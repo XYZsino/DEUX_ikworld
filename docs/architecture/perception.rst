@@ -104,7 +104,7 @@ ICP 비교 재현::
 
   python3 tools/replay_icp.py \
     --root /home/xyz-ai/Downloads/foundationpose2/outputs/zed_ros2_wrapper_2d \
-    --model /home/xyz-ai/git/DEUX_mujoco/assets/breadbag_model_v5/mesh/opaque_envelope.obj \
+    --model models/breadbag_model_v5/mesh/opaque_envelope.obj \
     --output validation/icp-replay.json
 
 실제 카메라→base 보정, 실시간 ZED 수신, 파지 후 자세 추적, 하드웨어 동작은 미검증입니다.

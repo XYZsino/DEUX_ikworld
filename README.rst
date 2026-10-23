@@ -60,6 +60,11 @@ Detection / ICP 추가 (2026-10-24)
 있습니다. 설치별 weights 설정에 해당 파일의 절대 경로를 지정하십시오.
 모델 SHA256과 클래스 매핑은 ``models/README.rst``에 기록했습니다.
 
+ICP 검증에 사용한 빵 봉투 v5 OBJ는
+``models/breadbag_model_v5/mesh/opaque_envelope.obj``에 포함되어 있습니다.
+참조 재질과 텍스처도 포함하며, model_path와 model_origin 설정은
+``models/README.rst``를 참고하십시오.
+
 촬영 프레임의 depth를 DetectionFrame에 함께 전달하며, 추론/ICP worker는 실행 중
 1프레임과 최신 대기 1프레임으로 제한합니다. yaw-only 결과는 full_orientation=false,
 설정 공분산은 covariance_estimated=false입니다. ObjectDetection의 ICP 품질 필드
