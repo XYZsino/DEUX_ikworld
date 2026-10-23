@@ -68,7 +68,7 @@ class ObservationNode(Node):
         self.status = 'waiting for synchronized RGB, depth and both CameraInfo streams'
         self.last_input_error = ''
         self.timer = self.create_timer(.5, self._diagnostic)
-        self.get_logger().info('External ZED observation: 640x480 by default; no robot command output')
+        self.get_logger().info(f"External ZED observation: {self.cfg['width']}x{self.cfg['height']}; no robot command output")
 
     def _objects(self, msg):
         try:

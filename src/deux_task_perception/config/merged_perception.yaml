@@ -1,0 +1,20 @@
+perception_node:
+  ros__parameters:
+    weights: "" # Explicit installation-specific YOLO/model/TF required.
+    device: cpu
+    model_path: ""
+    model_origin: ""
+    reference_frame: ""
+    base_frame: base_link
+    width: 640
+    height: 480
+    sync_queue_size: 3
+    max_image_age_s: 0.5
+    max_age_s: 1.0
+state_observation_node:
+  ros__parameters:
+    base_frame: base_link
+    camera_frame: ""
+    publish_rate_hz: 10.0
+    max_object_age_s: 0.6
+    max_joint_age_s: 0.1

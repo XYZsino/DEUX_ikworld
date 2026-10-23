@@ -11,8 +11,8 @@ observation_node:
     base_frame: base_link
     left_ee_frame: ""  # Configure actual calibrated grasp frame, not guessed wrist link.
     right_ee_frame: ""
-    width: 640
-    height: 480
+    width: 672
+    height: 376
     sync_queue_size: 10
     sync_slop_s: 0.02
     max_image_age_s: 0.5

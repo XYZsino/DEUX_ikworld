@@ -1,0 +1,21 @@
+observation_node:
+  ros__parameters:
+    rgb_topic: /zed/zed_node/rgb/color/rect/image
+    depth_topic: /zed/zed_node/depth/depth_registered
+    rgb_info_topic: /zed/zed_node/rgb/color/rect/camera_info
+    depth_info_topic: /zed/zed_node/depth/camera_info
+    arm_state_topic: /arm/joint_states
+    hand_state_topic: /task/hand_state
+    objects_topic: /task/object_detections
+    output_topic: /task/observation
+    base_frame: support_plane
+    left_ee_frame: ""  # Configure actual calibrated grasp frame, not guessed wrist link.
+    right_ee_frame: ""
+    width: 672
+    height: 376
+    sync_queue_size: 10
+    sync_slop_s: 0.02
+    max_image_age_s: 0.5
+    max_joint_age_s: 0.1
+    max_object_age_s: 0.6
+    camera_timeout_s: 1.0

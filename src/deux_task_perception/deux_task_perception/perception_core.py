@@ -84,7 +84,7 @@ def transform_matrix(translation, quaternion):
     return matrix
 
 
-def roi_points(depth, projection, box, reference_from_camera, min_height, max_distance):
+def roi_points(depth, projection, box, reference_from_camera, min_height, max_distance, depth_scale=1.0):
     """Rectified registered depth: use CameraInfo.P, not raw-camera K."""
     p = np.asarray(projection, dtype=float).reshape(3, 4)
     box = np.asarray(box, dtype=float)
@@ -103,6 +103,8 @@ def roi_points(depth, projection, box, reference_from_camera, min_height, max_di
     z = depth[y0:y1, x0:x1]
     valid = np.isfinite(z) & (z > 0)
     z, u, v = z[valid], u[valid], v[valid]
+    if depth_scale != 1.0:
+        z = z.astype(np.float32) * depth_scale
     camera = np.column_stack(((u-p[0, 2])*z/p[0, 0]-p[0, 3]/p[0, 0],
                               (v-p[1, 2])*z/p[1, 1]-p[1, 3]/p[1, 1], z))
     reference = camera @ reference_from_camera[:3, :3].T + reference_from_camera[:3, 3]

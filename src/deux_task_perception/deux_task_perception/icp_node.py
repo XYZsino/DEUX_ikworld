@@ -7,7 +7,7 @@ from rclpy.time import Time
 from rclpy.qos import qos_profile_sensor_data
 from tf2_ros import Buffer, TransformListener, TransformException
 from deux_task_msgs.msg import DetectionFrame, ObjectDetection, ObjectDetectionArray
-from .core import normalize_depth, stamp_ns
+from .core import normalize_depth, stamp_ns, depth_view
 from .perception_core import load_model, roi_points, transform_matrix, Tracker
 from .pipeline_node import PipelineNode, run
 from .yaw_icp import fit_icp
@@ -19,15 +19,17 @@ def matrix(msg):
 
 
 class IcpNode(PipelineNode):
-    def __init__(self, model_data=None, **kwargs):
-        super().__init__('icp_node', {
+    def __init__(self, model_data=None, input_enabled=True, node_name="icp_node", extra_defaults=None, **kwargs):
+        defaults = {
             'input_topic': '/task/detection_frames', 'output_topic': '/task/object_detections',
             'model_path': '', 'model_origin': '', 'reference_frame': '', 'base_frame': 'base_link',
             'min_height_m': .01, 'max_distance_m': 1.5, 'max_rmse_m': .015,
             'min_coverage': .5, 'track_gate_m': .08, 'track_max_age_s': .6,
             'position_std_m': .02, 'yaw_std_rad': .2, 'unobserved_std_rad': math.pi,
             'width': 640, 'height': 480, 'sync_slop_s': .02,
-            'target_classes': ['s1', 's1_1']}, **kwargs)
+            'target_classes': ['s1', 's1_1'], 'roi_only_depth': False}
+        defaults.update(extra_defaults or {})
+        super().__init__(node_name, defaults, **kwargs)
         self.positive('max_distance_m', 'max_rmse_m', 'track_gate_m', 'track_max_age_s',
                       'position_std_m', 'yaw_std_rad', 'unobserved_std_rad',
                       'width', 'height', 'sync_slop_s')
@@ -43,8 +45,9 @@ class IcpNode(PipelineNode):
         self.listener = TransformListener(self.tf, self)
         self.publisher = self.create_publisher(ObjectDetectionArray, self.cfg['output_topic'], qos_profile_sensor_data)
         self.start_worker(self.estimate)
-        self.subscription = self.create_subscription(DetectionFrame, self.cfg['input_topic'],
+        self.subscription = (self.create_subscription(DetectionFrame, self.cfg['input_topic'],
                                                       self.receive, qos_profile_sensor_data)
+                             if input_enabled else None)
 
     def receive(self, msg):
         try:
@@ -63,7 +66,11 @@ class IcpNode(PipelineNode):
         if epoch != self.track_epoch:
             self.tracker.tracks.clear()
             self.track_epoch = epoch
-        depth, _ = normalize_depth(frame.depth)
+        if self.cfg['roi_only_depth']:
+            depth, depth_scale = depth_view(frame.depth)
+        else:
+            depth, _ = normalize_depth(frame.depth)
+            depth_scale = 1.0
         info = frame.depth_info
         headers = [frame.header, frame.depth.header, info.header]
         times = [stamp_ns(h) for h in headers]
@@ -86,7 +93,7 @@ class IcpNode(PipelineNode):
             if not math.isfinite(box.confidence) or not 0 <= box.confidence <= 1:
                 raise ValueError('invalid detection confidence')
             points = roi_points(depth, info.p, box.xyxy, rc,
-                                self.cfg['min_height_m'], self.cfg['max_distance_m'])
+                                self.cfg['min_height_m'], self.cfg['max_distance_m'], depth_scale=depth_scale)
             fit = fit_icp(points, self.model, self.normals, rc[:3, 3])
             if (fit['status'] != 'fitted' or
                     not np.isfinite([fit['trimmed_rmse_m'], fit['target_coverage_10mm']]).all() or

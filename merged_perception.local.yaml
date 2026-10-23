@@ -1,0 +1,29 @@
+perception_node:
+  ros__parameters:
+    model_path: /home/DEUX003/DEUX_ikworld/models/breadbag_model_v5/mesh/opaque_envelope.obj
+    model_origin: bounds_center
+    reference_frame: support_plane
+    base_frame: support_plane
+    width: 672
+    height: 376
+    min_height_m: 0.01
+    max_distance_m: 1.5
+    max_rmse_m: 0.015
+    min_coverage: 0.5
+    max_age_s: 1.0
+    weights: /home/DEUX003/DEUX_ikworld/models/deux_1021_A_v2.0only_adamw.pt
+    device: '0'
+    confidence: 0.25
+    target_classes:
+    - s1
+    - s1_1
+    sync_queue_size: 3
+    max_image_age_s: 0.5
+    roi_only_depth: true
+state_observation_node:
+  ros__parameters:
+    base_frame: support_plane
+    camera_frame: zed_left_camera_frame_optical
+    publish_rate_hz: 10.0
+    max_object_age_s: 0.6
+    max_joint_age_s: 0.1

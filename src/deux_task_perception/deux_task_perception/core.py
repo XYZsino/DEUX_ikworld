@@ -47,6 +47,23 @@ def normalize_depth(msg):
     return np.ascontiguousarray(depth, dtype='<f4'), float(valid.mean())
 
 
+def depth_view(msg):
+    """Read-only strided ROS buffer view; apply units only inside selected ROIs."""
+    if msg.encoding == '32FC1':
+        dtype, scale = 'f4', 1.0
+    elif msg.encoding in ('16UC1', 'mono16'):
+        dtype, scale = 'u2', .001
+    else:
+        raise ValueError(f'unsupported depth encoding: {msg.encoding}')
+    dt = np.dtype(dtype).newbyteorder('>' if msg.is_bigendian else '<')
+    if msg.step < msg.width * dt.itemsize or len(msg.data) != msg.step * msg.height:
+        raise ValueError('invalid image step/data length')
+    view = np.ndarray((msg.height, msg.width), dtype=dt, buffer=memoryview(msg.data),
+                      strides=(msg.step, dt.itemsize))
+    view.setflags(write=False)
+    return view, scale
+
+
 def validate_bundle(rgb, depth, rgb_info, depth_info, width, height, slop_ns):
     messages = (rgb, depth, rgb_info, depth_info)
     if any((m.width, m.height) != (width, height) for m in messages):

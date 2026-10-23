@@ -1,0 +1,7 @@
+{
+  "entry": "live_20261022_191403_938314",
+  "camera_frame": "zed_left_camera_frame_optical",
+  "reference_frame": "support_plane",
+  "calibrated_robot_base": false,
+  "selection_reason": "Latest timestamp entry from user-provided fixed_references.json; reused provisionally, not recalibrated on current scene."
+}
