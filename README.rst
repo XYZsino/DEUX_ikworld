@@ -56,6 +56,10 @@ Detection / ICP 추가 (2026-10-24)
 않습니다. YOLO 설치는 선택 의존성이며 ROS 실행 Python 환경에 별도로 필요합니다.
 기존 observation launch만 실행할 때는 YOLO가 필요하지 않습니다.
 
+사용한 YOLO 체크포인트는 ``models/deux_1021_A_v2.0only_adamw.pt``에 포함되어
+있습니다. 설치별 weights 설정에 해당 파일의 절대 경로를 지정하십시오.
+모델 SHA256과 클래스 매핑은 ``models/README.rst``에 기록했습니다.
+
 촬영 프레임의 depth를 DetectionFrame에 함께 전달하며, 추론/ICP worker는 실행 중
 1프레임과 최신 대기 1프레임으로 제한합니다. yaw-only 결과는 full_orientation=false,
 설정 공분산은 covariance_estimated=false입니다. ObjectDetection의 ICP 품질 필드
