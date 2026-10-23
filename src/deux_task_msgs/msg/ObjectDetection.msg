@@ -4,3 +4,9 @@ geometry_msgs/PoseWithCovariance pose
 float32 confidence
 # True only when roll and pitch are observed as well as yaw.
 bool full_orientation
+# Fitting metrics, not ground-truth accuracy. Existing external producers may omit.
+bool fit_metrics_valid
+float64 trimmed_rmse_m
+float64 target_coverage_10mm
+# False for configured uncertainty assumptions used by yaw_icp.
+bool covariance_estimated

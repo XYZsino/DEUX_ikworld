@@ -7,6 +7,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObjectDetection.msg" "msg/ObjectDetectionArray.msg" "msg/Observation.msg"
+  "msg/BoundingBox.msg" "msg/DetectionFrame.msg"
   DEPENDENCIES std_msgs sensor_msgs geometry_msgs)
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()

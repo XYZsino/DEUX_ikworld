@@ -1,0 +1,12 @@
+{
+  "diagram_type": "architecture",
+  "output": "/home/xyz-ai/git/DEUX_mujoco/outputs/reader-pick/real-ros2-architecture/architecture.html",
+  "specification_sha256": "b46a073bc2921f53bb1f6123f73d90fe97e6c6a29948e7e442441c2380d055d0",
+  "artifact_sha256": "2a189b112855f9713572ea085f8c15cf8ca13f0f76ba055ecc0394bd552914b8",
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "correction_rounds": 0,
+  "review_scope": "1440x900 light / 2048x1320 dark screenshots: no crossings, clipping, label overlap; automated containment four desktop sizes passed",
+  "repository_modified": false
+}

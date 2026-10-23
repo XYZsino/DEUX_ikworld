@@ -1,11 +1,17 @@
 DEUX external-camera observation overlay
 ========================================
 
+세션 이어가기
+-------------
+
+현재 작업 인계와 다음 detection/ICP 구현 자료는 ``docs/HANDOFF.rst``를 먼저 읽으세요.
+구조도는 ``docs/architecture/architecture.html``, 상세 설계는 ``docs/architecture/design.html``입니다.
+
 현재 구현 범위
 --------------
 
 이 폴더는 DEUX/zed-ros2-wrapper 원본을 수정하지 않는 독립 ROS 2 overlay입니다.
-``deux_task_msgs``와 ``deux_task_perception/observation_node``만 추가했습니다.
+``deux_task_msgs``와 ``deux_task_perception``의 observation/detection/ICP 노드를 추가했습니다.
 모터 명령·bringup·카메라 드라이버를 시작하지 않습니다.
 
 * RGB, 등록된 depth, 각각의 CameraInfo를 ApproximateTimeSynchronizer로 동기화.
@@ -31,11 +37,29 @@ DEUX external-camera observation overlay
 * /task/observation/diagnostics는 입력 대기·누락·거부 원인을 전달.
   이 진단의 OK는 RGB-D 수신 상태일 뿐 로봇 동작 가능/성공을 뜻하지 않습니다.
 
-현재 객체 입력은 검증 후 원본 전달입니다. ICP 추정·ID 연결·Kalman 필터·바코드
-브리지는 아직 이 노드에 구현하지 않았습니다. 기존 sim tracker를 연결하는 경우
+observation_node의 객체 입력은 검증 후 원본 전달입니다. 별도 detection_node와
+icp_node가 검출·yaw ICP·거리 기반 ID 연결을 수행합니다. Kalman 필터·바코드
+브리지는 아직 구현하지 않았습니다. 기존 sim tracker를 연결하는 경우
 동일 pose sequence/header를 재갱신하지 않아야 합니다. 본 Observation은 RGB-D 및
 선택 측정 묶음이며 기존 JSON ObservationFrame과 직접 호환되는 메시지는 아닙니다.
 이후 BT adapter에서 유효성·시간·측정 축을 확인하고 변환해야 합니다.
+
+Detection / ICP 추가 (2026-10-24)
+--------------------------------
+
+실행 설정, 현재 3노드 데이터 흐름, 좌표·모델 원점 및 검증 범위는
+``docs/architecture/perception.rst``를 참고하십시오. 기존 HTML 구조도는 이전 설계
+스냅샷이며 현재 구현 구조는 이 문서가 우선합니다.
+
+``config/perception.yaml``의 weights, model_path, model_origin, reference_frame을
+명시적으로 채운 뒤 별도 launch로 실행합니다. 보정 TF가 없으면 base pose를 발행하지
+않습니다. YOLO 설치는 선택 의존성이며 ROS 실행 Python 환경에 별도로 필요합니다.
+기존 observation launch만 실행할 때는 YOLO가 필요하지 않습니다.
+
+촬영 프레임의 depth를 DetectionFrame에 함께 전달하며, 추론/ICP worker는 실행 중
+1프레임과 최신 대기 1프레임으로 제한합니다. yaw-only 결과는 full_orientation=false,
+설정 공분산은 covariance_estimated=false입니다. ObjectDetection의 ICP 품질 필드
+추가로 해당 메시지를 사용하는 외부 패키지도 재빌드해야 합니다.
 
 ZED 레포 기준 입력
 ------------------
@@ -112,6 +136,12 @@ deux_task_msgs/msg/ObjectDetectionArray:
 검증
 ----
 
+2026-10-24 최신 검증: ROS 2 Jazzy에서 두 패키지 빌드, 24개 테스트 통과.
+신규 테스트에는 합성 검출기→실제 yaw ICP의 ROS 통신과 TF 누락·만료 거부가
+포함됩니다. 저장 데이터 ICP 비교와 실제 YOLO 단일 이미지 추론 결과는
+``validation/icp-replay.json``, ``validation/yolo-replay.json``에 있습니다.
+YOLO의 Jazzy 환경 통합 실행 및 실제 ZED/DEUX 하드웨어 동작은 미검증입니다.
+
 ROS 환경에서 빌드 후::
 
   source install/setup.bash
@@ -122,5 +152,15 @@ ROS 통신 테스트(test_ros_smoke.py)는 640x480 BGRA와 OpenNI depth, CameraI
 로봇 명령을 발행하지 않습니다. 실제 드라이버와 테스트는 별도 ROS_DOMAIN_ID에서
 실행하십시오. 예: ROS_DOMAIN_ID=91 python3 -m pytest src/deux_task_perception/test -q
 
-2026-10-23 개발 환경: ROS 2(/opt/ros, rclpy) 없음. 순수 변환/검증 테스트16개 통과,
-ROS 통신 테스트1개 skipped. ROS build, DDS 동기화 및 실카메라 수신은 아직 미검증.
+2026-10-23 검증: 호스트에는 ROS 2가 없지만 ros:jazzy-ros-base 컨테이너에서
+Python 3.12.3 / ROS_DISTRO=jazzy로 colcon build 2개 패키지 성공,
+테스트17개 모두 통과(ROS RGB-D 실제 pub/sub 합성 통신 테스트 포함).
+실제 ZED 카메라·DEUX 하드웨어 연결은 아직 미검증입니다.
+
+재현: bash tools/validate_jazzy.sh
+로그: validation/jazzy-container.log
+컨테이너: ros:jazzy-ros-base
+검증 당시 image digest:
+sha256:103b6c417973394659af6804d4917cd489b91e5ed22eb7bef263025a3bed2410
+소스는 컨테이너에 read-only로 마운트하고 내부 임시 workspace에서 빌드합니다.
+장치와 host network를 연결하지 않으며 종료 후 컨테이너는 제거합니다.

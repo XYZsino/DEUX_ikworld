@@ -1,0 +1,110 @@
+{
+  "created": "2026-10-24",
+  "note": "Local path index and hashes; external code not vendored or executed. Reinspect before reuse.",
+  "files": [
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_msgs/package.xml",
+      "sha256": "783309d2f65b75ebee124a1a3789e230bef25553a82a7c2df6c1b71196948699"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_msgs/CMakeLists.txt",
+      "sha256": "af61097c8d5bd5059676dc91be32012ee538140c54db7fd90c6ee7a48d8b1237"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/package.xml",
+      "sha256": "5b4e426a0c5d5b62e0f8006ef2ddfe844a1fbfee8a01d53859d54a77551b6fc8"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/setup.cfg",
+      "sha256": "ea2b6d679710aaa01d835deb608b57cc094eed3a2f6b028ad6eefa9369b41630"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/setup.py",
+      "sha256": "d986399d2812ac1dfde0a0a4f0368ec61815d0e93243b390fa88313edc8bc6e2"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/launch/observation.launch.py",
+      "sha256": "67ed49467a0e8f4a7977d52b6e67b0c6ce1363ac7e36019c82f67b6d3e291893"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/resource/deux_task_perception",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/deux_task_perception/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/deux_task_perception/core.py",
+      "sha256": "e8362ff7484e64e7d60bf5c7c7702311ddb1a9a85d161ac6eb8a077bda1efcf5"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/deux_task_perception/observation_node.py",
+      "sha256": "26ab047f61b269ef68eb39f271db589f3178f08d7354c8be4656c6a0bb72d0c9"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/test/test_ros_smoke.py",
+      "sha256": "b0691acf475746e8838c71b6e434ad72b80070cfdd6f86f3624551f4921569f7"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/test/test_core.py",
+      "sha256": "277e65491a28172a31d0df2ec015698d38fa71b144338e7ec40c33595bc02fca"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_perception/config/observation.yaml",
+      "sha256": "27ec55df8d9796b655c62e8842852ce2b6a54f45d225023a83fe487c1ddbee41"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_msgs/msg/ObjectDetectionArray.msg",
+      "sha256": "a2613cd46b740fc5dc07915228f9ec0a7ab15f72c3189e08d5c583aaf13cc885"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_msgs/msg/ObjectDetection.msg",
+      "sha256": "c2833da119f42ae549ff436f817e0a00c59edcc511ff4b81d52d6799383047f6"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_ikworld/src/deux_task_msgs/msg/Observation.msg",
+      "sha256": "efcf720ff5f918197e57720a1d19312598fdcf201f84f4dbc91be009ddd234e8"
+    },
+    {
+      "path": "/home/xyz-ai/Downloads/foundationpose2/outputs/zed_ros2_wrapper_2d/process.py",
+      "sha256": "981d27334b88ce89320f889191003e08b8e793c51d11606d6da9842c0a35a4cd"
+    },
+    {
+      "path": "/home/xyz-ai/Downloads/foundationpose2/outputs/zed_ros2_wrapper_2d/fast_fit.py",
+      "sha256": "f84471d007be694b5681081842f2f91f865a77ca1c46edc2ae0b30d58cb21efb"
+    },
+    {
+      "path": "/home/xyz-ai/Downloads/foundationpose2/outputs/zed_ros2_wrapper_2d/run_detection.sh",
+      "sha256": "00655a67f7602397bdbff47b2aa2cd2bc1cd310aef1b9c3a66fa7df6b1608d7f"
+    },
+    {
+      "path": "/home/xyz-ai/Downloads/foundationpose2/outputs/zed_ros2_wrapper_2d/calibrate.py",
+      "sha256": "4f6e8b8fee3655156b666432e82f14f3e2a0ceb5081b9ad18260c668f5ebcc57"
+    },
+    {
+      "path": "/home/xyz-ai/Downloads/foundationpose2/outputs/detection_yaw_icp/fit.py",
+      "sha256": "8c7fce5ea39441ca84a5078bc43daf53d65074276f7887a1184b385fd8f4d829"
+    },
+    {
+      "path": "/home/xyz-ai/Downloads/foundationpose2/outputs/zed_deux_detection/detect_rgb.py",
+      "sha256": "6087abafc804005beff68af95e2c19042f0cabb7636eaf83bf258a1c70899a18"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_mujoco/sim/transfer_controller.py",
+      "sha256": "5c04b93a56e13a42c9dc3d0d5ef3951c6fa59afafae2d9dcb624972b35d84443"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_mujoco/sim/transfer_interface.py",
+      "sha256": "9027e85a4bae963b69ade755116a3d06858b7b47832641986b7ecd55646cc7ad"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_mujoco/sim/transfer_motion.py",
+      "sha256": "6f3bfbdc97e51b6d2a06b549eac1569aad591b445737ce113da78f77b70339b8"
+    },
+    {
+      "path": "/home/xyz-ai/git/DEUX_mujoco/sim/transfer_scan.py",
+      "sha256": "1c14cd47433c3bd103dcfd60cf637c5d2f4b30319f22f160aee0d970cef64f4c"
+    }
+  ]
+}

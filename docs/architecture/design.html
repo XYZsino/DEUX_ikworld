@@ -1,0 +1,78 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DEUX 실기 태스크 · ROS 2 추가 설계</title><style>body{margin:0;background:#101724;color:#e3eaf4;font:16px/1.7 system-ui,sans-serif}main{max-width:1160px;margin:auto;padding:42px 28px 90px}h1{font-size:32px}h2{margin-top:42px;color:#8fdbef}h3{color:#c0d6fc}a{color:#8fdbef}p{max-width:1030px}table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:13px;border:1px solid #344254;text-align:left;vertical-align:top}th{background:#203047}code,pre{background:#1c2939;border-radius:5px}code{padding:2px 4px;overflow-wrap:anywhere}pre{padding:20px;white-space:pre-wrap}.note{padding:18px 24px;background:#203047;border-left:4px solid #77c9d9}.tag{color:#ffc975}small{color:#b2c1d3}.steps{display:flex;flex-wrap:wrap;gap:9px}.steps span{background:#26384d;padding:10px;border-radius:8px}li{margin:8px 0}</style><main>
+<p class="tag">설계 제안 · 2026-10-23 · 실기 노드 구현/실행 전</p><h1>기존 DEUX 위에 추가하는 파지·스캔·적재 태스크</h1>
+<p>기존 드라이버와 ROS 2 제어 인터페이스는 그대로 사용하고, 별도 overlay workspace에 <b>7개 제어·연동 노드 + 1개 작업 공간 설정 노드</b>를 추가합니다. 시뮬레이션의 BT·파지 계산·Hermite 경로를 라이브러리로 가져오되, 실기 관측 수신과 시간 기반 실행은 새 노드가 담당합니다.</p>
+<p><a href="architecture.html">전체 구조도 열기 →</a> · 구조도는 archify로 작성했습니다. 설명은 한국어이며 고정 Viewer UI와 HTML 언어 속성은 도구 지원에 따라 영어입니다.</p>
+<div class="note">이번 작업은 구조 설계입니다. <code>/home/xyz-ai/git/DEUX</code>의 코드·설정은 수정하지 않았습니다. 상위 외부 카메라에서 ICP pose를 로봇 베이스 좌표계로 전달한다는 최신 조건을 사용합니다. 기존 head camera를 필수 입력으로 요구하지 않습니다.</div>
+<h2>1. 추가할 노드</h2>
+<table><tr><th>노드 / 배치 패키지(제안)</th><th>입력 → 출력</th><th>역할과 시뮬레이션 재사용</th></tr>
+<tr><td><code>observation_node</code><br>deux_task_perception</td><td>ICP pose, 양팔·양손 상태, 바코드<br>→ <code>/task/observation</code></td><td>이름 기준 28관절 조립, 측정 시각 보존, EE FK/외부 EE 검증, 물체 ID 관리·품질 검사. Kalman 필터는 이 노드에서 한 번만 적용하고 코어의 중복 갱신을 제거. 기존 transfer_observation·pose_filter 재사용.</td></tr>
+<tr><td><code>barcode_bridge_node</code><br>deux_task_perception</td><td>실제 리더의 문자열/기존 ROS 출력<br>→ <code>/task/barcode_read</code></td><td>수신 시각·코드·판독 세션을 전달. 디텍션/depth는 선택 입력. 통신 방식은 아직 미확정. 스캔 거리·각도 만족만으로 성공 처리하지 않음.</td></tr>
+<tr><td><code>scene_node</code><br>deux_task_runtime</td><td>현장 YAML·정적 기하·관측 지지 높이<br>→ <code>/task/scene</code></td><td>설치별 적재함 위치/크기, 출발 박스 높이 0.07m, 리프트 높이, 작업영역·리더 장착 변환·물체 원점. 버전을 부여해 계획 중 설정 변경 감지.</td></tr>
+<tr><td><code>task_node</code><br>deux_task_runtime</td><td>관측·계획/실행 결과<br>→ <code>/task/plan_motion</code>, <code>/task/execute_motion</code></td><td>BT와 대상 ID·시도 횟수 소유. Await → Approach → Close → Lift → Scan → Place → Recover. transfer_controller·behavior_tree의 의사결정 재사용. ROS callback 안에서 긴 IK 계산 금지.</td></tr>
+<tr><td><code>motion_planner_node</code><br>deux_task_runtime</td><td>단계 목표·관측 snapshot·scene 버전<br>→ 시간 포함 팔 궤적·손 이벤트·검증 결과</td><td>별도 프로세스에서 접점 기반 파지/IK/Hermite/여유·속도 검사. transfer_motion, transfer_contact_planner, transfer_scan, transfer_geometry 재사용. 최신 측정 시작 자세와 목표가 달라졌으면 재계획.</td></tr>
+<tr><td><code>execution_node</code><br>deux_task_runtime</td><td>승인 궤적·최신 로봇/물체 상태<br>→ 팔·손 실행 요청, 진행률/실패</td><td>동일 실행 시계로 양팔과 손 이벤트 동기화. 추종 오차·관측 유효성·계획 만료·취소 감시. 접근/스캔 추종은 짧은 계획 구간을 갱신하고, 운반은 연속 궤적으로 실행. 느린 계획기가 실행 루프를 막지 않음.</td></tr>
+<tr><td><code>arm_bridge_node</code><br>deux_task_adapters</td><td>14관절 궤적<br>→ 기존 팔 Action / 실행 피드백</td><td>왼팔7+오른팔7을 한 goal로 전달. goal 수락·결과·취소 확인. 기존 JTC 토픽과 Action을 동시에 사용하지 않음. 관절 이름·단위·한계를 실기 URDF와 검증.</td></tr>
+<tr><td><code>hand_bridge_node</code><br>deux_task_adapters</td><td>좌·우 각7관절/놓기·파지 이벤트<br>→ 기존 양손 cmd / 정규화된 측정 상태</td><td>이름→모터 ID, 부호·영점·범위 매핑. 임의 자세를 MotorData[]로 전송할 수 있는지 외부 드라이버 확인 필요. 실제 측정 피드백을 반환하며 명령값을 측정값으로 대체하지 않음.</td></tr></table>
+<p>카메라/ICP 생산자는 기존 프로젝트를 재사용합니다. <code>rosbag2</code> 기록은 별도 기존 도구로 실행하고, 노드를 불필요하게 추가하지 않습니다. UI가 필요하면 BT 상태·단계 결과·IK 횟수·실패 사유 토픽을 구독합니다.</p>
+<h2>2. 기존 레포와 연결되는 실제 인터페이스</h2>
+<table><tr><th>확인한 인터페이스</th><th>새 노드 연결 / 근거</th></tr>
+<tr><td><code>/arm/deux_arm_controller/follow_joint_trajectory</code><br>control_msgs/action/FollowJointTrajectory</td><td>arm_bridge의 Action client. <code>src/deux_tools/scripts/arm_hand_motion.py:24</code>에서 실제 사용. 관절은 arm_l_joint1..7, arm_r_joint1..7.</td></tr>
+<tr><td><code>/arm/joint_states</code><br>sensor_msgs/msg/JointState</td><td>observation_node와 execution_node가 구독. 이름 기준 정렬. 누락 관절을 0으로 채우지 않음.</td></tr>
+<tr><td><code>/hand/left/cmd</code>, <code>/hand/right/cmd</code><br>deux_hand_msgs/msg/HandCtlMessage</td><td>hand_bridge가 발행. HandCtlMessage의 motors 배열은 MotorData(id, torque, rad, velocity, goal_current, hardware_error_status). 메시지 정의가 드라이버의 실제 지원을 보장하지는 않음.</td></tr>
+<tr><td><code>/hand/{left,right}/ui_request</code><br>deux_hand_msgs/msg/HandUiMessage</td><td>기존 bringup이 원격 손 PC에 run_flag/teleop_mode 신호 전송. 이번 태스크는 teleop 모드 활성화를 재사용하지 않음. 임의 관절 제어 모드 확인 후 초기화.</td></tr>
+<tr><td><code>/state/status</code> · <code>/state/set_mode</code></td><td>status는 JSON 문자열(mode/hand_type/teleop). 관측·실행기가 감시하되 이 상태를 명령 소유권 lock으로 간주하지 않음. set_mode는 팔·리프트 이동을 유발하므로 작업 중 호출 금지.</td></tr>
+<tr><td>팔 controller update_rate=100Hz<br>position 명령 / position 상태</td><td><code>src/deux_bringup/config/deux_arm_controllers.yaml</code> 기준. 새 실행기의 주기는 측정 후 결정. sim dt=.034s의 tick 수로 실기 시간을 세지 않음.</td></tr></table>
+<h2>3. 새 내부 인터페이스와 피드백</h2>
+<p>아래 이름과 타입은 <b>신규 제안</b>이며 현재 DEUX에 존재하는 토픽이 아닙니다. <code>deux_task_msgs</code>에 정의합니다.</p>
+<table><tr><th>인터페이스</th><th>필수 정보</th><th>수신자</th></tr>
+<tr><td><code>/task/object_detections</code><br>ObjectDetectionArray</td><td>촬영 stamp, 수신 stamp, source/sequence, track_id, base frame pose, 원점/모델 버전, covariance·ICP 품질·유효 축</td><td>observation_node</td></tr>
+<tr><td><code>/task/hand_state</code><br>JointState + 진단</td><td>측정 관절 이름·값·측정 시각·장치 에러. 실제 토픽/상태 타입은 외부 손 드라이버 확인 후 연결.</td><td>관측 통합·실행 감시</td></tr>
+<tr><td><code>/task/observation</code><br>TaskObservation</td><td>각 입력의 원래 시각, 정렬된28관절, EE pose, 추적 물체·확신도·예측 여부, fresh 바코드</td><td>BT·계획기·실행기</td></tr>
+<tr><td><code>/task/plan_motion</code><br>PlanMotion Action</td><td>단계, target_id, 측정 시작 자세, scene 버전, seed 경로; 결과: trajectory, hand events, valid_until, IK 횟수·여유</td><td>planner; 결과→BT→실행기</td></tr>
+<tr><td><code>/task/execute_motion</code><br>ExecuteMotion Action</td><td>plan_id, 공통 시작 시각, 실행 기한; feedback: 진행 시간·추종 오차; result: 완료/취소/구체적 원인</td><td>execution_node</td></tr>
+<tr><td><code>/task/arm_motion</code>, <code>/task/hand_motion</code><br>내부 실행 Action</td><td>동일 plan_id/시계, arm 14관절; hand 각7관절·이벤트. 손 통신이 예약 실행을 지원하지 않으면 실측 지연 보상과 허용 오차 사용.</td><td>팔·손 bridge → 결과를 실행기로 반환</td></tr>
+<tr><td><code>/task/barcode_read</code>, <code>/task/status</code></td><td>판독 시각/문자열/세션, BT 단계·대상·재시도·실패/성공·IK 누계</td><td>관측·BT·기록</td></tr></table>
+<p>센서 입력은 최신 데이터 우선으로 처리하고, 계획/실행 요청은 수락·취소·결과를 확인합니다. scene은 최신 설정을 후발 구독자도 받을 수 있게 보관합니다. 재수신한 pose를 새 관측으로 세거나, 느린 ICP 결과에 도착 시간을 촬영 시각으로 덮어쓰지 않습니다.</p>
+<h2>4. 현재 시나리오의 실행 순서</h2>
+<div class="steps"><span>대상 관측</span><span>추적·접근</span><span>하강·파지</span><span>수직 상승·검증</span><span>전방 스캔</span><span>양팔 동시 이동</span><span>놓기·검증</span><span>복귀</span></div>
+<ol><li><b>시작:</b> 로봇·손 측정 상태와 설치 설정을 읽고 시작 자세를 측정값으로 맞춥니다. 카메라 pose가 들어오기 전 물체 위치를 미리 알지 않습니다.</li><li><b>파지:</b> 봉투 pose와 손가락 접점을 기준으로 접근 자세/깊이를 계산합니다. 손 관절 잔차는 접촉 가설이며, 상승 후 실제 물체 이동을 함께 확인합니다.</li><li><b>스캔:</b> 오른팔 전방으로 뻗는 자세를 기본으로 양면의 낮은 좌측 스티커 중 접근 가능한 면을 선택합니다. 왼손 리더가 추종하고 새 판독 문자열이 들어와야 성공입니다.</li><li><b>적재:</b> 스캔 전 자세로 역재생하지 않습니다. 왼손 리더 후퇴와 오른팔 적재 이동을 동시에 계획합니다. 직접 경로가 가능하면 사용하고, 불가하면 검증된 안전 경유점을 Hermite로 연속 통과합니다. 현재 seed1 성공은 경유점1개였으며 모든 설치에서 직접 경로를 보장하지 않습니다.</li><li><b>검증/실패:</b> 놓은 위치·손과의 분리 확인 후 성공. BT는 실패 원인을 받아 정지/복구합니다. 기존 관측 제어기에는 스캔 최대3회가 있으나, 이전 별도 시나리오의 파지 최대2회 재시도는 이 제어기로 아직 이식되지 않았습니다. 신규 BT에서 최초 포함 파지2회/스캔3회를 명시하고 동일 대상·새 관측·재접근 여유가 있을 때만 재시도하도록 구현할 항목입니다.</li></ol>
+<h2>5. sim 코드를 그대로 실행하기 전에 필요한 경계 변경</h2>
+<table><tr><th>현재 상태 / 문제</th><th>설계에서의 처리</th></tr>
+<tr><td>ControlIO.step 안에서 controller.tick과 계획이 동기 실행. 명령 유효시간 기본0.1s.</td><td>계획 worker와 실행 루프 분리. 느린 계획 뒤 이미 만료한 명령을 전송하지 않음. 수락 시 로봇 시작 자세·대상 이동·scene 버전을 재검증. 관측 기반 추종도 준비된 다음 구간만 연결.</td></tr>
+<tr><td>일부 코드가 매 tick마다 다음 궤적 sample을 소비.</td><td>실기 측정 시계/실행 elapsed time 기준 샘플링으로 변경. callback 누락/지연 때문에 궤적이 느려지거나 순간 점프하지 않도록 재타이밍. Hermite 통과 속도를 단일점 목표 반복으로 없애지 않음.</td></tr>
+<tr><td>tracker max_age=.3s, 현재 관측 포맷에 개별 pose 촬영시각/품질 축 정보 부족.</td><td>개별 촬영 시각·지연·공분산을 새 메시지에 포함. 추적 예측은 유효시간/불확실도 상한 안에서만 사용. 단순 timeout 확대 대신 실제 ICP 지연 분포로 조정.</td></tr>
+<tr><td>ICP가 테이블 위 XYZ+yaw만 추정하면 들어 올린 봉투의 tilt를 설명하지 못함.</td><td>지지 상태와 파지 후 추적 모드를 분리. 파지 후 6D 추정 또는 이미지/라벨 depth·손 상대 pose 기반 보조 관측 필요. EE만으로 만든 예측을 파지 성공의 독립 증거로 세지 않음.</td></tr>
+<tr><td>sim 관절 모델·고정 lift·EE grasp site와 실기 URDF 원점이 같다는 보장 없음.</td><td>실기 robot_description과 고정/측정 lift, EE→접점, 손목→리더를 설치 설정으로 사용. 팔 명칭은 같아도 FK·관절 부호·영점·범위 비교 필수. 현재 sim 6N을 goal_current에 숫자6으로 넣지 않음.</td></tr>
+<tr><td>현재 모델에 정적 물체/충돌 템플릿과 MuJoCo 계산이 포함.</td><td>MuJoCo는 IK/FK·기하 계산용 라이브러리로 유지 가능. live sim adapter의 정답 pose·접촉력·컨베이어 상태는 실기 입력에 포함하지 않음. 실제 상태는 센서/로봇 피드백만 사용.</td></tr></table>
+<h2>6. 컨베이어 높이·위치가 바뀌는 경우</h2>
+<p>봉투 pose가 base 기준으로 주어지면 접근 목표는 관측에서 다시 계산할 수 있습니다. 출발 박스 높이 7cm와 정적 봉투 형상으로 지지 높이/상승 여유를 추정하되, 봉투 하나만으로 박스 벽의 XY 위치·컨베이어 전체 윤곽·적재함 위치까지 알 수는 없습니다.</p>
+<ul><li><code>installation.yaml</code>: destination pose/내부 크기, conveyor plane/작업 영역, box height=.07, lift 상태, reader·EE 보정. 기존 소스 수정 없이 설치별 값 교체.</li><li>초기에는 출발 박스 벽/컨베이어 경계를 보수적 설정으로 제공하고, 추후 RGB-D 평면/박스 검출로 scene을 갱신합니다. 관측 없이 설치값이 자동 보정된다고 표시하지 않습니다.</li><li>기존 스캔 위치·팔꿈치 자세·경유점은 선호 경로로 사용합니다. IK 불가하면 위치/자세 후보를 재탐색하되 관절 한계·충돌·탑재 봉투 여유·실제 판독 성공은 유지합니다.</li><li>새 카메라 외부 파라미터는 추후 URDF 반영 전까지 별도 설정/정적 TF로 제공할 수 있습니다. pose가 이미 base 기준이면 제어를 위해 head cam 보정을 강제하지 않습니다.</li></ul>
+<h2>7. 기존 코드 수정 없이 배치</h2>
+<pre>deux_task_ws/                  # 새 overlay, DEUX 원본은 그대로
+  src/
+    deux_task_msgs/            # 관측·계획·실행 메시지/Action
+    deux_task_core/            # sim 제어 로직을 이식한 비ROS 라이브러리
+    deux_task_perception/      # observation_node, barcode_bridge_node
+    deux_task_runtime/         # scene_node, task_node, planner, execution
+    deux_task_adapters/        # arm_bridge_node, hand_bridge_node
+    deux_task_bringup/
+      launch/task.launch.py   # 신규 실행 파일(설계안)
+      config/installation.yaml
+      config/hand_mapping.yaml
+      config/task.yaml</pre>
+<p>기존 DEUX install을 underlay로 source하고 새 workspace를 build합니다. 기존 bringup launch를 포함하거나 이미 실행된 드라이버에 연결합니다. 기존 controller_manager를 중복 생성하지 않습니다. 태스크는 양팔·손만 제어하며 모바일/리프트는 작업 중 고정합니다.</p>
+<p><b>명령 충돌:</b> 기존 teleop와 state_node도 팔 궤적 토픽에 직접 쓰므로 새 execution_node 하나로 기존 발행자를 강제 중재할 수 없습니다. 자동 작업에서는 teleop를 시작하지 않고 state 모드 전환을 비활성화하거나, 별도 launch의 remapping으로 기존 명령을 격리해야 합니다. 소스 수정 없이 가능하지만 실행 구성은 구분해야 합니다. /state/status 감시와 경쟁 publisher 검사는 보조 검사이며 ROS Action client 경쟁까지 완전한 lock으로 보장하지 않습니다.</p>
+<h2>8. 구현 순서와 완료 기준</h2>
+<ol><li><b>관측/손 매핑 확정:</b> 손 측정 토픽·모터ID·임의 rad 명령 지원·전류 단위, 바코드 연결 방식 확인. 관절 name/순서 및 base/EE FK 대조. 누락 피드백 상태에서 실행 거부.</li><li><b>드라이런:</b> rosbag 관측 재생 → BT/계획기 → 출력 기록만 수행. 명령 전송 없이 상태·목표·시각·만료·IK 횟수를 sim 결과와 비교.</li><li><b>fake hardware:</b> 기존 use_fake_hardware:=true를 사용해 팔 Action 연동 검증. 손은 별도 fake adapter 필요. cancel, deadline, 시작 자세 불일치, 경쟁 명령, 피드백 끊김을 검증.</li><li><b>MuJoCo ROS 어댑터:</b> 동일 신규 ROS 노드에 sim 입력/출력을 연결해 파지·스캔·적재와 실패 재시도 비교. fake hardware만으로 접촉/파지 성공을 검증하지 않음.</li><li><b>현장 검증:</b> 정지 물체·짧은 단계부터 확인하고 컨베이어 이동/위치·높이 변화로 확대. 성공률, 손 미끄러짐, fresh barcode, 적재 확인, 팔/손 동기 오차를 기록.</li></ol>
+<h2>9. 코드 근거</h2>
+<p>실기 레포는 읽기만 수행했습니다. 다음 파일을 기준으로 실제 인터페이스와 제안 설계를 구분했습니다.</p><ul>
+<li><code>DEUX/src/deux_bringup/config/deux_arm_controllers.yaml</code> — 14관절 position controller와100Hz.</li>
+<li><code>DEUX/src/deux_bringup/launch/deux.launch.py</code> — /arm namespace, fake hardware, 기존 controller launch.</li>
+<li><code>DEUX/src/deux_tools/scripts/arm_hand_motion.py</code> — 팔 Action·양손 cmd 호출 예시.</li>
+<li><code>DEUX/src/deux_hand_msgs/msg/{HandCtlMessage,MotorData,HandUiMessage}.msg</code> — 손 명령 정의.</li>
+<li><code>DEUX/src/deux_tools/scripts/run_deux.sh:302</code> — 원격 hand PC에 bringup 요청; 손 드라이버 구현은 이 레포에서 확인되지 않음.</li>
+<li><code>DEUX/src/deux_state/deux_state/state_node.py:105</code> — 팔 명령 발행, 모드 전환과 상태.</li>
+<li><code>DEUX_mujoco/sim/transfer_controller.py</code> — 현재 BT·파지·스캔3회·동시 적재.</li>
+<li><code>DEUX_mujoco/sim/transfer_interface.py</code> — 28관절 transport-independent 입력/출력과 만료 처리.</li>
+<li><code>DEUX_mujoco/sim/transfer_{observation,motion,scan,geometry}.py</code> — 관측·경로·스캔·상대 기하.</li></ul>
+<p><small>이 문서는 현재 코드 기반의 구현 설계이며 하드웨어 동작 보증이나 구현 완료 보고서가 아닙니다. 상위 실기 이전 작업의 일시정지 상태는 유지합니다.</small></p></main></html>

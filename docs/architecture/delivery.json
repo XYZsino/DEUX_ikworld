@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/xyz-ai/git/DEUX_mujoco/outputs/reader-pick/real-ros2-architecture/architecture.json",
+  "output": "/home/xyz-ai/git/DEUX_mujoco/outputs/reader-pick/real-ros2-architecture/architecture.html",
+  "specification": {
+    "sha256": "b46a073bc2921f53bb1f6123f73d90fe97e6c6a29948e7e442441c2380d055d0",
+    "bytes": 4277
+  },
+  "artifact": {
+    "sha256": "2a189b112855f9713572ea085f8c15cf8ca13f0f76ba055ecc0394bd552914b8",
+    "bytes": 808262
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  }
+}

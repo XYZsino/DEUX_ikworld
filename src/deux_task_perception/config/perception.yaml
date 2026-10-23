@@ -1,0 +1,27 @@
+detection_node:
+  ros__parameters:
+    # Required: explicit trusted local YOLO checkpoint. No automatic download/install.
+    weights: ""
+    device: cpu
+    confidence: 0.25
+    target_classes: [s1, s1_1]
+    max_age_s: 1.0
+icp_node:
+  ros__parameters:
+    # Required: OBJ in metres; model_id includes its content hash and origin policy.
+    model_path: ""
+    model_origin: ""  # mesh or bounds_center; select to match downstream geometry.
+    # Required: calibrated support-plane frame, Z up; never assume base Z is plane Z.
+    reference_frame: ""
+    base_frame: base_link
+    min_height_m: 0.01
+    max_distance_m: 1.5
+    max_rmse_m: 0.015
+    min_coverage: 0.5
+    track_gate_m: 0.08
+    track_max_age_s: 0.6
+    # Configured assumptions, not statistical uncertainty estimated by ICP.
+    position_std_m: 0.02
+    yaw_std_rad: 0.2
+    unobserved_std_rad: 3.141592653589793
+    max_age_s: 1.0

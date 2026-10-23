@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "DEUX · 기존 코드 수정 없이 추가할 ROS 2 구조",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1320,
+      640
+    ]
+  },
+  "components": [
+    {
+      "id": "inputs",
+      "type": "external",
+      "label": "실제 관측 입력",
+      "sublabel": "외부 ICP · 로봇 상태 · 판독 코드",
+      "pos": [
+        40,
+        80
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "observe",
+      "type": "backend",
+      "label": "관측 통합",
+      "sublabel": "observation_node",
+      "pos": [
+        360,
+        80
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "task",
+      "type": "backend",
+      "label": "태스크 BT",
+      "sublabel": "task_node",
+      "pos": [
+        680,
+        80
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "planner",
+      "type": "backend",
+      "label": "비동기 경로 계획",
+      "sublabel": "motion_planner_node",
+      "pos": [
+        1000,
+        80
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "scene",
+      "type": "database",
+      "label": "작업 공간 설정",
+      "sublabel": "scene_node",
+      "pos": [
+        1000,
+        380
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "execute",
+      "type": "security",
+      "label": "명령 실행 · 감시",
+      "sublabel": "execution_node",
+      "pos": [
+        680,
+        380
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "arm",
+      "type": "backend",
+      "label": "양팔 어댑터",
+      "sublabel": "arm_bridge_node",
+      "pos": [
+        360,
+        280
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "hand",
+      "type": "backend",
+      "label": "양손 어댑터",
+      "sublabel": "hand_bridge_node",
+      "pos": [
+        360,
+        500
+      ],
+      "size": [
+        240,
+        88
+      ]
+    },
+    {
+      "id": "drivers",
+      "type": "external",
+      "label": "기존 DEUX 드라이버",
+      "sublabel": "팔 ros2_control · 외부 손 드라이버",
+      "pos": [
+        40,
+        380
+      ],
+      "size": [
+        240,
+        88
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "inputs-to-observe",
+      "from": "inputs",
+      "to": "observe",
+      "label": "관측"
+    },
+    {
+      "id": "observe-to-task",
+      "from": "observe",
+      "to": "task",
+      "label": "추적 상태"
+    },
+    {
+      "id": "task-to-planner",
+      "from": "task",
+      "to": "planner",
+      "label": "계획 요청"
+    },
+    {
+      "id": "scene-to-planner",
+      "from": "scene",
+      "to": "planner",
+      "label": "작업 기하"
+    },
+    {
+      "id": "planner-to-execute",
+      "from": "planner",
+      "to": "execute",
+      "label": "검증 궤적"
+    },
+    {
+      "id": "execute-to-arm",
+      "from": "execute",
+      "to": "arm",
+      "label": "14관절"
+    },
+    {
+      "id": "execute-to-hand",
+      "from": "execute",
+      "to": "hand",
+      "label": "손 목표"
+    },
+    {
+      "id": "arm-to-drivers",
+      "from": "arm",
+      "to": "drivers",
+      "label": "팔 Action"
+    },
+    {
+      "id": "hand-to-drivers",
+      "from": "hand",
+      "to": "drivers",
+      "label": "손 Topic"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "새 노드 7개 + 설정 노드 1개",
+      "items": [
+        "barcode_bridge_node가 판독 문자열을 관측에 공급",
+        "계획·실행을 분리하고 두 팔은 한 궤적으로 동기화"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "현재 동작 유지",
+      "items": [
+        "파지 → 상승 → 오른팔 전방 스캔 → 양팔 동시 적재",
+        "Hermite 경로 재사용 · 직접 이동 불가 시 안전 경유"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "설계안 / 아직 실기 구현 전",
+      "items": [
+        "화살표는 주 명령 흐름 · 피드백 연결은 상세 문서 참고",
+        "기존 teleop·state 명령과 동시 제어 금지"
+      ]
+    }
+  ]
+}
