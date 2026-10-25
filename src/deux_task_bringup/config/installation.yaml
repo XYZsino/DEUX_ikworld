@@ -27,7 +27,9 @@ retreat_left_pose: []
 destination_pose: []
 hand_open: []
 hand_closed: []
-home_joints: []
+# User-supplied home pose (rad), ordered per deux_task_core.model.JOINT_NAMES.
+# right_hand_thumb_joint_2 sign corrected to +1.0 per user; see user_home_pose.yaml.
+home_joints: [0.807611, -0.539279, -0.279199, 1.536379, -0.800389, -0.056719, -0.664892, 0.070002, 0.349999, 1.18, -1.400001, -0.9, 1.400001, 0.9, -1.072517, 0.92558, 0.511504, -1.776357, -0.481181, 0.539503, 0.646462, 0.0, 1.0, -1.0, 0.3, 0.2, -0.3, -0.2]
 workspace: {min: [], max: []}
 destination_bounds: {min: [], max: []}
 obstacles: []  # Calibrated AABBs including source box walls and destination walls.
