@@ -23,7 +23,7 @@ from deux_task_runtime.trajectory import arrays, sample, validate_limits
 
 class ArmBridgeNode(RuntimeNode):
     def __init__(self, **kwargs):
-        super().__init__("arm_bridge_node", **kwargs)
+        super().__init__("arm_bridge_node", observe_status=True, **kwargs)
         self.declare_parameter("hardware_enabled", False)
         self.declare_parameter(
             "driver_action", "/arm/deux_arm_controller/follow_joint_trajectory"

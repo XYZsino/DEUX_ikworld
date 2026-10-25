@@ -22,7 +22,7 @@ from deux_task_runtime.trajectory import arrays, sample
 
 class HandBridgeNode(RuntimeNode):
     def __init__(self, **kwargs):
-        super().__init__("hand_bridge_node", **kwargs)
+        super().__init__("hand_bridge_node", observe_status=True, **kwargs)
         self.declare_parameter("hardware_enabled", False)
         self.declare_parameter("mapping_file", "")
         self.mapping = None

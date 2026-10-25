@@ -159,3 +159,24 @@ hand_bridge_node, barcode_bridge_node, state_observation_node 및 ROS 메시지/
 녹화 화면 하단의 '실제 로봇으로 전환할 때' 표에도 같은 항목을 표시합니다.
 
 커밋 범위 및 실기 단계별 적용/검증 계획은 hardware_rollout.rst를 참고하십시오.
+
+
+미사용 구독 정리 후 검증 (2026-10-25)
+-----------------------------------
+
+RuntimeNode의 공통 구독을 역할별 선택으로 변경했습니다.
+StateObservation은 task/planner/execution, BarcodeTarget은 task/execution,
+/state/status는 execution/arm/hand만 구독합니다. task의 별도 라벨 callback은
+유지하고 부모의 중복 구독을 제거했습니다. 총8개 구독 객체가 제거되었습니다.
+브리지 직접 측정 피드백, planner의 계획 후 최신 관측 비교 및 실행 감시는 유지합니다.
+구조도와 새 sim trace의 수신 대상 목록도 같은 구조로 갱신했습니다.
+기존 scenario-recording은 당시 실행 구조를 보존하는 과거 기록입니다.
+
+Jazzy8개 패키지 빌드 및53개 회귀 테스트 통과. 변경 전후 PlanMotion 요청은
+Approach/Descend/Close/Lift/AlignBarcode/Place로 동일하며, barcode 모드 요청과
+BarcodeRead 수신을 확인했습니다. Place는 기존 IK unreachable로 종료했고,
+새 실행 오류/물리 경고는 없습니다. 전체 태스크 성공 검증은 아닙니다.
+짧은 VerifyLift/ScanSearch 상태는 주기적 상태 기록에서 누락될 수 있으므로
+샘플링된 단계 목록의 완전 일치 대신 실제 Action goal 순서와 판독 이벤트를 비교했습니다.
+증거: validation/ros2-sim-subscriptions/{build.log,regression.log,flow-comparison.json}.
+새 영상/화면은 validation/ros2-sim-subscriptions/scenario-recording/에 있습니다.

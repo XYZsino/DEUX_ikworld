@@ -696,3 +696,24 @@ def test_simulation_wall_watchdog_requires_sim_clock(tmp_path):
         node=h.add(RuntimeNode('sim_clock',parameter_overrides=params(config_file=str(h.config_path),use_sim_time=True)))
         assert node.wall_timeout(2.) == 8.
     finally:h.close()
+
+
+def test_runtime_subscription_roles(tmp_path):
+    """Check real ROS subscriptions, including task's specialized label callback."""
+    from collections import Counter
+    h = Harness(fixture(tmp_path))
+    try:
+        expected = [
+            (TaskNode, (1, 1, 0)),
+            (MotionPlannerNode, (1, 0, 0)),
+            (ExecutionNode, (1, 1, 1)),
+            (ArmBridgeNode, (0, 0, 1)),
+            (HandBridgeNode, (0, 0, 1)),
+        ]
+        topics = ('/task/state_observation', '/task/barcode_target', '/state/status')
+        for cls, counts in expected:
+            node = h.add(cls(parameter_overrides=params(config_file=str(h.config_path))))
+            actual = Counter(sub.topic_name for sub in node.subscriptions)
+            assert tuple(actual[t] for t in topics) == counts, node.get_name()
+    finally:
+        h.close()

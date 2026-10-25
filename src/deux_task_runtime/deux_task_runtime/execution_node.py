@@ -23,7 +23,7 @@ from .trajectory import arrays, sample
 
 class ExecutionNode(RuntimeNode):
     def __init__(self, **kwargs):
-        super().__init__("execution_node", **kwargs)
+        super().__init__("execution_node", observe_state=True, observe_barcode=True, observe_status=True, **kwargs)
         self.declare_parameter("dry_run", True)
         self.bridge_clients = [
             ActionClient(self, BridgeMotion, name, callback_group=self.group)

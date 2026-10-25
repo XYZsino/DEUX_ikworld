@@ -88,7 +88,8 @@ async def cancel_children(node, handles):
 
 
 class RuntimeNode(Node):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, *, observe_state=False, observe_barcode=False,
+                 observe_status=False, **kwargs):
         super().__init__(name, **kwargs)
         self.group = ReentrantCallbackGroup()
         self.declare_parameter("config_file", "", ParameterDescriptor(read_only=True))
@@ -105,20 +106,24 @@ class RuntimeNode(Node):
         )
         self.observation = None
         self.latest_barcode_target = None
-        self.barcode_target_sub = self.create_subscription(BarcodeTarget, "/task/barcode_target",
-            lambda msg: setattr(self, "latest_barcode_target", msg), qos_profile_sensor_data)
         self.robot_status = None
-        self.status_sub = self.create_subscription(
-            String, "/state/status", self.on_status, LATCHED
-        )
-        self.subs = [
-            self.create_subscription(
-                StateObservation,
-                "/task/state_observation",
-                self.on_observation,
+        # Each consumer opts into only the streams used by its role.
+        self.subs = []
+        if observe_barcode:
+            self.subs.append(self.create_subscription(
+                BarcodeTarget, "/task/barcode_target",
+                lambda msg: setattr(self, "latest_barcode_target", msg),
                 qos_profile_sensor_data,
-            ),
-        ]
+            ))
+        if observe_status:
+            self.subs.append(self.create_subscription(
+                String, "/state/status", self.on_status, LATCHED,
+            ))
+        if observe_state:
+            self.subs.append(self.create_subscription(
+                StateObservation, "/task/state_observation",
+                self.on_observation, qos_profile_sensor_data,
+            ))
 
     def on_status(self, msg):
         try:

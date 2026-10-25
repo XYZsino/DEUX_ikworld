@@ -1,6 +1,11 @@
 ROS 2 시뮬레이션 녹화와 메시지 타임라인
 ======================================
 
+미사용 구독 정리 후 재검증: Jazzy8개 패키지 빌드,53개 테스트 통과.
+새 sim 기록은 ``validation/ros2-sim-subscriptions/scenario-recording/dashboard.html``입니다.
+바코드 수신과 Place 요청까지 동일하게 진행했고 기존 IK 실패가 유지됩니다.
+아래 ros2-sim 기록은 변경 전 실행을 보존한 자료입니다.
+
 실기 적용 준비 문서: ``docs/architecture/hardware_rollout.rst``.
 현재 커밋 범위/제외 항목, 추가 구현·설정, 단계별 검증 및 통과 조건을 정리했습니다.
 

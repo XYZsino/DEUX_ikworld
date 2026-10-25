@@ -141,14 +141,6 @@
       "group": "control"
     },
     {
-      "source": "status",
-      "target": "bt",
-      "name": "/state/status",
-      "type": "std_msgs/String (JSON)",
-      "kind": "topic",
-      "group": "hardware"
-    },
-    {
       "source": "config",
       "target": "bt",
       "name": "설정 파일 직접 읽기",
@@ -157,28 +149,12 @@
       "group": "config"
     },
     {
-      "source": "perception",
-      "target": "planner",
-      "name": "/task/barcode_target",
-      "type": "deux_task_msgs/BarcodeTarget",
-      "kind": "topic",
-      "group": "perception"
-    },
-    {
       "source": "state",
       "target": "planner",
       "name": "/task/state_observation",
       "type": "deux_task_msgs/StateObservation",
       "kind": "topic",
       "group": "control"
-    },
-    {
-      "source": "status",
-      "target": "planner",
-      "name": "/state/status",
-      "type": "std_msgs/String (JSON)",
-      "kind": "topic",
-      "group": "hardware"
     },
     {
       "source": "config",
@@ -221,22 +197,6 @@
       "group": "config"
     },
     {
-      "source": "perception",
-      "target": "arm",
-      "name": "/task/barcode_target",
-      "type": "deux_task_msgs/BarcodeTarget",
-      "kind": "topic",
-      "group": "perception"
-    },
-    {
-      "source": "state",
-      "target": "arm",
-      "name": "/task/state_observation",
-      "type": "deux_task_msgs/StateObservation",
-      "kind": "topic",
-      "group": "control"
-    },
-    {
       "source": "status",
       "target": "arm",
       "name": "/state/status",
@@ -251,22 +211,6 @@
       "type": "YAML + URDF hash",
       "kind": "file",
       "group": "config"
-    },
-    {
-      "source": "perception",
-      "target": "hand",
-      "name": "/task/barcode_target",
-      "type": "deux_task_msgs/BarcodeTarget",
-      "kind": "topic",
-      "group": "perception"
-    },
-    {
-      "source": "state",
-      "target": "hand",
-      "name": "/task/state_observation",
-      "type": "deux_task_msgs/StateObservation",
-      "kind": "topic",
-      "group": "control"
     },
     {
       "source": "status",
@@ -481,7 +425,7 @@
     "코드 정적 연결도: 실행 중 ROS 그래프 캡처가 아닙니다.",
     "Action 선은 goal/result/feedback/cancel 채널을 하나로 묶습니다.",
     "타입의 msg/action 구분은 색상과 범례로 표시합니다.",
-    "StateObservation과 BarcodeTarget은 공통 RuntimeNode를 통해 5개 노드가 구독합니다.",
+    "StateObservation: task/planner/execution, BarcodeTarget: task/execution, state/status: execution/arm/hand 구독.",
     "ICP는 barcode 모드에서도 독립 감시를 계속합니다. yaw-only 결과는 full_orientation=false입니다."
   ]
 }

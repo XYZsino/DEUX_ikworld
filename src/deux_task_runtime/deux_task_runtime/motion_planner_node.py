@@ -23,7 +23,7 @@ def compute(config, version, stage, start, target, barcode=None):
 
 class MotionPlannerNode(RuntimeNode):
     def __init__(self, **kwargs):
-        super().__init__("motion_planner_node", **kwargs)
+        super().__init__("motion_planner_node", observe_state=True, **kwargs)
         self.pool = ProcessPoolExecutor(
             max_workers=1, mp_context=multiprocessing.get_context("spawn")
         )

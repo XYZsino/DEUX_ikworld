@@ -1,3 +1,21 @@
+최신 변경 — 미사용 구독8개 제거 (2026-10-25)
+============================================
+
+RuntimeNode는 노드 역할에 필요한 구독만 선택적으로 생성합니다.
+StateObservation: task/planner/execution. BarcodeTarget: task/execution.
+/state/status: execution/arm/hand. task의 중복 라벨 구독도 제거했습니다.
+직접 관절 피드백, planner의 최신 관측 비교 및 실행 감시는 유지합니다.
+정적 구조도와 sim trace의 수신 대상 목록도 갱신했습니다.
+
+Jazzy8개 패키지 빌드, 실제 구독 개수 검사 포함53개 테스트 통과.
+sim에서 변경 전과 동일한 PlanMotion 요청 순서 및 바코드 수신을 확인했습니다.
+Place는 기존과 동일한 IK unreachable로 종료했습니다. 전체 태스크 성공 검증이 아닙니다.
+새 실행 오류/물리 경고 없음. 짧은 BT 상태는 발행/샘플링 시점에 따라 기록 여부가 달라
+모션 순서는 Action goal 기록으로 비교했습니다.
+증거: validation/ros2-sim-subscriptions/의 build.log, regression.log,
+flow-comparison.json 및 scenario-recording/. 이전 녹화는 보존했습니다.
+이번 커밋에서도 tools/validation은 제외하고 푸시는 수행하지 않습니다.
+
 최신 변경 — ROS 2 sim 연결 및 동기화 녹화 (2026-10-25)
 ======================================================
 

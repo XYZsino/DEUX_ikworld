@@ -93,8 +93,10 @@ Place는 full_orientation=true가 계속 필요합니다. 현재 merged yaw ICP�
 -----------------
 
 StateObservation.msg와 perception_node/state_observation_node 실행 항목을 등록했습니다.
-RuntimeNode의5개 소비자는 /task/state_observation을 구독하고 PlanMotion도 이 타입을
-사용합니다. 이미지가 제어 관측과 계획 Action에 포함되지 않습니다. 메시지 변경으로
+task/planner/execution만 /task/state_observation을 구독하고 PlanMotion도 이 타입을
+사용합니다. BarcodeTarget은 task/execution만 구독하며 task의 라벨 구독은 하나입니다.
+/state/status는 execution/arm bridge/hand bridge만 구독합니다. 브리지는 각 장치의
+직접 측정 피드백을 사용하며 물체·라벨 관측을 구독하지 않습니다. 이미지가 제어 관측과 계획 Action에 포함되지 않습니다. 메시지 변경으로
 관련 overlay 및 외부 클라이언트를 재빌드해야 합니다.
 
 ::

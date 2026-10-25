@@ -13,16 +13,16 @@ from deux_hand_msgs.msg import HandCtlMessage
 from deux_task_msgs.msg import StateObservation,ObjectDetectionArray,BarcodeTarget,PerceptionRequest,ScanSession,BarcodeRead,TaskStatus
 from deux_task_runtime.common import seconds,LATCHED
 
-RUNTIME=['task_node','motion_planner_node','execution_node','arm_bridge_node','hand_bridge_node']
+STATE_CONSUMERS=['task_node','motion_planner_node','execution_node']
 TOPICS=[
  ('/arm/joint_states',JointState,'mujoco_driver_node',['state_observation_node','arm_bridge_node'],False),
  ('/sim/hand/left/joint_states',JointState,'mujoco_driver_node',['hand_bridge_node'],False),
  ('/sim/hand/right/joint_states',JointState,'mujoco_driver_node',['hand_bridge_node'],False),
  ('/task/hand_state',JointState,'hand_bridge_node',['state_observation_node'],False),
  ('/task/object_detections',ObjectDetectionArray,'mujoco_driver_node',['state_observation_node'],False),
- ('/task/state_observation',StateObservation,'state_observation_node',RUNTIME,False),
+ ('/task/state_observation',StateObservation,'state_observation_node',STATE_CONSUMERS,False),
  ('/task/perception_request',PerceptionRequest,'task_node',['mujoco_driver_node'],True),
- ('/task/barcode_target',BarcodeTarget,'mujoco_driver_node',RUNTIME,False),
+ ('/task/barcode_target',BarcodeTarget,'mujoco_driver_node',['task_node','execution_node'],False),
  ('/task/scan_session',ScanSession,'task_node',['barcode_bridge_node','mujoco_driver_node'],True),
  ('/barcode/raw',String,'mujoco_driver_node',['barcode_bridge_node'],False),
  ('/task/barcode_read',BarcodeRead,'barcode_bridge_node',['task_node'],False),

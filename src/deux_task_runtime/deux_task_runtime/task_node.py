@@ -27,7 +27,7 @@ from .common import (
 
 class TaskNode(RuntimeNode):
     def __init__(self, **kwargs):
-        super().__init__("task_node", **kwargs)
+        super().__init__("task_node", observe_state=True, **kwargs)
         self.planner = ActionClient(
             self, PlanMotion, "/task/plan_motion", callback_group=self.group
         )
