@@ -1,6 +1,9 @@
 """External ZED RGB-D observation boundary. Never publishes robot commands."""
 from copy import deepcopy
 import math
+import numpy as np
+from scipy.spatial.transform import Rotation
+from deux_task_core.filter import PoseFilter
 import message_filters
 import rclpy
 from rclpy.node import Node
@@ -31,6 +34,7 @@ class ObservationNode(Node):
             'sync_queue_size': 10, 'sync_slop_s': .02,
             'max_image_age_s': .5, 'max_joint_age_s': .1,
             'max_object_age_s': .6, 'camera_timeout_s': 1.,
+            'filter_objects': False,
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
@@ -42,6 +46,7 @@ class ObservationNode(Node):
         if min(self.cfg['width'], self.cfg['height'], self.cfg['sync_queue_size']) <= 0:
             raise ValueError('positive image dimensions and queue required')
         self.arm, self.hand, self.objects = History(), History(), History()
+        self.pose_filter = PoseFilter()
         self.tf = Buffer()
         self.tf_listener = TransformListener(self.tf, self)
         qos = qos_profile_sensor_data
@@ -73,6 +78,28 @@ class ObservationNode(Node):
     def _objects(self, msg):
         try:
             validate_objects(msg, self.cfg['base_frame'])
+            if self.cfg['filter_objects']:
+                msg = deepcopy(msg)
+                stamp = stamp_ns(msg.header)*1e-9
+                if any((old := self.pose_filter.tracks.get((msg.source,msg.model_id,d.track_id))) is not None and stamp <= old[0]
+                       for d in msg.detections if not d.pose_filtered):
+                    return
+                for detection in msg.detections:
+                    if detection.pose_filtered:
+                        continue  # Never double-filter an upstream filtered result.
+                    p = detection.pose.pose
+                    rotation = Rotation.from_quat([p.orientation.x,p.orientation.y,p.orientation.z,p.orientation.w])
+                    yaw = math.atan2(rotation.as_matrix()[1,0], rotation.as_matrix()[0,0])
+                    filtered, updated = self.pose_filter.update(
+                        (msg.source,msg.model_id,detection.track_id), stamp_ns(msg.header)*1e-9,
+                        msg.sequence, [p.position.x,p.position.y,p.position.z,yaw])
+                    if not updated:
+                        return  # Repeated or out-of-order acquisition cannot refresh filtered data.
+                    p.position.x,p.position.y = map(float,filtered[:2])
+                    q = (Rotation.from_rotvec([0,0,float(filtered[2]-yaw)])*rotation).as_quat()
+                    p.orientation.x,p.orientation.y,p.orientation.z,p.orientation.w = map(float,q)
+                    detection.pose_filtered = True
+                    detection.covariance_estimated = False
             self.objects.add(msg)
         except ValueError as error:
             self.last_input_error = str(error)
@@ -92,6 +119,7 @@ class ObservationNode(Node):
         if now < self.last_clock:
             for history in (self.arm, self.hand, self.objects):
                 history.clear()
+            self.pose_filter.tracks.clear()
             self.last_stamp = self.last_publish = None
             self.status = 'clock moved backwards; observation caches cleared'
         self.last_clock = now

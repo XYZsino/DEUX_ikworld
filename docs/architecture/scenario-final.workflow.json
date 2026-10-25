@@ -1,0 +1,199 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "빵 봉투 이송 · Behavior Tree 실행 흐름",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "bt",
+      "label": "task_node · 메모리 Sequence"
+    },
+    {
+      "id": "io",
+      "label": "협력 ROS 노드"
+    }
+  ],
+  "mainPath": [
+    "grasp",
+    "lift",
+    "search",
+    "align",
+    "read",
+    "place"
+  ],
+  "nodes": [
+    {
+      "id": "grasp",
+      "lane": "bt",
+      "col": 0,
+      "type": "backend",
+      "label": "파지·상승",
+      "sublabel": "접근 → 파지 → 상승",
+      "width": 160
+    },
+    {
+      "id": "lift",
+      "lane": "bt",
+      "col": 1,
+      "type": "backend",
+      "label": "상승 확인",
+      "sublabel": "서로 다른 새 관측 2개",
+      "width": 160
+    },
+    {
+      "id": "search",
+      "lane": "bt",
+      "col": 2,
+      "type": "backend",
+      "label": "ScanSearch",
+      "sublabel": "라벨 표면 탐색",
+      "width": 160
+    },
+    {
+      "id": "align",
+      "lane": "bt",
+      "col": 3,
+      "type": "backend",
+      "label": "AlignBarcode",
+      "sublabel": "오른손 유지 · 왼손 리더 정렬",
+      "width": 160
+    },
+    {
+      "id": "read",
+      "lane": "bt",
+      "col": 4,
+      "type": "backend",
+      "label": "WaitBarcode",
+      "sublabel": "리더 문자열 판독",
+      "width": 160
+    },
+    {
+      "id": "place",
+      "lane": "bt",
+      "col": 5,
+      "type": "backend",
+      "label": "적재·분리 확인",
+      "sublabel": "Place → Release → Retreat",
+      "width": 160
+    },
+    {
+      "id": "perception",
+      "lane": "io",
+      "col": 2,
+      "type": "backend",
+      "label": "perception_node",
+      "sublabel": "YOLO · ICP · 라벨 평면",
+      "width": 160,
+      "yOffset": 20
+    },
+    {
+      "id": "motion",
+      "lane": "io",
+      "col": 3,
+      "type": "backend",
+      "label": "계획·실행 노드",
+      "sublabel": "planner → execution → bridges",
+      "width": 160,
+      "yOffset": 20
+    },
+    {
+      "id": "barcode",
+      "lane": "io",
+      "col": 4,
+      "type": "backend",
+      "label": "barcode_bridge_node",
+      "sublabel": "실제 리더 → BarcodeRead",
+      "width": 160,
+      "yOffset": 20
+    },
+    {
+      "id": "state",
+      "lane": "io",
+      "col": 5,
+      "type": "backend",
+      "label": "state_observation_node",
+      "sublabel": "봉투 · 측정 관절 · EE TF",
+      "width": 160,
+      "yOffset": 20
+    }
+  ],
+  "edges": [
+    {
+      "id": "e0",
+      "from": "grasp",
+      "to": "lift"
+    },
+    {
+      "id": "e1",
+      "from": "lift",
+      "to": "search"
+    },
+    {
+      "id": "e2",
+      "from": "search",
+      "to": "align"
+    },
+    {
+      "id": "e3",
+      "from": "align",
+      "to": "read"
+    },
+    {
+      "id": "e4",
+      "from": "read",
+      "to": "place"
+    },
+    {
+      "id": "search_io",
+      "from": "search",
+      "to": "perception",
+      "label": "PerceptionRequest"
+    },
+    {
+      "id": "align_io",
+      "from": "align",
+      "to": "motion",
+      "label": "Plan / Execute"
+    },
+    {
+      "id": "read_io",
+      "from": "barcode",
+      "to": "read",
+      "label": "BarcodeRead"
+    },
+    {
+      "id": "place_io",
+      "from": "state",
+      "to": "place",
+      "label": "StateObservation"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "조건부 재시도",
+      "items": [
+        "파지 최대 2회: 원래 지지면에 남은 봉투만 Recover → Release",
+        "ScanSearch → AlignBarcode → WaitBarcode 최대 3회; 탐색·판독 실패만 재시도"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "관측과 실행의 경계",
+      "items": [
+        "모든 모션 leaf는 planner → execution → arm/hand bridge를 호출",
+        "상승·적재는 새 관측 2개로 확인; Place는 full_orientation 필요"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "현재 검증 범위",
+      "items": [
+        "합성 ROS 시험 대상; 실제 하드웨어 성공을 의미하지 않음",
+        "라벨 미검출 시 정지 탐색만 수행; 임의 봉투 회전 탐색 없음"
+      ]
+    }
+  ]
+}

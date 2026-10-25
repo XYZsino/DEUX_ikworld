@@ -1,3 +1,32 @@
+ROS 2 시뮬레이션 녹화와 메시지 타임라인
+======================================
+
+실기 적용 준비 문서: ``docs/architecture/hardware_rollout.rst``.
+현재 커밋 범위/제외 항목, 추가 구현·설정, 단계별 검증 및 통과 조건을 정리했습니다.
+
+MuJoCo 드라이버를 실제 ROS 2 task/planner/execution/bridge에 연결했습니다.
+재현: ``bash tools/validate_sim.sh``. 상세 설정과 검증 범위는
+``docs/architecture/simulation.rst``를 참고하십시오.
+결과 화면: ``validation/ros2-sim/scenario-recording/dashboard.html``.
+영상 시각과 노드 연결, 토픽/Action 이벤트, BT 단계를 함께 확인할 수 있습니다.
+
+Jazzy8개 패키지 빌드,52개 회귀 테스트 통과. 기록은 바코드 수신 후 Place 계획의
+IK 실패까지이며, 전체 태스크 정상 완료를 확인한 것은 아닙니다.
+사용자 요청에 따라 성공 튜닝은 중단했습니다. sim 관측은 가시성 기반6D/라벨 센서이고,
+실제 YOLO/ICP 및 하드웨어는 이 실행에서 검증하지 않았습니다.
+
+현재 제어 경로 — 단계별 인식 / Behavior Tree
+==========================================
+
+공통 YOLO → 독립 ICP·바코드 표면, 요청 ID/lease 기반 모드 전환,
+ScanSearch → AlignBarcode → WaitBarcode, 이미지 없는 StateObservation을 구현했습니다.
+설치 YAML은 각 노드에서 직접 읽습니다. 최신 실행 안내와 제약은
+``docs/architecture/controlled_perception.rst``를 참고하십시오.
+Jazzy7개 패키지 빌드 및49개 합성 테스트 통과. 실제 하드웨어 미검증.
+새 구조도: ``docs/architecture/nodes.html``, ``docs/architecture/scenario.html``.
+
+아래 설명 중 기존 observation/detection/ICP 분리 경로는 호환 실행 옵션입니다.
+
 DEUX external-camera observation overlay
 ========================================
 
@@ -11,8 +40,10 @@ DEUX external-camera observation overlay
 --------------
 
 이 폴더는 DEUX/zed-ros2-wrapper 원본을 수정하지 않는 독립 ROS 2 overlay입니다.
-``deux_task_msgs``와 ``deux_task_perception``의 observation/detection/ICP 노드를 추가했습니다.
-모터 명령·bringup·카메라 드라이버를 시작하지 않습니다.
+관측/검출/ICP와 설계의 나머지6개 노드를 포함한9개 노드를 구현했습니다.
+현재 구현·실행 설정·검증 한계는 ``docs/architecture/runtime.rst``가 우선합니다.
+팔/손 명령 브리지가 포함되지만 기본 launch는 명령 전송을 비활성화합니다.
+기존 bringup·카메라 드라이버·teleop·리프트를 시작하지 않습니다.
 
 * RGB, 등록된 depth, 각각의 CameraInfo를 ApproximateTimeSynchronizer로 동기화.
   기본 크기 640x480, 시각 차이 최대20ms. best-effort sensor-data QoS.
@@ -38,11 +69,12 @@ DEUX external-camera observation overlay
   이 진단의 OK는 RGB-D 수신 상태일 뿐 로봇 동작 가능/성공을 뜻하지 않습니다.
 
 observation_node의 객체 입력은 검증 후 원본 전달입니다. 별도 detection_node와
-icp_node가 검출·yaw ICP·거리 기반 ID 연결을 수행합니다. Kalman 필터·바코드
-브리지는 아직 구현하지 않았습니다. 기존 sim tracker를 연결하는 경우
+icp_node가 검출·yaw ICP·거리 기반 ID 연결을 수행합니다. 선택적 XY/yaw Kalman 필터와 별도 바코드 브리지도 구현했습니다.
+Kalman 필터는 설정 파일에서 ``filter_objects: true``일 때만 적용합니다. 기존 sim tracker를 연결하는 경우
 동일 pose sequence/header를 재갱신하지 않아야 합니다. 본 Observation은 RGB-D 및
 선택 측정 묶음이며 기존 JSON ObservationFrame과 직접 호환되는 메시지는 아닙니다.
-이후 BT adapter에서 유효성·시간·측정 축을 확인하고 변환해야 합니다.
+신규 runtime은 ROS 메시지를 직접 사용합니다. legacy JSON adapter는 시각/관측축을
+잃지 않는 입력만 명시적으로 허용합니다.
 
 Detection / ICP 추가 (2026-10-24)
 --------------------------------
@@ -69,6 +101,24 @@ ICP 검증에 사용한 빵 봉투 v5 OBJ는
 1프레임과 최신 대기 1프레임으로 제한합니다. yaw-only 결과는 full_orientation=false,
 설정 공분산은 covariance_estimated=false입니다. ObjectDetection의 ICP 품질 필드
 추가로 해당 메시지를 사용하는 외부 패키지도 재빌드해야 합니다.
+
+
+Runtime 추가 (2026-10-24)
+------------------------
+
+``scene_node`` 대신 task/planner/execution/arm/hand 노드가 각자 ``config_file``의
+설치 YAML을 시작 시 직접 읽습니다. 설정 배포 토픽과 reload 서비스는 없습니다.
+launch의 ``scene_config`` 인자로 동일 파일을 지정하며, 수정 후 관련 노드를 함께
+재시작합니다. 설정·URDF 버전 비교는 Action에서 유지합니다.
+
+``deux_task_core``, ``deux_task_runtime``, ``deux_task_adapters``, ``deux_task_bringup``을
+추가했습니다. 설치 YAML, 손 매핑 및 실행 명령은 ``docs/architecture/runtime.rst``를
+참고하십시오. 실제 파지 후6D 관측과 설치 보정값은 아직 공급되지 않았으며,
+yaw-only ICP를 완전한 자세로 간주하여 Scan/Place를 실행하지 않습니다.
+
+이전 MuJoCo 성공 궤적과의 동등성/실기 성공률은 미검증입니다. 새 계획기는 실기
+expanded URDF 기반 IK와 명시된 collision envelope를 사용하며, 새 Action 및
+합성 드라이버로 통신·실패 처리를 검증합니다.
 
 ZED 레포 기준 입력
 ------------------
@@ -107,7 +157,7 @@ CameraInfo만 있는 다른 생산자라면 별도의 명시적 동기화 처리
   source /home/xyz-ai/git/DEUX/install/setup.bash
   cd /home/xyz-ai/git/DEUX_ikworld
   rosdep install --from-paths src --ignore-src -r -y
-  colcon build --symlink-install --packages-select deux_task_msgs deux_task_perception
+  colcon build --symlink-install
   source install/setup.bash
   ros2 launch deux_task_perception observation.launch.py
 
@@ -145,7 +195,11 @@ deux_task_msgs/msg/ObjectDetectionArray:
 검증
 ----
 
-2026-10-24 최신 검증: ROS 2 Jazzy에서 두 패키지 빌드, 24개 테스트 통과.
+2026-10-24 runtime 추가 검증: overlay6개 패키지와 기존 deux_hand_msgs를 포함한
+7개 패키지 빌드, 전체41개 테스트 통과. 실제 bridge와 합성 드라이버의 정상 실행·
+취소·피드백 단절 및 태스크 실패/재시도 경로를 포함합니다.
+
+이전 perception 단계 검증: ROS 2 Jazzy에서 두 패키지 빌드, 24개 테스트 통과.
 신규 테스트에는 합성 검출기→실제 yaw ICP의 ROS 통신과 TF 누락·만료 거부가
 포함됩니다. 저장 데이터 ICP 비교와 실제 YOLO 단일 이미지 추론 결과는
 ``validation/icp-replay.json``, ``validation/yolo-replay.json``에 있습니다.
@@ -154,12 +208,12 @@ YOLO의 Jazzy 환경 통합 실행 및 실제 ZED/DEUX 하드웨어 동작은 �
 ROS 환경에서 빌드 후::
 
   source install/setup.bash
-  python3 -m pytest src/deux_task_perception/test -q
+  python3 -m pytest src/deux_task_perception/test src/deux_task_core/test src/deux_task_runtime/test -q
 
 ROS 통신 테스트(test_ros_smoke.py)는 640x480 BGRA와 OpenNI depth, CameraInfo를
 합성 발행해서 Observation 수신/변환 및 URDF/관절 없이 수신 가능함을 검증합니다.
 로봇 명령을 발행하지 않습니다. 실제 드라이버와 테스트는 별도 ROS_DOMAIN_ID에서
-실행하십시오. 예: ROS_DOMAIN_ID=91 python3 -m pytest src/deux_task_perception/test -q
+실행하십시오. 예: ROS_DOMAIN_ID=91 python3 -m pytest src/deux_task_perception/test src/deux_task_core/test src/deux_task_runtime/test -q
 
 2026-10-23 검증: 호스트에는 ROS 2가 없지만 ros:jazzy-ros-base 컨테이너에서
 Python 3.12.3 / ROS_DISTRO=jazzy로 colcon build 2개 패키지 성공,

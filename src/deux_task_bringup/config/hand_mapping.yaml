@@ -1,0 +1,17 @@
+# Populate from actual hand driver feedback/protocol. No guessed IDs/current units.
+calibrated: false
+position_mode_confirmed: false
+left:
+  feedback_topic: ''
+  feedback_type: sensor_msgs/msg/JointState
+  mode: null
+  action_state: null
+  action_state_save: null
+  joints: {}  # joint_name: {id, feedback_name, sign, offset, min, max, velocity, goal_current}
+right:
+  feedback_topic: ''
+  feedback_type: sensor_msgs/msg/JointState
+  mode: null
+  action_state: null
+  action_state_save: null
+  joints: {}

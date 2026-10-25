@@ -1,0 +1,10 @@
+# Empty target_id selects the first currently valid tracked object.
+string target_id
+---
+bool success
+string reason
+string barcode
+---
+string state
+uint32 grasp_attempt
+uint32 scan_attempt

@@ -1,3 +1,103 @@
+최신 변경 — ROS 2 sim 연결 및 동기화 녹화 (2026-10-25)
+======================================================
+
+실기 적용 준비 문서: ``docs/architecture/hardware_rollout.rst``.
+현재 커밋 범위/제외 항목, 추가 구현·설정, 단계별 검증 및 통과 조건을 정리했습니다.
+
+사용자 범위: 태스크 성공 튜닝 없이 실행 흐름 녹화와 시간별 노드/메시지 시각화.
+deux_task_sim 추가: 기존 MuJoCo를 ROS 팔 Action/손 토픽 드라이버와 /clock에 연결.
+공통 runtime/bridge를 그대로 실행하고, sim 관측은 가시성 기반 truth6D/라벨 센서입니다.
+실제 YOLO/ICP 실행 및 하드웨어 검증은 포함하지 않습니다.
+
+최종 기록은 Approach → Descend → Close → Lift → ScanSearch → AlignBarcode →
+WaitBarcode → Place 요청까지 진행 후 Place IK unreachable로 Failed 종료했습니다.
+가상 바코드 문자열은 수신했습니다. 전체 시나리오 정상 완료를 확인한 것은 아니며,
+Release/Retreat/VerifyPlace는 실행되지 않았습니다. 성공 튜닝은 요청에 따라 중단했습니다.
+
+* 검증: Jazzy8개 패키지 빌드,52개 회귀 테스트 통과.
+* 영상24.276초,238프레임 / 이벤트5,946건,14개 토픽 및6개 Action 계측.
+* 최종 화면: validation/ros2-sim/scenario-recording/dashboard.html.
+* 브라우저 재생/시간 이동/노드 필터/메시지 상세 검사 통과, JS 오류 없음.
+* 실기 전환 항목: 녹화 화면 하단 표 및 simulation.rst 마지막 절에 구동/센서/리더/TF/설정 교체와 유지 노드를 정리했습니다.
+* 재현: bash tools/validate_sim.sh. 상세 조건/공통 코드 변경: docs/architecture/simulation.rst.
+* 원본 DEUX/DEUX_mujoco는 수정하지 않았습니다. 사용자 요청으로 소스·설정·문서를 커밋합니다.
+  tools/validation 및 구조도 검토용 산출물은 제외하며, 푸시는 수행하지 않습니다.
+
+아래 과거 인계보다 이 절과 simulation.rst가 우선합니다.
+
+최신 변경 — 단계별 인식과 Behavior Tree (2026-10-24)
+====================================================
+
+공통 YOLO에서 봉투/바코드를 검출하고 ICP·라벨 표면 worker를 분리했습니다.
+PerceptionRequest lease/request_id로 모드 전환과 오래된 결과 폐기를 처리합니다.
+ScanSearch → AlignBarcode → WaitBarcode BT, 라벨 기반 왼팔 정렬/실행 감시,
+이미지 없는 StateObservation 제어 경로를 연결했습니다.
+
+권장 경로8개 노드이며 기존 standalone 경로는 별도 옵션입니다.
+상세 실행 조건/제약: docs/architecture/controlled_perception.rst.
+새 구조도: docs/architecture/nodes.html, docs/architecture/scenario.html.
+정적 설치 YAML 직접 로드는 유지하며 scene_node는 없습니다.
+
+검증: Jazzy7개 패키지 빌드,49개 합성 테스트 통과. 하드웨어 미실행.
+barcode_classes는 데이터셋 기준 설정 필요. yaw ICP는 full_orientation=false이며,
+Place에 필요한 파지 후6D 인식은 여전히 현장 통합 과제입니다.
+변경사항은 커밋/푸시하지 않았습니다. 아래 과거 인계보다 이 절이 우선합니다.
+
+최신 변경 — scene_node를 설정 파일 직접 로드로 대체 (2026-10-24)
+================================================================
+
+사용자 요청에 따라 scene_node, Scene.msg, /task/scene, /task/reload_scene를 제거했습니다.
+현재 전체9개 노드입니다. 아래 이전 인계의 scene_node/10개 노드 설명보다 이 절이 우선합니다.
+
+* task/planner/execution/arm/hand는 RuntimeNode에서 config_file YAML을 시작 시 직접 로드.
+* 공통 로더: src/deux_task_core/deux_task_core/configuration.py.
+* launch의 scene_config 인자를5개 소비 노드에 config_file로 전달.
+* YAML과 URDF 검증 실패 시 시작 거부. URDF 상대 경로는 YAML 디렉터리 기준.
+* 설정은 시작 시 snapshot. 파일 변경의 자동 반영/폴링/재로드 서비스 없음.
+  YAML 수정 후 작업 종료 및 관련 노드 전체 재시작. config_file 파라미터는 read-only.
+* Action의 scene_version 해시는 유지. BridgeMotion에도 추가하여 bridge 설정 불일치 거부.
+* planner/실행/팔 URDF 재사용 시 시작 버전과 달라지면 재시작 요구.
+* 실제 장비 명령은 전송하지 않았으며 변경사항은 아직 커밋하지 않았습니다.
+
+최신 검증: Jazzy7개 패키지 빌드, 41개 테스트 통과. 실제 하드웨어 미실행.
+최신 실행 안내: docs/architecture/runtime.rst. 검증 결과: validation/jazzy-container.log.
+
+최신 진행 — 설계의 나머지7개 노드 구현 (2026-10-24)
+===================================================
+
+사용자가 design.html 기반 나머지 노드 전체 구현을 요청했습니다.
+아래 과거 인계의 runtime 미구현 설명보다 이 절과 docs/architecture/runtime.rst가 우선합니다.
+기존 DEUX 원본 및 하드웨어는 수정/실행하지 않았습니다. 이번 변경은 아직 커밋하지 않았습니다.
+
+추가: barcode_bridge_node, scene_node, task_node, motion_planner_node,
+execution_node, arm_bridge_node, hand_bridge_node. 전체10개 노드, overlay6개 패키지입니다.
+별도 프로세스 계획, URDF FK/IK, Cartesian 접근/하강/상승, 라벨 기준 스캔 후보,
+Hermite 관절 경로, 명시적 collision envelope 및 관절/속도/가속도 검사,
+팔/손 공통 시간 실행·취소·피드백 감시, 파지2회·스캔3회 제한 및 독립 관측 검증을 추가했습니다.
+observation_node의 선택적 XY/yaw Kalman과 엄격한 legacy JSON adapter도 추가했습니다.
+
+핵심 파일:
+
+* src/deux_task_core/deux_task_core/{model,planning,filter}.py
+* src/deux_task_runtime/deux_task_runtime/{scene_node,task_node,motion_planner_node,execution_node}.py
+* src/deux_task_adapters/deux_task_adapters/{arm_bridge_node,hand_bridge_node}.py
+* src/deux_task_bringup/launch/task.launch.py 및 config/*.yaml
+* src/deux_task_msgs/action/*.action 및 Scene/MotionPlan/BarcodeRead/ScanSession/TaskStatus.msg
+* docs/architecture/runtime.rst: 설치 조건·구현과 설계의 차이·검증 범위
+
+설치 템플릿에는 미확정 frame/손 매핑/기하를 임의로 채우지 않았습니다.
+hardware_enabled=false, dry_run=true가 기본입니다. String 바코드 stamp는 수신 시각입니다.
+Scan/Place는 full_orientation=true가 필요하므로 현재 yaw-only ICP만으로는 실행 불가합니다.
+실기 expanded URDF, collision envelope, grasp/reader/label 보정, 손 피드백/프로토콜,
+파지 후6D 인식 생산자가 남은 현장 통합 입력입니다.
+이전 MuJoCo controller와 궤적/접촉 동등성, 실제 성공률은 검증하지 않았습니다.
+
+검증 도구는 overlay 전체와 기존 DEUX의 deux_hand_msgs를 읽기 전용으로 복사해 빌드합니다.
+합성 태스크 결과는 시험 코드의 물체/리더 관측이며 물리 시뮬레이션 결과가 아닙니다.
+최종 검증: ROS 2 Jazzy/Python3.12.3, 7개 패키지 빌드, 전체39개 테스트 통과.
+상세 로그는 validation/jazzy-container.log 및 README.rst를 참고하십시오.
+이전 사용자 지시에 따라 tools/와 validation/은 Git 미추적 상태로 남겨 두었습니다.
+
 최신 진행 — detection/ICP 구현 완료 (2026-10-24)
 ================================================
 

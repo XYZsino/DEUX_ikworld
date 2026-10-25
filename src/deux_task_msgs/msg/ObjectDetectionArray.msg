@@ -4,3 +4,6 @@ uint64 sequence
 string source
 string model_id
 ObjectDetection[] detections
+
+# Empty for legacy standalone producers.
+string request_id

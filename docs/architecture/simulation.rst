@@ -1,0 +1,161 @@
+ROS 2 MuJoCo 연결과 메시지 동기화 녹화
+=====================================
+
+2026-10-25 사용자 요청: sim도 동일한 ROS 2 인터페이스로 연결.
+이후 범위 조정: 물리 태스크 성공까지 튜닝하지 않고, 실행 흐름을 녹화한 뒤
+같은 시각의 노드·메시지를 시각화.
+
+구현
+----
+
+새 패키지 deux_task_sim은 기존 DEUX_mujoco의 모델·장면·물리 엔진을 사용합니다.
+기존 DEUX 실기 코드와 DEUX_mujoco 원본은 변경하지 않습니다.
+
+* task_node / motion_planner_node / execution_node / arm_bridge_node /
+  hand_bridge_node / barcode_bridge_node / state_observation_node는 실제 ROS 구현을 사용합니다.
+* mujoco_driver_node는 팔 FollowJointTrajectory Action 서버 및 손 HandCtlMessage
+  수신 드라이버입니다. 실제 MuJoCo 관절값을 JointState로 발행합니다.
+* /clock은 MuJoCo 시간입니다. 나머지 노드는 use_sim_time=true로 동작합니다.
+* 센서는 렌더 가시성으로 제한한 sim truth6D ObjectDetectionArray와 분석적 BarcodeTarget을
+  제공합니다. 실제 YOLO/ICP 실행은 이 검증 범위에 포함하지 않습니다.
+* 가상 리더는 기존 SimBarcodeSource의 거리·방향·250ms 유지 조건을 만족해야 문자열을
+  발생시킵니다. barcode_bridge_node의 simulated=true가 유지됩니다.
+* 정지 컨베이어, seed4, 고정된 테스트 설치를 사용합니다. 오른쪽 출발 트레이와 내용물을
+  실행 전에 함께10cm 이동시킵니다. 실행 중 물체를 이동시키거나 weld로 붙이지 않습니다.
+* MuJoCo의 알려진 액추에이터 강성 및 관측 접점 모델로 생성한 sim 전용 preload를 사용합니다.
+  생성 설정은 실기 보정값이 아닙니다. 팔 gravcomp 등 원래 sim의 모델 설정은 유지합니다.
+* 각 노드는 같은 검증 프로세스의 ROS executor에서 실행하며, 계획 계산은 별도 프로세스입니다.
+  DDS 토픽·Action 경로를 사용하지만 별도 장치/프로세스 배포 지연 시험은 아닙니다.
+
+연결 시험으로 수정한 공통 코드
+-----------------------------
+
+* loop_pick_scene가 URDF 로드 후 리프트를15cm 올리는 변경을 sim 계획용 URDF에도 반영.
+  초기 양팔 FK가 MuJoCo 측정 프레임과1e-6 오차 이내인지 확인합니다.
+* Approach는 도달 불가능한 중간 손목 방향을 피하도록 관절 경로로 계획합니다.
+  Descend/Lift는 Cartesian이며 모든 경로의 기존 충돌/속도/가속도 검사는 유지합니다.
+* MuJoCo soft limit의 수치 오차를 위한 robot.joint_limit_tolerance 옵션을 추가했습니다.
+  기본1e-7rad, 허용 설정 범위0..0.001rad; sim은1e-4rad입니다. 측정값을 클리핑하지 않습니다.
+* ROS 시간 마감은 유지하고, synthetic=true + use_sim_time=true인 경우에만
+  simulation_wall_timeout_scale로 느린 소프트웨어 렌더링의 벽시계 watchdog 여유를 둡니다.
+  기본 배율1, sim8. 잘못된 조합은 시작 시 거부합니다.
+* 성공한 손 명령의 마지막 목표를 측정 각도로 덮어쓰지 않아 preload를 유지합니다.
+  Lift/Scan/AlignBarcode/Place는 설정된 hand_closed 목표를 유지하며 측정 시작 오차는
+  계속 검사합니다. 실패/취소 시에는 기존 측정 위치 hold 정책을 유지합니다.
+
+녹화와 관측 의미
+----------------
+
+실행 중 MuJoCo qpos와 시각을 저장하고 종료 후 해당 물리 상태를 렌더링합니다.
+영상 렌더링/인코딩이 제어 callback을 막지 않도록 분리했습니다.
+프레임 간격은0.102초이며 영상0초가 대응하는 ROS 시각은 video-frames.json에 기록됩니다.
+실행 중의 렌더 가시성 기반 센서 계산은 별도로 계속 수행합니다.
+
+* Topic:14개 업무 토픽의 실제 DDS 구독 수신 시각과 메시지 요약.
+* Action:6개 Action의 client API 전송·수락/거부·feedback·result·cancel 경계.
+  기록을 위해 추가 goal이나 결과 요청을 보내지 않습니다.
+* 각 이벤트는 time_s(ROS/sim 시각), wall_s(실행 경과 벽시계), 이름, 송신 역할,
+  수신 대상, phase, goal_id, payload 요약을 보존합니다.
+* Topic 수신 대상은 코드상 구독 관계이며 각 노드의 callback 처리 완료 증거가 아닙니다.
+  Action 기록은 네트워크 패킷 캡처가 아닙니다. /clock과 /tf 내부 트래픽은 목록에서 제외합니다.
+* 시나리오 클라이언트는 mujoco_driver_node 내부의 RunTask 시작 역할로 표시합니다.
+
+HTML에는 영상, 단계 구간, 노드 연결 강조, 시점별 메시지 묶음, 메시지 상세가 있습니다.
+단계/이벤트 선택은 영상을 이동시키며 노드/텍스트/고빈도 스트림 필터를 지원합니다.
+
+실행
+----
+
+호스트 Docker와 ffmpeg 필요. 컨테이너에 장치나 host network를 연결하지 않습니다.::
+
+  bash tools/validate_sim.sh
+
+기본 외부 경로는 환경변수로 바꿀 수 있습니다:
+DEUX_SIM_REPOSITORY, DEUX_HAND_MSGS, DEUX_SIM_RESULTS.
+기존 사용자 방침대로 tools/와 validation/은 커밋 대상에서 제외할 수 있습니다.
+
+이미 준비된 ROS 2 Jazzy 환경에서는::
+
+  ros2 run deux_task_sim validate_transfer \
+    --sim-repository /absolute/DEUX_mujoco \
+    --output /absolute/recording --record --observe-flow
+  ros2 run deux_task_sim render_timeline --output /absolute/recording
+
+MuJoCo3.13.0, imageio, Pillow, OpenCV 및 소프트웨어 렌더링 라이브러리가 필요합니다.
+requirements.txt와 tools/validate_sim.sh의 OSMesa 설정을 참고하십시오.
+--observe-flow는 태스크 실패 자체를 검증 프로그램 오류로 처리하지 않지만 실제 실패를
+result.json과 화면에 그대로 남깁니다. 기본 모드는 물리 태스크 성공을 요구하며,
+현재 장면에서 그 모드가 통과한다고 주장하지 않습니다.
+
+현재 실행 결과
+--------------
+
+Approach → Descend → Close → Lift → VerifyLift → ScanSearch → AlignBarcode →
+WaitBarcode → Place 요청까지 진행했습니다. 가상 판독 문자열을 수신했고,
+Place 계획에서 IK unreachable이 반환되어 Failed로 종료했습니다.
+따라서 ROS 호출·피드백·오류 반환의 실행 증거이며, 전체 시나리오 정상 완료 또는
+물리 태스크 성공 판정이 아닙니다. 사용자의 범위 조정에 따라 적재 성공 튜닝은 중단했습니다.
+Release/Retreat/VerifyPlace는 이 최종 녹화에서 실행되지 않았습니다.
+
+결과 위치: validation/ros2-sim/scenario-recording/
+
+* dashboard.html, scenario.mp4: 동기화 화면과 영상.
+* ros-events.json, video-frames.json, recorded-qpos.npz: 원본 시각/물리 기록.
+* result.json, trace.json: 실제 결과와 상태 궤적.
+* installation.yaml, hand_mapping.yaml, robot.urdf: 해당 실행의 sim 설정.
+* browser-check.json: 재생·이동·필터 검증 기록.
+
+공통 코드 회귀:52개 테스트 통과. 로봇 명령은 MuJoCo 드라이버에만 전달했습니다.
+실기, 이동 컨베이어 추적, 실제 카메라/YOLO/ICP 인식 성능, 실제 바코드 판독은 미검증입니다.
+
+
+실제 로봇 전환 시 교체·설정할 부분
+----------------------------------
+
+mujoco_driver_node는 실기에서 실행하지 않습니다. 이 노드에 묶여 있던 구동,
+센서, 가상 리더를 아래 실제 장치 입력/출력으로 분리합니다.
+다음은 코드 기준 통합 지점이며, 실기 동작 검증 결과가 아닙니다.
+
+* 팔: 실제 FollowJointTrajectory 서버 및 /arm/joint_states 측정 입력.
+  arm_bridge_node의 driver_action 기본값은
+  /arm/deux_arm_controller/follow_joint_trajectory입니다.
+  장치 이름이 다르면 노드 파라미터/토픽 remap을 적용합니다.
+* 손: /hand/left/cmd 및 /hand/right/cmd의 HandCtlMessage를 실제 드라이버에 연결.
+  hand_mapping.yaml의 motor ID, position mode, 부호/offset, 범위, 속도,
+  goal_current 단위, feedback_topic/type을 실제 프로토콜에 맞춥니다.
+  bridge는 측정값을 /task/hand_state로 집계합니다.
+  sim의 mode7/ID0..6, preload, hand_open/hand_closed를 그대로 옮기지 않습니다.
+* 인식: 외부 ZED RGB-D/CameraInfo 및 보정된 TF를 perception_node에 연결.
+  공통 YOLO의 봉투/바코드 검출과 ICP/라벨 표면 worker가 sim 센서를 대체합니다.
+  controlled_perception.yaml에 weights, model_path/origin, 클래스 및 frame을 설정합니다.
+  /task/perception_request를 받아 /task/object_detections, /task/barcode_target을 발행하고,
+  state_observation_node는 유지합니다. 현재 yaw ICP의 full_orientation=false로는
+  Place 조건을 충족하지 못합니다. 파지 후6D 관측 생산자 통합은 추가 구현/통합 과제입니다.
+* 바코드 문자열: 실제 USB/serial/SDK 리더의 결과를 std_msgs/String으로 내보내는
+  드라이버/어댑터가 필요합니다. 이 overlay가 해당 실제 장치 드라이버를 제공하지는 않습니다.
+  task.launch.py의 barcode_topic으로 입력을 지정합니다. 기본 /barcode/raw이며
+  barcode_bridge_node의 simulated=false를 사용합니다.
+  /task/scan_session과 /task/barcode_read의 세션 매칭은 유지합니다.
+* 시간/TF: use_sim_time=false, simulation_wall_timeout_scale=1.
+  실제 관절값 기반 robot_state_publisher/TF 및 장치 간 시각 동기화가 필요합니다.
+  외부 ZED→base는 실측 보정하고, 기존 head camera pose를 대신 사용하지 않습니다.
+  sim에서 보정한 리프트 +15cm는 실기 URDF에 복사하지 않습니다.
+* 설치: src/deux_task_bringup/config/installation.yaml 템플릿을 실측값으로 작성합니다.
+  실제 expanded URDF/리프트/EE 프레임, grasp/reader/label 변환, 상자/목표 위치,
+  충돌 형상, 관절 제한, start/tracking 허용 오차와 손 목표값이 필요합니다.
+  synthetic=false, calibration_confirmed/command_ownership_confirmed 및
+  /state/status의 allowed_state_modes는 실제 확인 결과로 채웁니다.
+  sim의 단순 충돌 형상과 넓힌 허용 오차를 실기 보정값으로 사용하지 않습니다.
+* 시작 클라이언트: sim 내부 클라이언트를 운영 UI/ROS Action 클라이언트로 교체하여
+  동일한 /task/run을 호출합니다. task.launch.py는 팔/손/카메라 드라이버를 실행하지 않습니다.
+  실제 명령 전송은 hardware_enabled=true, dry_run=false 설정이며 기본값은 비활성입니다.
+
+유지하는 코드는 task_node, motion_planner_node, execution_node, arm_bridge_node,
+hand_bridge_node, barcode_bridge_node, state_observation_node 및 ROS 메시지/Action 계약입니다.
+설치 YAML은 계속 각 노드가 시작 시 직접 읽습니다. scene_node나 설정 배포 토픽은 없습니다.
+동일 인터페이스 사용이 실기 검증 완료를 뜻하지는 않습니다. Place IK 실패와
+아직 실행하지 않은 Release/Retreat/VerifyPlace 단계도 남아 있습니다.
+
+녹화 화면 하단의 '실제 로봇으로 전환할 때' 표에도 같은 항목을 표시합니다.
+
+커밋 범위 및 실기 단계별 적용/검증 계획은 hardware_rollout.rst를 참고하십시오.

@@ -1,0 +1,7 @@
+deux_task_msgs/MotionPlan plan
+---
+bool success
+string reason
+---
+float64 progress
+string status

@@ -1,0 +1,50 @@
+# Template only. Each consumer loads this file at startup; missing measurements reject startup.
+schema: deux.scene.v1
+base_frame: base_link
+synthetic: false
+calibration_confirmed: false
+command_ownership_confirmed: false
+require_state_status: true
+allowed_state_modes: []  # Explicitly approved stationary mode names; no /state/set_mode calls.
+model_id: ''
+source_box_height: 0.07
+robot:
+  urdf_path: ''  # Expanded URDF, all 28 joints, calibrated grasp links; no invented lift pose.
+  base_frame: base_link
+  ee_links: {left: '', right: ''}
+  fixed_joints: {}
+  acceleration_limits: []  # 28 measured/approved limits in JOINT_NAMES order.
+  collision_spheres: []  # {link, center: [x,y,z], radius}; conservative envelopes of robot/reader.
+  allowed_collision_pairs: []
+  attachment_touch_links: []
+grasp_object_from_right_ee: []
+scan_right_pose: []
+scan_left_pose: []  # Used only by synthetic fixture when no label geometry is supplied.
+left_ee_from_reader: []
+object_from_labels: []  # Front/back label frames; local +Z is outward surface normal.
+read_distance: 0.15
+retreat_left_pose: []
+destination_pose: []
+hand_open: []
+hand_closed: []
+home_joints: []
+workspace: {min: [], max: []}
+destination_bounds: {min: [], max: []}
+obstacles: []  # Calibrated AABBs including source box walls and destination walls.
+safe_joint_waypoint: null
+approach_height: 0.05
+lift_height: 0.10
+attached_radius: 0.20  # Must bound bag + uncertain attachment from right grasp origin.
+max_target_drift: 0.02
+max_target_angle_rad: 0.15
+max_observation_age: 0.5
+max_joint_age: 0.2
+max_object_age: 0.6
+max_plan_age: 1.0
+sample_period: 0.02
+collision_margin: 0.02
+start_tolerance: 0.05
+tracking_tolerance: 0.15
+settle_timeout: 2.0
+scan_timeout: 3.0
+verification_timeout: 2.0

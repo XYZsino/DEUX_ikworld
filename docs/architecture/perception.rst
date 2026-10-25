@@ -1,7 +1,11 @@
+.. note:: 최신 권장 경로는 controlled_perception.rst를 참고하십시오. 아래 분리 인식 및 고정 Scan 설명은 이전 구현 설명입니다.
+
 Detection / ICP 구현 구조 — 2026-10-24
 =====================================
 
-현재 구현은 observation_node, detection_node, icp_node 세 노드입니다.
+이 문서는 perception 단계의 기록입니다. 이후 나머지7개 노드 구현을 추가했으며
+최신 전체 구현/설정은 runtime.rst를 참고하십시오.
+perception 단계의 구현은 observation_node, detection_node, icp_node 세 노드입니다.
 기존 architecture.html/design.html은 2026-10-23의 장기 설계 스냅샷입니다.
 그 문서의 8노드 제안에 detection/ICP 두 노드를 추가하면 전체 계획은 10노드이며,
 나머지 7노드는 아직 구현되지 않았습니다. 현재 실행 흐름은 아래와 같습니다::

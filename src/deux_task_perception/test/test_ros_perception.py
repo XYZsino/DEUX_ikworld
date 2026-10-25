@@ -159,3 +159,89 @@ def test_finished_worker_result_cannot_publish_after_expiry_or_clock_epoch_chang
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
+
+def test_shared_detection_publishes_without_tf_and_mode_change_discards_work():
+    from deux_task_perception.merged_perception_node import PerceptionNode
+    from deux_task_msgs.msg import DetectionArray, PerceptionRequest
+    from builtin_interfaces.msg import Time as Stamp
+    rclpy.init()
+    ex = SingleThreadedExecutor()
+    source = rclpy.create_node('shared_source')
+    class Detector(SyntheticDetector):
+        def __call__(self, rgb):
+            return super().__call__(rgb)+[(0,'label',.95,[5.,2.,14.,9.])]
+    node = PerceptionNode(detector=Detector(), model_data=(np.zeros((40,3)),np.tile([0.,0.,1.],(40,1)),'test'),
+        parameter_overrides=parameters(width=20,height=12,reference_frame='plane',barcode_classes=['label']))
+    ex.add_node(source); ex.add_node(node)
+    found=[]
+    sub=source.create_subscription(DetectionArray,'/task/detections',found.append,qos_profile_sensor_data)
+    try:
+        deadline=time.monotonic()+3
+        while not node.detection_pub.get_subscription_count() and time.monotonic()<deadline: ex.spin_once(timeout_sec=.02)
+        msg=observation(source,0)
+        node.receive_images(msg.rgb,msg.depth,msg.rgb_info,msg.depth_info)
+        while not found and time.monotonic()<deadline: ex.spin_once(timeout_sec=.02)
+        assert {b.class_name for b in found[-1].boxes} == {'s1','label'}
+        assert found[-1].header == msg.header and found[-1].sequence == 0
+        old=node.token()
+        req=PerceptionRequest(request_id='new',target_id='bag',mode='barcode')
+        req.header.stamp=source.get_clock().now().to_msg()
+        req.expires_at=Stamp(sec=req.header.stamp.sec+5,nanosec=req.header.stamp.nanosec)
+        node.set_request(req)
+        assert not node.admitted(old,msg.header)
+        assert node.admitted(node.token(),msg.header)
+        node.request.expires_at=Stamp(sec=1)
+        assert not node.admitted(node.token(),msg.header)
+        # TF errors from independent ICP must not suppress common detections.
+        deadline=time.monotonic()+2
+        while node.rejected == 0 and time.monotonic()<deadline: ex.spin_once(timeout_sec=.02)
+        assert node.rejected > 0
+    finally:
+        ex.shutdown();node.destroy_node();source.destroy_node();rclpy.shutdown()
+
+
+def test_barcode_surface_carries_request_acquisition_and_rejects_ambiguous_tracks():
+    from deux_task_perception.merged_perception_node import PerceptionNode
+    from deux_task_msgs.msg import PerceptionRequest, ObjectDetection
+    rclpy.init()
+    node=PerceptionNode(detector=SyntheticDetector(),model_data=(np.zeros((40,3)),np.tile([0.,0.,1.],(40,1)),'test'),
+        parameter_overrides=parameters(width=20,height=12,reference_frame='plane',barcode_classes=['label']))
+    try:
+        msg=observation(node,0)
+        req=PerceptionRequest(request_id='scan-1',target_id='bag',mode='barcode')
+        _,_,frame=node.detect((node.token(),req,(msg.rgb,msg.depth,msg.rgb_info,msg.depth_info),42))
+        from deux_task_msgs.msg import BoundingBox
+        frame.boxes.append(BoundingBox(class_name='label',confidence=.9,xyxy=[1.,1.,18.,10.]))
+        objects=ObjectDetectionArray(header=deepcopy(msg.header))
+        obj=ObjectDetection(track_id='bag');obj.pose.pose.position.z=.5;obj.pose.pose.orientation.w=1.
+        objects.detections=[obj]
+        node.transforms=lambda _: (np.eye(4),np.eye(4))
+        _,result=node.label((node.token(),req,frame,objects))
+        assert result.request_id == 'scan-1' and result.target_id == 'bag'
+        assert result.sequence == 42 and result.header.stamp == msg.header.stamp
+        assert result.orientation_valid and result.header.frame_id == 'base_link'
+        other=deepcopy(obj);other.track_id='other';objects.detections.append(other)
+        with pytest.raises(ValueError,match='unique'): node.label((node.token(),req,frame,objects))
+    finally:
+        node.destroy_node();rclpy.shutdown()
+
+
+def test_lightweight_state_preserves_object_acquisition_without_images():
+    from deux_task_perception.state_observation_node import StateObservationNode
+    from deux_task_msgs.msg import StateObservation, ObjectDetection
+    rclpy.init();node=StateObservationNode();source=rclpy.create_node('state_check')
+    ex=SingleThreadedExecutor();ex.add_node(node);ex.add_node(source);found=[]
+    sub=source.create_subscription(StateObservation,'/task/state_observation',found.append,qos_profile_sensor_data)
+    try:
+        msg=ObjectDetectionArray();msg.header.stamp=node.get_clock().now().to_msg();msg.header.frame_id='base_link'
+        msg.source='synthetic';msg.model_id='fixture';msg.sequence=17
+        d=ObjectDetection(track_id='bag',confidence=.9);d.pose.pose.orientation.w=1.
+        msg.detections=[d];node.receive_objects(msg)
+        deadline=time.monotonic()+3
+        while not found and time.monotonic()<deadline: ex.spin_once(timeout_sec=.02)
+        assert found and found[-1].objects_valid and not found[-1].joints_valid
+        assert found[-1].objects.header == msg.header and found[-1].objects.sequence == 17
+        assert not hasattr(found[-1],'rgb')
+    finally:
+        ex.shutdown();node.destroy_node();source.destroy_node();rclpy.shutdown()

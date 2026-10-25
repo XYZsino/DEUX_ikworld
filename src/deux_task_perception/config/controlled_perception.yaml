@@ -1,0 +1,20 @@
+# Installation template. Fill model, class mapping and calibrated frame IDs before launch.
+perception_node:
+  ros__parameters:
+    weights: ''
+    model_path: ''
+    model_origin: ''
+    reference_frame: ''
+    base_frame: base_link
+    bag_classes: [s1, s1_1]
+    # Confirm training dataset semantics; b1 is NOT assumed to mean barcode.
+    barcode_classes: [__configure_barcode_class__]
+    device: cpu
+    width: 640
+    height: 480
+state_observation_node:
+  ros__parameters:
+    base_frame: base_link
+    left_ee_frame: ''
+    right_ee_frame: ''
+    camera_frame: ''

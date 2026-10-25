@@ -1,0 +1,487 @@
+{
+  "nodes": {
+    "camera": [
+      "외부 ZED",
+      "driver",
+      "등록 RGB-D + CameraInfo"
+    ],
+    "perception": [
+      "perception_node",
+      "node",
+      "YOLO 1회 · 독립 최신 큐 ICP / 라벨 평면"
+    ],
+    "state": [
+      "state_observation_node",
+      "node",
+      "이미지 없는 제어 관측 · 실제 관절 + TF"
+    ],
+    "bt": [
+      "task_node",
+      "node",
+      "메모리 BT · 파지 2회 / 스캔 3회 제한"
+    ],
+    "planner": [
+      "motion_planner_node",
+      "node",
+      "별도 프로세스 IK / 충돌 / 시간 계획"
+    ],
+    "exec": [
+      "execution_node",
+      "node",
+      "검증 · 공통 시작 시각 · 실행 중 감시"
+    ],
+    "arm": [
+      "arm_bridge_node",
+      "node",
+      "FollowJointTrajectory 연결"
+    ],
+    "hand": [
+      "hand_bridge_node",
+      "node",
+      "설치별 손 명령 / 측정 피드백 정규화"
+    ],
+    "reader": [
+      "바코드 리더",
+      "driver",
+      "실제 문자열 입력"
+    ],
+    "barcode": [
+      "barcode_bridge_node",
+      "node",
+      "활성 세션에만 판독 결과 연결"
+    ],
+    "arm_driver": [
+      "기존 팔 드라이버",
+      "driver",
+      "외부 DEUX · 원본 코드 변경 없음"
+    ],
+    "hand_driver": [
+      "원격 손 드라이버",
+      "driver",
+      "설치별 feedback topic / 타입 설정"
+    ],
+    "operator": [
+      "태스크 클라이언트",
+      "driver",
+      "RunTask goal / result / cancel"
+    ],
+    "status": [
+      "기존 state_node",
+      "driver",
+      "자동 제어 소유권 / 모드 확인"
+    ],
+    "config": [
+      "installation.yaml",
+      "config",
+      "각 runtime/bridge 시작 시 직접 로드 · 토픽 없음"
+    ],
+    "mapping": [
+      "hand_mapping.yaml",
+      "config",
+      "hand bridge 시작 시 직접 로드"
+    ],
+    "pcfg": [
+      "인식 파라미터 YAML",
+      "config",
+      "클래스 매핑 · 모델 · 보정 프레임 · ROS 파라미터"
+    ],
+    " tf": [
+      "보정 TF",
+      "driver",
+      "/tf · /tf_static / tf2_msgs/TFMessage"
+    ]
+  },
+  "links": [
+    {
+      "source": "camera",
+      "target": "perception",
+      "name": "/zed/zed_node/rgb/color/rect/image\n/zed/zed_node/depth/depth_registered",
+      "type": "sensor_msgs/Image × 2",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "camera",
+      "target": "perception",
+      "name": "/zed/zed_node/rgb/color/rect/camera_info\n/zed/zed_node/depth/camera_info",
+      "type": "sensor_msgs/CameraInfo × 2",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "perception",
+      "target": "state",
+      "name": "/task/object_detections",
+      "type": "deux_task_msgs/ObjectDetectionArray",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "perception",
+      "target": null,
+      "name": "/task/detections",
+      "type": "deux_task_msgs/DetectionArray",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "perception",
+      "target": "bt",
+      "name": "/task/barcode_target",
+      "type": "deux_task_msgs/BarcodeTarget",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "state",
+      "target": "bt",
+      "name": "/task/state_observation",
+      "type": "deux_task_msgs/StateObservation",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "status",
+      "target": "bt",
+      "name": "/state/status",
+      "type": "std_msgs/String (JSON)",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "config",
+      "target": "bt",
+      "name": "설정 파일 직접 읽기",
+      "type": "YAML + URDF hash",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": "perception",
+      "target": "planner",
+      "name": "/task/barcode_target",
+      "type": "deux_task_msgs/BarcodeTarget",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "state",
+      "target": "planner",
+      "name": "/task/state_observation",
+      "type": "deux_task_msgs/StateObservation",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "status",
+      "target": "planner",
+      "name": "/state/status",
+      "type": "std_msgs/String (JSON)",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "config",
+      "target": "planner",
+      "name": "설정 파일 직접 읽기",
+      "type": "YAML + URDF hash",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": "perception",
+      "target": "exec",
+      "name": "/task/barcode_target",
+      "type": "deux_task_msgs/BarcodeTarget",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "state",
+      "target": "exec",
+      "name": "/task/state_observation",
+      "type": "deux_task_msgs/StateObservation",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "status",
+      "target": "exec",
+      "name": "/state/status",
+      "type": "std_msgs/String (JSON)",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "config",
+      "target": "exec",
+      "name": "설정 파일 직접 읽기",
+      "type": "YAML + URDF hash",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": "perception",
+      "target": "arm",
+      "name": "/task/barcode_target",
+      "type": "deux_task_msgs/BarcodeTarget",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "state",
+      "target": "arm",
+      "name": "/task/state_observation",
+      "type": "deux_task_msgs/StateObservation",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "status",
+      "target": "arm",
+      "name": "/state/status",
+      "type": "std_msgs/String (JSON)",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "config",
+      "target": "arm",
+      "name": "설정 파일 직접 읽기",
+      "type": "YAML + URDF hash",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": "perception",
+      "target": "hand",
+      "name": "/task/barcode_target",
+      "type": "deux_task_msgs/BarcodeTarget",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "state",
+      "target": "hand",
+      "name": "/task/state_observation",
+      "type": "deux_task_msgs/StateObservation",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "status",
+      "target": "hand",
+      "name": "/state/status",
+      "type": "std_msgs/String (JSON)",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "config",
+      "target": "hand",
+      "name": "설정 파일 직접 읽기",
+      "type": "YAML + URDF hash",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": "bt",
+      "target": "perception",
+      "name": "/task/perception_request",
+      "type": "deux_task_msgs/PerceptionRequest",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "operator",
+      "target": "bt",
+      "name": "/task/run",
+      "type": "deux_task_msgs/RunTask",
+      "kind": "action",
+      "group": "control"
+    },
+    {
+      "source": "bt",
+      "target": "planner",
+      "name": "/task/plan_motion",
+      "type": "deux_task_msgs/PlanMotion",
+      "kind": "action",
+      "group": "control"
+    },
+    {
+      "source": "bt",
+      "target": "exec",
+      "name": "/task/execute_motion",
+      "type": "deux_task_msgs/ExecuteMotion",
+      "kind": "action",
+      "group": "control"
+    },
+    {
+      "source": "exec",
+      "target": "arm",
+      "name": "/task/arm_motion",
+      "type": "deux_task_msgs/BridgeMotion",
+      "kind": "action",
+      "group": "hardware"
+    },
+    {
+      "source": "exec",
+      "target": "hand",
+      "name": "/task/hand_motion",
+      "type": "deux_task_msgs/BridgeMotion",
+      "kind": "action",
+      "group": "hardware"
+    },
+    {
+      "source": "arm",
+      "target": "arm_driver",
+      "name": "/arm/deux_arm_controller/follow_joint_trajectory",
+      "type": "control_msgs/FollowJointTrajectory",
+      "kind": "action",
+      "group": "hardware"
+    },
+    {
+      "source": "arm_driver",
+      "target": "state",
+      "name": "/arm/joint_states",
+      "type": "sensor_msgs/JointState",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "arm_driver",
+      "target": "arm",
+      "name": "/arm/joint_states",
+      "type": "sensor_msgs/JointState",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "hand",
+      "target": "state",
+      "name": "/task/hand_state",
+      "type": "sensor_msgs/JointState",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "hand",
+      "target": "hand_driver",
+      "name": "/hand/left/cmd + /hand/right/cmd",
+      "type": "deux_hand_msgs/HandCtlMessage",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "hand_driver",
+      "target": "hand",
+      "name": "설정된 left/right feedback_topic",
+      "type": "JointState 또는 HandCtlMessage",
+      "kind": "topic",
+      "group": "hardware"
+    },
+    {
+      "source": "reader",
+      "target": "barcode",
+      "name": "/barcode/raw (설정 가능)",
+      "type": "std_msgs/String",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "bt",
+      "target": "barcode",
+      "name": "/task/scan_session",
+      "type": "deux_task_msgs/ScanSession",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "barcode",
+      "target": "bt",
+      "name": "/task/barcode_read",
+      "type": "deux_task_msgs/BarcodeRead",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "bt",
+      "target": null,
+      "name": "/task/status",
+      "type": "deux_task_msgs/TaskStatus",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "exec",
+      "target": null,
+      "name": "/task/execution_record",
+      "type": "std_msgs/String",
+      "kind": "topic",
+      "group": "control"
+    },
+    {
+      "source": "mapping",
+      "target": "hand",
+      "name": "매핑 파일 읽기",
+      "type": "YAML",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": "pcfg",
+      "target": "perception",
+      "name": "노드별 ROS 파라미터",
+      "type": "YAML",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": " tf",
+      "target": "perception",
+      "name": "/tf + /tf_static",
+      "type": "tf2_msgs/TFMessage",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "pcfg",
+      "target": "state",
+      "name": "노드별 ROS 파라미터",
+      "type": "YAML",
+      "kind": "file",
+      "group": "config"
+    },
+    {
+      "source": " tf",
+      "target": "state",
+      "name": "/tf + /tf_static",
+      "type": "tf2_msgs/TFMessage",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "perception",
+      "target": null,
+      "name": "/task/perception_node/diagnostics",
+      "type": "diagnostic_msgs/DiagnosticArray",
+      "kind": "topic",
+      "group": "perception"
+    },
+    {
+      "source": "state",
+      "target": null,
+      "name": "/task/state_observation/diagnostics",
+      "type": "diagnostic_msgs/DiagnosticArray",
+      "kind": "topic",
+      "group": "perception"
+    }
+  ],
+  "notes": [
+    "코드 정적 연결도: 실행 중 ROS 그래프 캡처가 아닙니다.",
+    "Action 선은 goal/result/feedback/cancel 채널을 하나로 묶습니다.",
+    "타입의 msg/action 구분은 색상과 범례로 표시합니다.",
+    "StateObservation과 BarcodeTarget은 공통 RuntimeNode를 통해 5개 노드가 구독합니다.",
+    "ICP는 barcode 모드에서도 독립 감시를 계속합니다. yaw-only 결과는 full_orientation=false입니다."
+  ]
+}

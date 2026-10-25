@@ -1,0 +1,6 @@
+# Python 3.12 / ROS 2 Jazzy validation environment.
+mujoco==3.13.0
+imageio==2.38.1
+pillow
+# Install with --no-deps to retain the ROS distribution's NumPy/SciPy pair.
+opencv-python-headless

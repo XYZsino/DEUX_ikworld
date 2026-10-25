@@ -10,3 +10,5 @@ float64 trimmed_rmse_m
 float64 target_coverage_10mm
 # False for configured uncertainty assumptions used by yaw_icp.
 bool covariance_estimated
+# True when observation_node applied the optional acquisition-time XY/yaw filter.
+bool pose_filtered
