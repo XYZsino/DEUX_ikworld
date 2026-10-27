@@ -1,0 +1,26 @@
+{
+  "ultralytics": "8.3.228",
+  "architecture": "yolo11n-seg",
+  "tracker": "ByteTrack",
+  "weights": "/home/xyz-ai/git/DEUX_ikworld/validation/head-rgbd/seg-training-v2/detector/weights/best.pt",
+  "weights_sha256": "bcf96491081ac0c6e3b9d764f4e29a35c6d0c0d75653e70e994cda8ae09a03ab",
+  "dataset": "/home/xyz-ai/git/DEUX_ikworld/validation/head-rgbd/masked-dataset/segmentation/dataset.yaml",
+  "dataset_sha256": "7cfb0b15e979c2988fb88c76c032e60f1d6b9a220d3a1db81b6fbeb267de92a0",
+  "manifest_sha256": "f899234d129120ff43c40be55a375a559baa35eaff6f2842f6f89a30ccac8ddb",
+  "heldout": {
+    "metrics/precision(B)": 0.9818803024836207,
+    "metrics/recall(B)": 0.8949553132639367,
+    "metrics/mAP50(B)": 0.9495048032888842,
+    "metrics/mAP50-95(B)": 0.7887893213306559,
+    "metrics/precision(M)": 0.9041995485392411,
+    "metrics/recall(M)": 0.865620643312272,
+    "metrics/mAP50(M)": 0.8996703998680984,
+    "metrics/mAP50-95(M)": 0.6597568734632002,
+    "fitness": 1.448546194793856
+  },
+  "classes": {
+    "0": "bread_bag",
+    "1": "barcode"
+  },
+  "scope": "synthetic held-out scenes; not real-camera validation"
+}

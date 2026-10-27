@@ -4,6 +4,7 @@ from pathlib import Path
 import yaml
 from .model import RobotModel
 from .planning import validate_scene, scene_version
+from .ik_backends import backend_name
 
 
 def load_configuration(filename):
@@ -13,6 +14,8 @@ def load_configuration(filename):
     config = yaml.safe_load(path.read_text())
     if not isinstance(config, dict):
         raise ValueError("installation YAML must contain a mapping")
+    # Include the effective default in every consumer's immutable scene identity.
+    config['ik_backend'] = backend_name(config)
     validate_scene(config)
     model_path = Path(config["robot"]["urdf_path"]).expanduser()
     if not model_path.is_absolute():

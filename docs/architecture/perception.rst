@@ -113,3 +113,67 @@ ICP 비교 재현::
 
 실제 카메라→base 보정, 실시간 ZED 수신, 파지 후 자세 추적, 하드웨어 동작은 미검증입니다.
 기존 DEUX 및 외부 detection/ICP 원본은 수정하지 않았습니다.
+
+Coarse 관측점 축소 비교 — 2026-10-25
+-----------------------------------
+
+``fit_icp``와 standalone/merged ROS 노드에 선택적 coarse 관측점 제한을 구현했습니다.
+``icp_initial_angles`` 기본24, ``icp_yaw_span_deg`` 기본360.0,
+``icp_coarse_point_limit`` 기본0(비활성)이며 기존 실행 기본값은 유지합니다.
+초기각 범위는 fitted yaw의 제한이 아닙니다.
+
+coarse 반복만 기존 downsample 점군에서 균등 인덱스로 최대400/600점을 선택합니다.
+원래 점 수가 제한 이하이면 그대로 사용합니다. 모델 점, 정확한 최근접점 검색,
+후보 순위 평가, refine 및 최종 품질 평가는 기존 최대1,600점 기준을 유지합니다.
+``validation/icp-multiscale/coarse600.yaml``은 기존 설치 설정 뒤에 적용할 수 있는
+180도/12개/600점 파라미터 override 예시입니다. 실기 설정에 자동 적용하지 않았습니다.
+
+저장5세션/51프레임/94물체, 조건별3회 교차 실행의 물체별 중앙값을 비교했습니다.
+모든 조건은180도/12개 초기각, coarse5회, refine상위2개/최대20회입니다.
+시간은 호스트 ICP 함수 내부이며 YOLO/ROI 추출/파일 읽기/ROS 전송을 제외합니다.
+
+* 기존: 평균188.42ms, P95 284.32ms, 품질 통과47/94.
+* coarse400: 평균121.94ms, P95 184.56ms, 통과46/94. 기존 통과1개 추가 탈락.
+  양쪽 통과46개에서 yaw(mod180) 차이 최대1.72도, 위치 차이 최대2.68mm.
+  탈락 사례까지 포함하면 yaw 차이 최대27.90도이므로 위 수치는 전체 성능 보장이 아닙니다.
+* coarse600: 평균137.64ms, P95 213.19ms, 기존과 동일한47개 통과.
+  양쪽 통과47개에서 yaw(mod180) 차이 최대9.85도, 위치 차이 최대5.72mm.
+* 새 API에서 coarse 비활성일 때 기존180도/12개 저장 결과94개와 변환행렬 차이0.
+* ROS2 Jazzy9개 패키지 빌드,64개 테스트 통과. coarse 점 수가 달라도 최종 품질 지표가
+  전체 fine 점군에서 계산되는지 독립 검산하는 테스트를 포함합니다.
+
+대시보드: ``validation/icp-multiscale/dashboard.html``.
+재현: ``python3 validation/icp-multiscale/benchmark.py`` 후
+``python3 validation/icp-multiscale/build_report.py``.
+원시 결과/로그는 같은 디렉터리의 results.json 및 jazzy-run.log입니다.
+정답 자세가 없는 저장 데이터 비교이며 실기 정확도·실시간 성능 검증은 아닙니다.
+
+독립 voxel 점군 비교 — 2026-10-25
+--------------------------------
+
+``icp_coarse_voxel_size_m`` 파라미터를 추가했습니다(기본0.0, 비활성).
+0.006이면 원본 ROI에서6mm coarse 점군을 만들고, fine은 원본에서 기존3mm로 만듭니다.
+voxel 대표점은 기존과 동일한 첫 입력점입니다. 평균점/centroid로 바꾸지 않았습니다.
+두 점군 모두 최대1,600점이며 초과 시 기존 균등 인덱스 제한을 적용합니다.
+coarse가40점 미만이면 fine으로 복귀합니다. coarse_point_limit과 동시 사용은 거부합니다.
+후보 순위·refine·최종 품질 지표는 fine 점군 기준입니다.
+``validation/icp-voxel/voxel6.yaml``은 설치별 설정 뒤에 적용할 override 예시입니다.
+기본 설정은 유지하며 하드웨어 실행은 수행하지 않았습니다.
+
+동일51프레임/94물체를3회씩 교차 실행한 결과:
+
+* 기존180도/12개: 평균188.85ms, P95 284.72ms, 통과47개.
+* 6mm→3mm: 평균173.73ms(8.0% 단축), P95 259.78ms, 동일한47개 통과.
+* 함께 재측정한600점 방식: 평균138.12ms, P95 213.89ms, 동일한47개 통과.
+* coarse 평균1,125.4점, fine 평균1,472.3점. 6mm 후1,600점 초과23물체,
+  coarse/fine 실제 점 수 동일24물체, 점 부족 fallback1물체.
+* 양쪽 통과 물체의6mm 방식 차이: yaw(mod180) 중앙값0.17도/최대24.23도,
+  위치 중앙값0.53mm/최대11.36mm. 정답 자세 오차가 아닌 기존 결과 대비 차이입니다.
+* 기존 및600점 조건은 직전94개 결과와 변환행렬 차이0.
+* Jazzy9개 패키지 빌드,70개 테스트 통과. raw ROI 독립 sampling,
+  fine 품질 지표 독립 검산, 희소 coarse fallback, 설정 충돌 검증 포함.
+
+시간 범위는 ICP 함수 내부이며 전처리 ROI 추출/YOLO/ROS는 제외합니다.
+이 데이터와 설정에서6mm voxel은600점 방식보다 빠르거나 결과를 더 잘 유지하지 않았습니다.
+대시보드와3D bbox: ``validation/icp-voxel/dashboard.html`` 및 ``bbox-comparison.html``.
+재현: 같은 디렉터리의 benchmark.py, build_report.py.

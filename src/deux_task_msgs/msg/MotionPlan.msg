@@ -3,6 +3,9 @@ string plan_id
 string scene_version
 string target_id
 string stage
+# IK engine only. Conveyor timing and full-body path checks are shared.
+string ik_backend
+string grasp_candidate_id
 string model_id
 builtin_interfaces/Time valid_until
 geometry_msgs/Pose target_pose
@@ -13,3 +16,11 @@ bool synthetic
 
 # Present for AlignBarcode; acquisition-time surface snapshot.
 deux_task_msgs/BarcodeTarget barcode_target
+# Original ICP acquisition time. Never refreshed when a grasp snapshot is reused.
+builtin_interfaces/Time target_acquired_at
+# Moving-source forecast at original acquisition; trajectory.header is scheduled start.
+bool follows_conveyor
+geometry_msgs/Twist target_velocity
+
+# TrackGrasp: cumulative Track, Descend, Close boundaries (seconds).
+float64[] phase_end_times

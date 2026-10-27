@@ -1,0 +1,18 @@
+model: zed2i
+parent_link: lift
+name: zed
+# User confirmed: downward pitch45deg and camera bottom/display gap3mm.
+pitch_deg: 45.0
+display_gap_m: 0.003
+# Provisional CAD/image reference; NOT measured real camera extrinsics.
+# Head exterior front is around x=.140m in lift coordinates. The eye display
+# is not a separate original CAD link, so its top-edge Z requires measurement.
+eye_display_top_xyz: [0.14005368, 0.0, 0.72]
+# Mount is centred left/right; positive X is forward from the display reference.
+mount_forward_offset_m: 0.02
+calibration_confirmed: false
+provenance: user image and angle/gap constraints; eye-reference position estimated for simulation
+# Sim intrinsics are an explicit pinhole approximation, replaced by CameraInfo on hardware.
+sim_width: 640
+sim_height: 480
+sim_horizontal_fov_deg: 100.0

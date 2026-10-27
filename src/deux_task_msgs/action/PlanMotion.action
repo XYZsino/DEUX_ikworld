@@ -1,6 +1,8 @@
 string stage
 string target_id
 string scene_version
+# Empty for Approach search; selected Approach ID is required for TrackGrasp.
+string grasp_candidate_id
 deux_task_msgs/StateObservation observation
 deux_task_msgs/BarcodeTarget barcode_target
 ---

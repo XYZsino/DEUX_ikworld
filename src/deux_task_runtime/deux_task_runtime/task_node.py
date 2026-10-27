@@ -8,7 +8,7 @@ from rclpy.action import ActionClient
 from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import Header
 from action_msgs.msg import GoalStatus
-from deux_task_msgs.action import PlanMotion, ExecuteMotion, RunTask
+from deux_task_msgs.action import PlanMotion, ExecuteMotion, RunTask, MoveToReady
 from deux_task_msgs.msg import BarcodeRead, ScanSession, TaskStatus, PerceptionRequest, BarcodeTarget
 from .behavior_tree import Leaf, Sequence, Retry, Failure
 from .common import (
@@ -46,6 +46,7 @@ class TaskNode(RuntimeNode):
         self.label = None
         self.label_sub = self.create_subscription(BarcodeTarget, "/task/barcode_target", self.on_label,
                                                   qos_profile_sensor_data)
+        self.prepared = False
         self.state = "Idle"
         self.target_id = ""
         self.session_id = ""
@@ -56,6 +57,8 @@ class TaskNode(RuntimeNode):
         self.action = ExclusiveAction(
             self, RunTask, "/task/run", self.execute, self.validate
         )
+        self.ready_action = ExclusiveAction(self, MoveToReady, '/task/move_to_ready',
+            self.move_to_ready, self.validate_ready, gate=self.action.gate)
         self.timer = self.create_timer(0.2, self.publish_status)
 
     def on_label(self, msg):
@@ -81,13 +84,13 @@ class TaskNode(RuntimeNode):
         self.perception_pub.publish(self.perception_request)
 
     def validate(self, req):
-        self.measured()
+        self.robot_ready()
         if (
             not self.planner.server_is_ready()
             or not self.executor_client.server_is_ready()
         ):
             raise ValueError("planner/executor unavailable")
-        if req.target_id:
+        if req.target_id and not (self.config.get("prepare_before_first_task", False) and not self.prepared):
             self.target(req.target_id)
 
     def read(self, msg):
@@ -110,19 +113,20 @@ class TaskNode(RuntimeNode):
         m = TaskStatus()
         m.header.stamp = self.get_clock().now().to_msg()
         m.state = self.state
+        m.workflow = getattr(self, "workflow", "transfer")
         m.target_id = self.target_id
         m.session_id = self.session_id
         m.reason = self.reason
         m.grasp_attempt = self.grasp_attempt
         m.scan_attempt = self.scan_attempt
         m.ik_calls = self.ik_calls
-        m.active = self.action.busy
+        m.active = self.action.busy or self.ready_action.busy
         self.status_pub.publish(m)
 
     def guard(self, goal, version):
         if goal.is_cancel_requested:
             raise InterruptedError("task canceled")
-        self.measured()
+        self.robot_ready()
         if self.config_version != version:
             raise ValueError("scene changed during task")
         if self.now() < self.previous_clock:
@@ -132,7 +136,12 @@ class TaskNode(RuntimeNode):
             self.request_perception(self.perception_request.mode)
 
     async def call(self, client, request, goal, version, timeout):
-        send = client.send_goal_async(request)
+        def feedback(message):
+            if hasattr(request,'plan') and request.plan.stage=='TrackGrasp':
+                stage=message.feedback.status
+                if stage in ('Approach','Track','Descend','Close') and self.state!=stage:
+                    self.state=stage;self.publish_status()
+        send = client.send_goal_async(request,feedback_callback=feedback)
         handle = None
         try:
             handle = await wait(self, send, 3.0)
@@ -165,6 +174,9 @@ class TaskNode(RuntimeNode):
                 )
             self.child = None
 
+    def planning_observation(self, stage):
+        return deepcopy(self.observation)
+
     async def stage(self, name, goal, version):
         self.guard(goal, version)
         self.state = name
@@ -175,7 +187,8 @@ class TaskNode(RuntimeNode):
                 stage=name,
                 target_id=self.target_id,
                 scene_version=version,
-                observation=deepcopy(self.observation),
+                grasp_candidate_id=getattr(self,'grasp_candidate_id','') if name=='TrackGrasp' else '',
+                observation=self.planning_observation(name),
                 barcode_target=deepcopy(self.label) if name == "AlignBarcode" and self.label else BarcodeTarget(),
             ),
             goal,
@@ -183,6 +196,11 @@ class TaskNode(RuntimeNode):
             35.0,
         )
         self.ik_calls += result.plan.ik_calls
+        if name=='Approach':
+            self.grasp_candidate_id=result.plan.grasp_candidate_id
+        if result.plan.grasp_candidate_id:
+            self.reason=f'{result.plan.ik_backend or "scipy"} · 파지 후보 {result.plan.grasp_candidate_id} · Lift까지 경로 검증 완료'
+            self.publish_status()
         duration = seconds(result.plan.trajectory.points[-1].time_from_start)
         executed = await self.call(
             self.executor_client,
@@ -193,6 +211,37 @@ class TaskNode(RuntimeNode):
         )
         if executed.reason == "dry_run_only":
             raise ValueError("dry-run plan checked; no motion or task success claimed")
+
+    async def prepare_once(self, goal, version):
+        if self.config.get("prepare_before_first_task", False) and not self.prepared:
+            await self.stage("Prepare", goal, version)
+            # Mark only after measured execution success; cancellation/dry-run/failure retry.
+            self.guard(goal, version)
+            self.prepared = True
+
+    def validate_ready(self, request):
+        self.robot_ready()
+        if not self.planner.server_is_ready() or not self.executor_client.server_is_ready():
+            raise ValueError('planner/executor unavailable')
+
+    async def move_to_ready(self, goal):
+        version=self.config_version;self.previous_clock=self.now()
+        self.reason='';self.target_id='';self.requested_target_id=''
+        self.state='ReadyPose'
+        self.close_session();self.request_perception('detect')
+        try:
+            if not self.prepared and self.config.get('prepare_before_first_task',False):
+                await self.prepare_once(goal,version)
+            else:
+                await self.stage('ReadyPose',goal,version)
+                self.prepared=True
+            self.state='Ready';self.reason='ready pose motion completed; no task started'
+            return MoveToReady.Result(success=True,reason=self.reason)
+        except Exception as exc:
+            self.state='Canceled' if goal.is_cancel_requested else 'Failed'
+            self.reason=str(exc);raise
+        finally:
+            self.target_id='';self.close_session();self.request_perception('detect');self.publish_status()
 
     async def verify(self, predicate, after, goal, version):
         wall = time.monotonic()
@@ -227,15 +276,18 @@ class TaskNode(RuntimeNode):
         self.reason = ""
         self.barcode = None
         self.target_id = goal.request.target_id
-        if not self.target_id:
-            if (
-                not self.observation.objects_valid
-                or not self.observation.objects.detections
-            ):
-                raise ValueError("no target")
-            self.target_id = self.observation.objects.detections[0].track_id
-        self.target(self.target_id)
         self.request_perception("locate")
+        async def select_target():
+            self.state = "SelectTarget"
+            self.publish_status()
+            if not self.target_id:
+                if (
+                    not self.observation.objects_valid
+                    or not self.observation.objects.detections
+                ):
+                    raise ValueError("no target")
+                self.target_id = self.observation.objects.detections[0].track_id
+            self.target(self.target_id)
         async def grasp_and_verify():
             for attempt in range(1, 3):
                 self.grasp_attempt = attempt
@@ -247,6 +299,7 @@ class TaskNode(RuntimeNode):
                     after = self.now()
                     await self.stage("Lift", goal, version)
                     self.state = "VerifyLift"
+                    self.publish_status()
                     if await self.verify(
                         lambda p: p[2, 3] - original[2, 3]
                         >= self.config["lift_height"] * 0.5,
@@ -269,6 +322,7 @@ class TaskNode(RuntimeNode):
         async def search_label():
             self.scan_attempt += 1
             self.state = 'ScanSearch'
+            self.publish_status()
             self.request_perception('barcode')
             wall = time.monotonic()
             started = self.now()
@@ -285,6 +339,7 @@ class TaskNode(RuntimeNode):
 
         async def read_label():
             self.state = "WaitBarcode"
+            self.publish_status()
             self.session_id = uuid4().hex
             self.scan_start = self.now()
             self.barcode = None
@@ -311,6 +366,7 @@ class TaskNode(RuntimeNode):
             await self.stage("Release", goal, version)
             await self.stage("Retreat", goal, version)
             self.state = "VerifyPlace"
+            self.publish_status()
             bounds = self.config["destination_bounds"]
 
             def placed(p):
@@ -338,7 +394,9 @@ class TaskNode(RuntimeNode):
         self.scan_tree = Retry('ScanRetry', Sequence('ScanSequence', [
             Leaf('ScanSearch', search_label), Leaf('AlignBarcode', align_label),
             Leaf('WaitBarcode', read_label)]), 3)
-        self.tree = Sequence('Transfer', [Leaf('GraspAndVerify', grasp_and_verify),
+        self.tree = Sequence('Transfer', [
+            Leaf('Prepare', lambda: self.prepare_once(goal, version)),
+            Leaf('SelectTarget', select_target), Leaf('GraspAndVerify', grasp_and_verify),
             self.scan_tree, Leaf('PlaceAndVerify', place_and_verify)])
         try:
             await self.tree.run()

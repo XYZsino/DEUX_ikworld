@@ -233,3 +233,29 @@ C. 실측 설치와 운용 설정
 
 당장 커밋 가능한 것은 구현 코드·템플릿·문서입니다. 전체 실기 자동 이송 준비 완료는
 6D 관측/실제 리더/실측 설정 및 위 단계별 하드웨어 검증을 마친 뒤에 판단합니다.
+
+헤드 RGB-D PickScan 추가 검증 항목 (2026-10-26)
+---------------------------------------------
+
+새 경로는 sim 학습 YOLO11n-seg + ByteTrack, 선택 대상의 masked-depth yaw ICP,
+그 후 시각적 봉투/바코드 관측으로 동작합니다. 외부 카메라/헤드 카메라의 실제
+extrinsics, depth scale·등록·timestamp 및 grasp frame은 각각 실측해야 합니다.
+실제 영상에서 bag/barcode class, mask 품질, 가림 후 ID 변경과 false positive를
+별도 검증하고 필요하면 실영상으로 학습을 보완해야 합니다.
+
+현재 sim의 ICP 파지 snapshot은 원 촬영 시각을 보존하고15초 한계를 둡니다.
+이는 명시적으로 정지한 소스에만 허용합니다. 실제 컨베이어가 움직이거나
+물체가 밀리면 이 설치 정책을 그대로 적용할 수 없습니다. 실제 운용의 허용
+나이/물체 변위 기준을 따로 검증해야 합니다.
+
+ReacquireHeldTarget은 손 근처에서 상승한 단일 후보를3프레임 확인합니다.
+이 관측은 접촉력·미끄러짐 방지·고유 물체 신원의 증명이 아닙니다.
+실기 파지 확인에는 그리퍼 feedback/force와 이동 중 loss 확인을 통합하십시오.
+바코드 시야각·roll 후보는 실제 리더의 판독 거리/각도 규격으로 제한해야 합니다.
+sim의 ±60도/roll unrestricted 프로파일과 가상 EAN 응답을 실기 성능으로
+간주하지 않습니다. 실제 reader raw 문자열은 기존 barcode_bridge_node로 받습니다.
+
+실제 팔/손 관절 피드백과 FollowJointTrajectory/손 모터 매핑은 계속 유지합니다.
+head_rgbd.launch.py는 hardware_enabled=false, dry_run=true가 기본이며 드라이버를
+직접 시작하지 않습니다. source_support plane 가정과 정적 환경 충돌 모델을
+실제 상자/컨베이어/로봇 링크 기하로 검증한 후 단계별로 적용해야 합니다.

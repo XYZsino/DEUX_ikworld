@@ -130,6 +130,28 @@ class RobotModel:
             for link in [*self.ee.values(), *[s["link"] for s in self.spheres]]
         ):
             raise ValueError("EE/collision link disconnected from base")
+        by_child={joint['child']:(name,joint) for name,joint in self.joints.items()}
+        self.ee_chains={}
+        for side,link in self.ee.items():
+            chain=[]
+            while link!=self.base:
+                name,joint=by_child[link];chain.append((name,joint));link=joint['parent']
+            self.ee_chains[side]=chain[::-1]
+
+    def ee_fk(self,side,q):
+        """Same URDF transform as fk(), evaluated only along the requested chain."""
+        values=dict(zip(JOINT_NAMES,vector(q,28)));transform=np.eye(4)
+        for name,joint in self.ee_chains[side]:
+            motion=np.eye(4)
+            if joint['kind']!='fixed':
+                if name not in values and name not in self.fixed:raise ValueError(f'unmeasured joint: {name}')
+                value=float(values.get(name,self.fixed.get(name)))
+                if not np.isfinite(value):raise ValueError('invalid fixed joint')
+                if joint['kind'] in ('revolute','continuous'):motion[:3,:3]=Rotation.from_rotvec(joint['axis']*value).as_matrix()
+                elif joint['kind']=='prismatic':motion[:3,3]=joint['axis']*value
+                else:raise ValueError('unsupported joint type')
+            transform=transform@joint['origin']@motion
+        return transform
 
     def fk(self, q):
         values = dict(zip(JOINT_NAMES, vector(q, 28)))
@@ -159,24 +181,30 @@ class RobotModel:
         visit(self.base)
         return transforms
 
-    def ik(self, side, target, seed):
+    def ik(self, side, target, seed, continuity_weight=0.):
+        if getattr(self, 'ik_solver', None) is not None:
+            self.ik_calls += 1
+            return self.ik_solver.solve(side,target,seed,continuity_weight)
         target = pose(target)
         q = vector(seed, 28).copy()
         indices = np.array(
             [JOINT_NAMES.index(n) for n in ARM_NAMES[: 7 if side == "left" else 14]]
         )
         indices = indices[:7] if side == "left" else indices[7:]
+        if not np.isfinite(continuity_weight) or continuity_weight<0:raise ValueError('invalid IK continuity weight')
+        seed_arm=q[indices].copy()
         self.ik_calls += 1
 
         def residual(arm):
             trial = q.copy()
             trial[indices] = arm
-            actual = self.fk(trial)[self.ee[side]]
-            return np.r_[
+            actual = self.ee_fk(side,trial)
+            error=np.r_[
                 actual[:3, 3] - target[:3, 3],
                 0.15
                 * Rotation.from_matrix(target[:3, :3] @ actual[:3, :3].T).as_rotvec(),
             ]
+            return np.r_[error,continuity_weight*(arm-seed_arm)] if continuity_weight else error
 
         result = least_squares(
             residual,
@@ -190,7 +218,7 @@ class RobotModel:
         )
         q[indices] = result.x
         r = residual(result.x)
-        if np.linalg.norm(r[:3]) > 0.002 or np.linalg.norm(r[3:]) / 0.15 > 0.02:
+        if np.linalg.norm(r[:3]) > 0.002 or np.linalg.norm(r[3:6]) / 0.15 > 0.02:
             raise ValueError("IK unreachable")
         return q
 

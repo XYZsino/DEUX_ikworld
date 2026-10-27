@@ -36,12 +36,13 @@ class PerceptionNode(IcpNode):
         if self.cfg['confidence'] > 1 or set(self.cfg['bag_classes']) & set(self.cfg['barcode_classes']):
             raise ValueError('invalid confidence or overlapping bag/barcode classes')
         self.cfg['target_classes'] = self.cfg['bag_classes']
+        self.estimator.cfg['target_classes'] = self.cfg['bag_classes']
         self.detector = detector if detector is not None else YoloDetector(
             self.cfg['weights'], self.cfg['device'], self.cfg['confidence'])
         self.worker.close()
-        self.worker = LatestWorker(self.detect)
-        self.icp_worker = LatestWorker(self.fit)
-        self.label_worker = LatestWorker(self.label)
+        self.worker = LatestWorker(self.detect, self.completion.trigger)
+        self.icp_worker = LatestWorker(self.fit, self.completion.trigger)
+        self.label_worker = LatestWorker(self.label, self.completion.trigger)
         self.request = None
         self.generation = 0
         self.last_request_stamp = 0

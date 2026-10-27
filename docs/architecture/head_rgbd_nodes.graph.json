@@ -1,0 +1,1117 @@
+{
+  "snapshot": {
+    "nodes": [
+      "mujoco_driver_node",
+      "tracked_detection_node",
+      "icp_node",
+      "state_observation_node",
+      "motion_planner_node",
+      "execution_node",
+      "arm_bridge_node",
+      "hand_bridge_node",
+      "barcode_bridge_node",
+      "task_node",
+      "_ros2cli_daemon_128_ffa60012dfb64549a96ac2769af786da",
+      "graph_audit"
+    ],
+    "topics": [
+      {
+        "name": "/arm/joint_states",
+        "types": [
+          "sensor_msgs/msg/JointState"
+        ],
+        "publishers": [
+          "mujoco_driver_node"
+        ],
+        "subscribers": [
+          "arm_bridge_node",
+          "mujoco_driver_node",
+          "state_observation_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "arm_bridge_node",
+          "state_observation_node"
+        ]
+      },
+      {
+        "name": "/barcode/raw",
+        "types": [
+          "std_msgs/msg/String"
+        ],
+        "publishers": [
+          "mujoco_driver_node"
+        ],
+        "subscribers": [
+          "barcode_bridge_node",
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "barcode_bridge_node"
+        ]
+      },
+      {
+        "name": "/clock",
+        "types": [
+          "rosgraph_msgs/msg/Clock"
+        ],
+        "publishers": [
+          "mujoco_driver_node"
+        ],
+        "subscribers": [
+          "arm_bridge_node",
+          "barcode_bridge_node",
+          "execution_node",
+          "hand_bridge_node",
+          "icp_node",
+          "motion_planner_node",
+          "state_observation_node",
+          "task_node",
+          "tracked_detection_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "arm_bridge_node",
+          "barcode_bridge_node",
+          "execution_node",
+          "hand_bridge_node",
+          "icp_node",
+          "motion_planner_node",
+          "state_observation_node",
+          "task_node",
+          "tracked_detection_node"
+        ]
+      },
+      {
+        "name": "/hand/left/cmd",
+        "types": [
+          "deux_hand_msgs/msg/HandCtlMessage"
+        ],
+        "publishers": [
+          "hand_bridge_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "mujoco_driver_node"
+        ]
+      },
+      {
+        "name": "/hand/right/cmd",
+        "types": [
+          "deux_hand_msgs/msg/HandCtlMessage"
+        ],
+        "publishers": [
+          "hand_bridge_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "mujoco_driver_node"
+        ]
+      },
+      {
+        "name": "/sim/hand/left/joint_states",
+        "types": [
+          "sensor_msgs/msg/JointState"
+        ],
+        "publishers": [
+          "mujoco_driver_node"
+        ],
+        "subscribers": [
+          "hand_bridge_node",
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "hand_bridge_node"
+        ]
+      },
+      {
+        "name": "/sim/hand/right/joint_states",
+        "types": [
+          "sensor_msgs/msg/JointState"
+        ],
+        "publishers": [
+          "mujoco_driver_node"
+        ],
+        "subscribers": [
+          "hand_bridge_node",
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "hand_bridge_node"
+        ]
+      },
+      {
+        "name": "/state/status",
+        "types": [
+          "std_msgs/msg/String"
+        ],
+        "publishers": [],
+        "subscribers": [
+          "arm_bridge_node",
+          "execution_node",
+          "hand_bridge_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "arm_bridge_node",
+          "execution_node",
+          "hand_bridge_node"
+        ]
+      },
+      {
+        "name": "/task/barcode_read",
+        "types": [
+          "deux_task_msgs/msg/BarcodeRead"
+        ],
+        "publishers": [
+          "barcode_bridge_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "task_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "task_node"
+        ]
+      },
+      {
+        "name": "/task/barcode_target",
+        "types": [
+          "deux_task_msgs/msg/BarcodeTarget"
+        ],
+        "publishers": [
+          "tracked_detection_node"
+        ],
+        "subscribers": [
+          "execution_node",
+          "mujoco_driver_node",
+          "task_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "execution_node",
+          "task_node"
+        ]
+      },
+      {
+        "name": "/task/detection_frames",
+        "types": [
+          "deux_task_msgs/msg/DetectionFrame"
+        ],
+        "publishers": [
+          "tracked_detection_node"
+        ],
+        "subscribers": [
+          "icp_node",
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "icp_node"
+        ]
+      },
+      {
+        "name": "/task/detections",
+        "types": [
+          "deux_task_msgs/msg/DetectionArray"
+        ],
+        "publishers": [
+          "tracked_detection_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "task_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "task_node"
+        ]
+      },
+      {
+        "name": "/task/execution_record",
+        "types": [
+          "std_msgs/msg/String"
+        ],
+        "publishers": [
+          "execution_node"
+        ],
+        "subscribers": [],
+        "recording_subscribers": [],
+        "runtime_subscribers": []
+      },
+      {
+        "name": "/task/hand_state",
+        "types": [
+          "sensor_msgs/msg/JointState"
+        ],
+        "publishers": [
+          "hand_bridge_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "state_observation_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "state_observation_node"
+        ]
+      },
+      {
+        "name": "/task/icp_node/diagnostics",
+        "types": [
+          "diagnostic_msgs/msg/DiagnosticArray"
+        ],
+        "publishers": [
+          "icp_node"
+        ],
+        "subscribers": [],
+        "recording_subscribers": [],
+        "runtime_subscribers": []
+      },
+      {
+        "name": "/task/object_detections",
+        "types": [
+          "deux_task_msgs/msg/ObjectDetectionArray"
+        ],
+        "publishers": [
+          "icp_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "state_observation_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "state_observation_node"
+        ]
+      },
+      {
+        "name": "/task/observation",
+        "types": [
+          "deux_task_msgs/msg/Observation"
+        ],
+        "publishers": [
+          "mujoco_driver_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "tracked_detection_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "tracked_detection_node"
+        ]
+      },
+      {
+        "name": "/task/perception_request",
+        "types": [
+          "deux_task_msgs/msg/PerceptionRequest"
+        ],
+        "publishers": [
+          "task_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "tracked_detection_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "tracked_detection_node"
+        ]
+      },
+      {
+        "name": "/task/scan_session",
+        "types": [
+          "deux_task_msgs/msg/ScanSession"
+        ],
+        "publishers": [
+          "task_node"
+        ],
+        "subscribers": [
+          "barcode_bridge_node",
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "barcode_bridge_node",
+          "mujoco_driver_node"
+        ]
+      },
+      {
+        "name": "/task/state_observation",
+        "types": [
+          "deux_task_msgs/msg/StateObservation"
+        ],
+        "publishers": [
+          "state_observation_node"
+        ],
+        "subscribers": [
+          "execution_node",
+          "motion_planner_node",
+          "mujoco_driver_node",
+          "task_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "execution_node",
+          "motion_planner_node",
+          "task_node"
+        ]
+      },
+      {
+        "name": "/task/state_observation/diagnostics",
+        "types": [
+          "diagnostic_msgs/msg/DiagnosticArray"
+        ],
+        "publishers": [
+          "state_observation_node"
+        ],
+        "subscribers": [],
+        "recording_subscribers": [],
+        "runtime_subscribers": []
+      },
+      {
+        "name": "/task/status",
+        "types": [
+          "deux_task_msgs/msg/TaskStatus"
+        ],
+        "publishers": [
+          "task_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "mujoco_driver_node"
+        ]
+      },
+      {
+        "name": "/task/tracked_detection_node/diagnostics",
+        "types": [
+          "diagnostic_msgs/msg/DiagnosticArray"
+        ],
+        "publishers": [
+          "tracked_detection_node"
+        ],
+        "subscribers": [],
+        "recording_subscribers": [],
+        "runtime_subscribers": []
+      },
+      {
+        "name": "/task/visual_candidates",
+        "types": [
+          "deux_task_msgs/msg/VisualEvidenceArray"
+        ],
+        "publishers": [
+          "tracked_detection_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "task_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "task_node"
+        ]
+      },
+      {
+        "name": "/task/visual_evidence",
+        "types": [
+          "deux_task_msgs/msg/VisualEvidence"
+        ],
+        "publishers": [
+          "tracked_detection_node"
+        ],
+        "subscribers": [
+          "mujoco_driver_node",
+          "task_node"
+        ],
+        "recording_subscribers": [
+          "mujoco_driver_node"
+        ],
+        "runtime_subscribers": [
+          "task_node"
+        ]
+      },
+      {
+        "name": "/tf",
+        "types": [
+          "tf2_msgs/msg/TFMessage"
+        ],
+        "publishers": [
+          "mujoco_driver_node"
+        ],
+        "subscribers": [
+          "icp_node",
+          "state_observation_node",
+          "tracked_detection_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "icp_node",
+          "state_observation_node",
+          "tracked_detection_node"
+        ]
+      },
+      {
+        "name": "/tf_static",
+        "types": [
+          "tf2_msgs/msg/TFMessage"
+        ],
+        "publishers": [],
+        "subscribers": [
+          "icp_node",
+          "state_observation_node",
+          "tracked_detection_node"
+        ],
+        "recording_subscribers": [],
+        "runtime_subscribers": [
+          "icp_node",
+          "state_observation_node",
+          "tracked_detection_node"
+        ]
+      }
+    ]
+  },
+  "topics": [
+    {
+      "name": "/arm/joint_states",
+      "types": [
+        "sensor_msgs/msg/JointState"
+      ],
+      "publishers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "arm_bridge_node",
+        "mujoco_driver_node",
+        "state_observation_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "arm_bridge_node",
+        "state_observation_node"
+      ]
+    },
+    {
+      "name": "/barcode/raw",
+      "types": [
+        "std_msgs/msg/String"
+      ],
+      "publishers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "barcode_bridge_node",
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "barcode_bridge_node"
+      ]
+    },
+    {
+      "name": "/clock",
+      "types": [
+        "rosgraph_msgs/msg/Clock"
+      ],
+      "publishers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "arm_bridge_node",
+        "barcode_bridge_node",
+        "execution_node",
+        "hand_bridge_node",
+        "icp_node",
+        "motion_planner_node",
+        "state_observation_node",
+        "task_node",
+        "tracked_detection_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "arm_bridge_node",
+        "barcode_bridge_node",
+        "execution_node",
+        "hand_bridge_node",
+        "icp_node",
+        "motion_planner_node",
+        "state_observation_node",
+        "task_node",
+        "tracked_detection_node"
+      ]
+    },
+    {
+      "name": "/hand/left/cmd",
+      "types": [
+        "deux_hand_msgs/msg/HandCtlMessage"
+      ],
+      "publishers": [
+        "hand_bridge_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "mujoco_driver_node"
+      ]
+    },
+    {
+      "name": "/hand/right/cmd",
+      "types": [
+        "deux_hand_msgs/msg/HandCtlMessage"
+      ],
+      "publishers": [
+        "hand_bridge_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "mujoco_driver_node"
+      ]
+    },
+    {
+      "name": "/sim/hand/left/joint_states",
+      "types": [
+        "sensor_msgs/msg/JointState"
+      ],
+      "publishers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "hand_bridge_node",
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "hand_bridge_node"
+      ]
+    },
+    {
+      "name": "/sim/hand/right/joint_states",
+      "types": [
+        "sensor_msgs/msg/JointState"
+      ],
+      "publishers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "hand_bridge_node",
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "hand_bridge_node"
+      ]
+    },
+    {
+      "name": "/state/status",
+      "types": [
+        "std_msgs/msg/String"
+      ],
+      "publishers": [],
+      "subscribers": [
+        "arm_bridge_node",
+        "execution_node",
+        "hand_bridge_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "arm_bridge_node",
+        "execution_node",
+        "hand_bridge_node"
+      ]
+    },
+    {
+      "name": "/task/barcode_read",
+      "types": [
+        "deux_task_msgs/msg/BarcodeRead"
+      ],
+      "publishers": [
+        "barcode_bridge_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "task_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "task_node"
+      ]
+    },
+    {
+      "name": "/task/barcode_target",
+      "types": [
+        "deux_task_msgs/msg/BarcodeTarget"
+      ],
+      "publishers": [
+        "tracked_detection_node"
+      ],
+      "subscribers": [
+        "execution_node",
+        "mujoco_driver_node",
+        "task_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "execution_node",
+        "task_node"
+      ]
+    },
+    {
+      "name": "/task/detection_frames",
+      "types": [
+        "deux_task_msgs/msg/DetectionFrame"
+      ],
+      "publishers": [
+        "tracked_detection_node"
+      ],
+      "subscribers": [
+        "icp_node",
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "icp_node"
+      ]
+    },
+    {
+      "name": "/task/detections",
+      "types": [
+        "deux_task_msgs/msg/DetectionArray"
+      ],
+      "publishers": [
+        "tracked_detection_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "task_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "task_node"
+      ]
+    },
+    {
+      "name": "/task/execution_record",
+      "types": [
+        "std_msgs/msg/String"
+      ],
+      "publishers": [
+        "execution_node"
+      ],
+      "subscribers": [],
+      "recording_subscribers": [],
+      "runtime_subscribers": []
+    },
+    {
+      "name": "/task/hand_state",
+      "types": [
+        "sensor_msgs/msg/JointState"
+      ],
+      "publishers": [
+        "hand_bridge_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "state_observation_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "state_observation_node"
+      ]
+    },
+    {
+      "name": "/task/icp_node/diagnostics",
+      "types": [
+        "diagnostic_msgs/msg/DiagnosticArray"
+      ],
+      "publishers": [
+        "icp_node"
+      ],
+      "subscribers": [],
+      "recording_subscribers": [],
+      "runtime_subscribers": []
+    },
+    {
+      "name": "/task/object_detections",
+      "types": [
+        "deux_task_msgs/msg/ObjectDetectionArray"
+      ],
+      "publishers": [
+        "icp_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "state_observation_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "state_observation_node"
+      ]
+    },
+    {
+      "name": "/task/observation",
+      "types": [
+        "deux_task_msgs/msg/Observation"
+      ],
+      "publishers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "tracked_detection_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "tracked_detection_node"
+      ]
+    },
+    {
+      "name": "/task/perception_request",
+      "types": [
+        "deux_task_msgs/msg/PerceptionRequest"
+      ],
+      "publishers": [
+        "task_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "tracked_detection_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "tracked_detection_node"
+      ]
+    },
+    {
+      "name": "/task/scan_session",
+      "types": [
+        "deux_task_msgs/msg/ScanSession"
+      ],
+      "publishers": [
+        "task_node"
+      ],
+      "subscribers": [
+        "barcode_bridge_node",
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "barcode_bridge_node",
+        "mujoco_driver_node"
+      ]
+    },
+    {
+      "name": "/task/state_observation",
+      "types": [
+        "deux_task_msgs/msg/StateObservation"
+      ],
+      "publishers": [
+        "state_observation_node"
+      ],
+      "subscribers": [
+        "execution_node",
+        "motion_planner_node",
+        "mujoco_driver_node",
+        "task_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "execution_node",
+        "motion_planner_node",
+        "task_node"
+      ]
+    },
+    {
+      "name": "/task/state_observation/diagnostics",
+      "types": [
+        "diagnostic_msgs/msg/DiagnosticArray"
+      ],
+      "publishers": [
+        "state_observation_node"
+      ],
+      "subscribers": [],
+      "recording_subscribers": [],
+      "runtime_subscribers": []
+    },
+    {
+      "name": "/task/status",
+      "types": [
+        "deux_task_msgs/msg/TaskStatus"
+      ],
+      "publishers": [
+        "task_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "mujoco_driver_node"
+      ]
+    },
+    {
+      "name": "/task/tracked_detection_node/diagnostics",
+      "types": [
+        "diagnostic_msgs/msg/DiagnosticArray"
+      ],
+      "publishers": [
+        "tracked_detection_node"
+      ],
+      "subscribers": [],
+      "recording_subscribers": [],
+      "runtime_subscribers": []
+    },
+    {
+      "name": "/task/visual_candidates",
+      "types": [
+        "deux_task_msgs/msg/VisualEvidenceArray"
+      ],
+      "publishers": [
+        "tracked_detection_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "task_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "task_node"
+      ]
+    },
+    {
+      "name": "/task/visual_evidence",
+      "types": [
+        "deux_task_msgs/msg/VisualEvidence"
+      ],
+      "publishers": [
+        "tracked_detection_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node",
+        "task_node"
+      ],
+      "recording_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "runtime_subscribers": [
+        "task_node"
+      ]
+    },
+    {
+      "name": "/tf",
+      "types": [
+        "tf2_msgs/msg/TFMessage"
+      ],
+      "publishers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "icp_node",
+        "state_observation_node",
+        "tracked_detection_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "icp_node",
+        "state_observation_node",
+        "tracked_detection_node"
+      ]
+    },
+    {
+      "name": "/tf_static",
+      "types": [
+        "tf2_msgs/msg/TFMessage"
+      ],
+      "publishers": [],
+      "subscribers": [
+        "icp_node",
+        "state_observation_node",
+        "tracked_detection_node"
+      ],
+      "recording_subscribers": [],
+      "runtime_subscribers": [
+        "icp_node",
+        "state_observation_node",
+        "tracked_detection_node"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "/task/run",
+      "types": [
+        "deux_task_msgs/action/RunTask"
+      ],
+      "publishers": [
+        "scenario_client"
+      ],
+      "runtime_subscribers": [
+        "task_node"
+      ],
+      "subscribers": [
+        "task_node"
+      ],
+      "recording_subscribers": [],
+      "action": true
+    },
+    {
+      "name": "/task/plan_motion",
+      "types": [
+        "deux_task_msgs/action/PlanMotion"
+      ],
+      "publishers": [
+        "task_node"
+      ],
+      "runtime_subscribers": [
+        "motion_planner_node"
+      ],
+      "subscribers": [
+        "motion_planner_node"
+      ],
+      "recording_subscribers": [],
+      "action": true
+    },
+    {
+      "name": "/task/execute_motion",
+      "types": [
+        "deux_task_msgs/action/ExecuteMotion"
+      ],
+      "publishers": [
+        "task_node"
+      ],
+      "runtime_subscribers": [
+        "execution_node"
+      ],
+      "subscribers": [
+        "execution_node"
+      ],
+      "recording_subscribers": [],
+      "action": true
+    },
+    {
+      "name": "/task/arm_motion",
+      "types": [
+        "deux_task_msgs/action/BridgeMotion"
+      ],
+      "publishers": [
+        "execution_node"
+      ],
+      "runtime_subscribers": [
+        "arm_bridge_node"
+      ],
+      "subscribers": [
+        "arm_bridge_node"
+      ],
+      "recording_subscribers": [],
+      "action": true
+    },
+    {
+      "name": "/task/hand_motion",
+      "types": [
+        "deux_task_msgs/action/BridgeMotion"
+      ],
+      "publishers": [
+        "execution_node"
+      ],
+      "runtime_subscribers": [
+        "hand_bridge_node"
+      ],
+      "subscribers": [
+        "hand_bridge_node"
+      ],
+      "recording_subscribers": [],
+      "action": true
+    },
+    {
+      "name": "/arm/deux_arm_controller/follow_joint_trajectory",
+      "types": [
+        "control_msgs/action/FollowJointTrajectory"
+      ],
+      "publishers": [
+        "arm_bridge_node"
+      ],
+      "runtime_subscribers": [
+        "mujoco_driver_node"
+      ],
+      "subscribers": [
+        "mujoco_driver_node"
+      ],
+      "recording_subscribers": [],
+      "action": true
+    }
+  ],
+  "source": "scenario-07 live graph; validate_head Action instrumentation; head_stack source"
+}

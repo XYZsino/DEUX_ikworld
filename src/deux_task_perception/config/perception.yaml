@@ -18,6 +18,13 @@ icp_node:
     max_distance_m: 1.5
     max_rmse_m: 0.015
     min_coverage: 0.5
+    # Optional coarse subsampling; 0 preserves the existing full-cloud search.
+    icp_initial_angles: 24
+    icp_yaw_span_deg: 360.0
+    icp_coarse_point_limit: 0
+    # Optional separate coarse voxel cloud from raw ROI (e.g. 0.006).
+    # Mutually exclusive with icp_coarse_point_limit; fine remains 3mm.
+    icp_coarse_voxel_size_m: 0.0
     track_gate_m: 0.08
     track_max_age_s: 0.6
     # Configured assumptions, not statistical uncertainty estimated by ICP.

@@ -14,12 +14,14 @@ def transform_pose(transform):
     return pose_matrix(p).tolist()
 
 
-def legacy_packet(observation, barcode_reads=()):
+def legacy_packet(observation, barcode_reads=(), *, joints=None):
     """v1 lacks per-object timestamps/axis flags: require exact-time complete poses.
 
     Delayed yaw-only ICP must remain in the ROS contract, not be passed to v1.
     The runtime nodes use the richer ROS messages and do not call this adapter.
     """
+    if joints is None:
+        raise ValueError("legacy adapter requires explicit measured joints")
     o = observation
     if not (
         o.joints_valid and o.left_ee_valid and o.right_ee_valid and o.objects_valid
@@ -34,7 +36,7 @@ def legacy_packet(observation, barcode_reads=()):
     for ee in (o.base_from_left_ee, o.base_from_right_ee):
         if ee.header.frame_id != "base_link" or ee.header.stamp != o.header.stamp:
             raise ValueError("legacy EE frame/time mismatch")
-    if o.joints.header.stamp != o.header.stamp:
+    if joints.header.stamp != o.header.stamp:
         raise ValueError("legacy joint timestamp mismatch")
     readings = []
     for read in barcode_reads:
@@ -55,7 +57,7 @@ def legacy_packet(observation, barcode_reads=()):
         angle_unit="rad",
         timestamp=seconds(o.header.stamp),
         sequence=o.sequence,
-        joints=dict(names=list(JOINT_NAMES), positions=joint_array(o.joints).tolist()),
+        joints=dict(names=list(JOINT_NAMES), positions=joint_array(joints).tolist()),
         ee=dict(
             left=transform_pose(o.base_from_left_ee.transform),
             right=transform_pose(o.base_from_right_ee.transform),

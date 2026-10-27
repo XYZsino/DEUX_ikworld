@@ -1,0 +1,14 @@
+barcode_node:
+  ros__parameters:
+    enabled: false  # Explicitly enable only for the dedicated scanner serial port.
+    simulated: false
+    port: ''  # e.g. /dev/serial/by-id/...; empty = VID/PID 1eab:3306 discovery.
+    serial_number: ''  # Required to disambiguate multiple matching dongles.
+    baudrate: 115200
+    value_pattern: '(?:[0-9]{8}|[0-9]{12,14})'
+    quiet_s: 0.2
+    drain_timeout_s: 1.0
+    scan_timeout_s: 5.0
+    reconnect_s: 1.0
+    max_bytes: 4096
+    input_topic: /barcode/raw  # SIM only; REAL does not subscribe to this topic.

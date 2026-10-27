@@ -95,3 +95,93 @@ def test_yaw_icp_recovers_asymmetric_synthetic_cloud():
     assert result['trimmed_rmse_m'] < .002
     assert result['target_coverage_10mm'] > .95
     assert fit_icp(observed[:10], model, normals, np.zeros(3))['status'] == 'insufficient_depth'
+
+
+@pytest.mark.parametrize('limit', [80, 400, 600, 1600])
+def test_coarse_subsampling_retains_full_cloud_metrics(limit):
+    from scipy.spatial import cKDTree
+    from deux_task_perception.perception_core import downsample
+    rng = np.random.default_rng(9)
+    model = rng.uniform([-.08, -.04, -.03], [.08, .04, .03], (3600, 3))
+    normals = model / np.linalg.norm(model, axis=1)[:, None]
+    observed = model[::3] @ rot(np.pi/6).T + [.2, -.1, .4]
+    result = fit_icp(observed, model, normals, np.array([0., 0., 1.]),
+                     initial_angles=12, yaw_span_deg=180., coarse_point_limit=limit)
+    q = downsample(observed)
+    assert result['coarse_fit_points'] == min(limit, len(q))
+    assert len(result['multistart']) == 12
+    # Independently recompute published metrics from every fine-resolution point.
+    dist = cKDTree(model[::3]).query((q-np.array(result['translation'])) @ rot(result['theta']))[0]
+    assert result['target_coverage_10mm'] == pytest.approx(np.mean(dist < .01))
+    assert result['trimmed_rmse_m'] == pytest.approx(np.sqrt(np.mean(np.sort(dist)[:int(.8*len(dist))]**2)))
+    np.testing.assert_allclose(result['translation'], [.2, -.1, .4], atol=.003)
+    assert abs(result['theta']-np.pi/6) < .03
+
+
+@pytest.mark.parametrize('kwargs', [{'coarse_point_limit': 39}, {'coarse_point_limit': 4.5},
+                                  {'initial_angles': 0}, {'yaw_span_deg': float('nan')}])
+def test_invalid_icp_sampling_configuration(kwargs):
+    with pytest.raises(ValueError, match='invalid ICP'):
+        fit_icp(np.empty((0, 3)), np.empty((0, 3)), np.empty((0, 3)), np.zeros(3), **kwargs)
+
+
+def test_independent_coarse_voxel_cloud_and_full_resolution_metrics(monkeypatch):
+    from scipy.spatial import cKDTree
+    from deux_task_perception import yaw_icp
+    from deux_task_perception.perception_core import downsample, voxel_downsample
+    rng = np.random.default_rng(9)
+    model = rng.uniform([-.08, -.04, -.03], [.08, .04, .03], (9000, 3))
+    normals = model / np.linalg.norm(model, axis=1)[:, None]
+    observed = model[::3] @ rot(np.pi/6).T + [.2, -.1, .4]
+    calls = []
+    def capture(points, size):
+        calls.append(points)
+        return voxel_downsample(points, size)
+    monkeypatch.setattr(yaw_icp, 'voxel_downsample', capture)
+    result = fit_icp(observed, model, normals, np.array([0., 0., 1.]),
+                     initial_angles=12, yaw_span_deg=180., coarse_voxel_size_m=.006)
+    assert len(calls) == 1 and calls[0] is observed
+    expected = len(voxel_downsample(observed, .006))
+    assert result['coarse_voxel_points'] == expected
+    assert result['coarse_fit_points'] == min(1600, expected)
+    assert not result['coarse_fallback']
+    q = downsample(observed)
+    dist = cKDTree(model[::3]).query((q-result['translation']) @ rot(result['theta']))[0]
+    assert result['fit_points'] == len(q)
+    assert result['target_coverage_10mm'] == pytest.approx(np.mean(dist < .01))
+    assert result['trimmed_rmse_m'] == pytest.approx(np.sqrt(np.mean(np.sort(dist)[:int(.8*len(dist))]**2)))
+
+
+def test_sparse_coarse_voxels_reuse_fine_cloud():
+    points = np.array([[x*.0031, y*.0031, z*.0031] for x in range(6)
+                       for y in range(6) for z in range(2)])
+    model = np.repeat(points, 3, axis=0)
+    normals = np.tile([0., 0., 1.], (len(model), 1))
+    kwargs = dict(initial_angles=12, yaw_span_deg=180.)
+    baseline = fit_icp(points, model, normals, np.array([0., 0., 1.]), **kwargs)
+    coarse = fit_icp(points, model, normals, np.array([0., 0., 1.]),
+                     coarse_voxel_size_m=.006, **kwargs)
+    assert coarse['coarse_fallback'] and coarse['coarse_voxel_points'] < 40
+    assert coarse['coarse_fit_points'] == coarse['fit_points'] >= 40
+    np.testing.assert_array_equal(coarse['T_reference_model'], baseline['T_reference_model'])
+
+
+@pytest.mark.parametrize('kwargs', [{'coarse_voxel_size_m': -.006},
+                                  {'coarse_voxel_size_m': .002},
+                                  {'coarse_voxel_size_m': float('nan')},
+                                  {'coarse_voxel_size_m': .006, 'coarse_point_limit': 400}])
+def test_invalid_coarse_voxel_configuration(kwargs):
+    with pytest.raises(ValueError, match='invalid ICP'):
+        fit_icp(np.empty((0, 3)), np.empty((0, 3)), np.empty((0, 3)), np.zeros(3), **kwargs)
+
+
+def test_instance_mask_excludes_foreground_gripper_and_background():
+    from deux_task_perception.perception_core import masked_depth
+    depth=np.full((40,50),2.,dtype=np.float32)
+    depth[8:30,10:35]=1.
+    depth[0:7,:]=.4  # A closer gripper outside the visible bag polygon.
+    masked=masked_depth(depth,[10.,8.,34.,8.,34.,29.,10.,29.])
+    assert np.isnan(masked[:8]).all() and np.isnan(masked[:,35:]).all()
+    assert np.all(masked[np.isfinite(masked)]==1.)
+    assert np.isfinite(masked[15,20])
+    with pytest.raises(ValueError):masked_depth(depth,[0.,0.,float('nan'),2.,4.,4.])

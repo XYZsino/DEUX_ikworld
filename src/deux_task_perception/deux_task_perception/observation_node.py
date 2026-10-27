@@ -1,20 +1,16 @@
 """External ZED RGB-D observation boundary. Never publishes robot commands."""
 from copy import deepcopy
 import math
-import numpy as np
-from scipy.spatial.transform import Rotation
-from deux_task_core.filter import PoseFilter
 import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
-from sensor_msgs.msg import Image, CameraInfo, JointState
+from sensor_msgs.msg import Image, CameraInfo
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from tf2_ros import Buffer, TransformListener, TransformException
-from deux_task_msgs.msg import Observation, ObjectDetectionArray
-from .core import (ARM_NAMES, JOINT_NAMES, History, stamp_ns, normalize_rgb,
-                   normalize_depth, validate_bundle, validate_objects, joint_values)
+from deux_task_msgs.msg import Observation
+from .core import stamp_ns, normalize_rgb, normalize_depth, validate_bundle
 
 
 class ObservationNode(Node):
@@ -25,38 +21,25 @@ class ObservationNode(Node):
             'depth_topic': '/zed/zed_node/depth/depth_registered',
             'rgb_info_topic': '/zed/zed_node/rgb/color/rect/camera_info',
             'depth_info_topic': '/zed/zed_node/depth/camera_info',
-            'arm_state_topic': '/arm/joint_states',
-            'hand_state_topic': '/task/hand_state',
-            'objects_topic': '/task/object_detections',
             'output_topic': '/task/observation',
-            'base_frame': 'base_link', 'left_ee_frame': '', 'right_ee_frame': '',
+            'base_frame': 'base_link',
             'width': 640, 'height': 480,
             'sync_queue_size': 10, 'sync_slop_s': .02,
-            'max_image_age_s': .5, 'max_joint_age_s': .1,
-            'max_object_age_s': .6, 'camera_timeout_s': 1.,
-            'filter_objects': False,
+            'max_image_age_s': .5, 'camera_timeout_s': 1.,
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
         self.cfg = {name: self.get_parameter(name).value for name in defaults}
-        for key in ('sync_slop_s', 'max_image_age_s', 'max_joint_age_s',
-                    'max_object_age_s', 'camera_timeout_s'):
+        for key in ('sync_slop_s', 'max_image_age_s', 'camera_timeout_s'):
             if not math.isfinite(self.cfg[key]) or self.cfg[key] <= 0:
                 raise ValueError(f'{key} must be positive and finite')
         if min(self.cfg['width'], self.cfg['height'], self.cfg['sync_queue_size']) <= 0:
             raise ValueError('positive image dimensions and queue required')
-        self.arm, self.hand, self.objects = History(), History(), History()
-        self.pose_filter = PoseFilter()
         self.tf = Buffer()
         self.tf_listener = TransformListener(self.tf, self)
         qos = qos_profile_sensor_data
         self.publisher = self.create_publisher(Observation, self.cfg['output_topic'], qos)
         self.diagnostics = self.create_publisher(DiagnosticArray, '/task/observation/diagnostics', 10)
-        self.state_subscriptions = [
-            self.create_subscription(JointState, self.cfg['arm_state_topic'], self.arm.add, qos),
-            self.create_subscription(JointState, self.cfg['hand_state_topic'], self.hand.add, qos),
-            self.create_subscription(ObjectDetectionArray, self.cfg['objects_topic'],
-                                     self._objects, qos)]
         self.filters = [message_filters.Subscriber(self, typ, self.cfg[name], qos_profile=qos)
                         for typ, name in ((Image, 'rgb_topic'), (Image, 'depth_topic'),
                                           (CameraInfo, 'rgb_info_topic'),
@@ -75,35 +58,6 @@ class ObservationNode(Node):
         self.timer = self.create_timer(.5, self._diagnostic)
         self.get_logger().info(f"External ZED observation: {self.cfg['width']}x{self.cfg['height']}; no robot command output")
 
-    def _objects(self, msg):
-        try:
-            validate_objects(msg, self.cfg['base_frame'])
-            if self.cfg['filter_objects']:
-                msg = deepcopy(msg)
-                stamp = stamp_ns(msg.header)*1e-9
-                if any((old := self.pose_filter.tracks.get((msg.source,msg.model_id,d.track_id))) is not None and stamp <= old[0]
-                       for d in msg.detections if not d.pose_filtered):
-                    return
-                for detection in msg.detections:
-                    if detection.pose_filtered:
-                        continue  # Never double-filter an upstream filtered result.
-                    p = detection.pose.pose
-                    rotation = Rotation.from_quat([p.orientation.x,p.orientation.y,p.orientation.z,p.orientation.w])
-                    yaw = math.atan2(rotation.as_matrix()[1,0], rotation.as_matrix()[0,0])
-                    filtered, updated = self.pose_filter.update(
-                        (msg.source,msg.model_id,detection.track_id), stamp_ns(msg.header)*1e-9,
-                        msg.sequence, [p.position.x,p.position.y,p.position.z,yaw])
-                    if not updated:
-                        return  # Repeated or out-of-order acquisition cannot refresh filtered data.
-                    p.position.x,p.position.y = map(float,filtered[:2])
-                    q = (Rotation.from_rotvec([0,0,float(filtered[2]-yaw)])*rotation).as_quat()
-                    p.orientation.x,p.orientation.y,p.orientation.z,p.orientation.w = map(float,q)
-                    detection.pose_filtered = True
-                    detection.covariance_estimated = False
-            self.objects.add(msg)
-        except ValueError as error:
-            self.last_input_error = str(error)
-
     @staticmethod
     def _image(header, array, encoding):
         msg = Image()
@@ -117,9 +71,6 @@ class ObservationNode(Node):
 
     def _clock_reset(self, now):
         if now < self.last_clock:
-            for history in (self.arm, self.hand, self.objects):
-                history.clear()
-            self.pose_filter.tracks.clear()
             self.last_stamp = self.last_publish = None
             self.status = 'clock moved backwards; observation caches cleared'
         self.last_clock = now
@@ -153,46 +104,11 @@ class ObservationNode(Node):
                 out.camera_transform_valid = True
             except TransformException:
                 pass  # No invented extrinsics or substitution of old head camera.
-            for side in ('left', 'right'):
-                frame_id = self.cfg[f'{side}_ee_frame']
-                if frame_id:
-                    try:
-                        transform = self.tf.lookup_transform(
-                            self.cfg['base_frame'], frame_id,
-                            Time.from_msg(rgb.header.stamp, clock_type=self.get_clock().clock_type))
-                        setattr(out, f'base_from_{side}_ee', transform)
-                        setattr(out, f'{side}_ee_valid', True)
-                    except TransformException:
-                        pass
-            age = int(self.cfg['max_joint_age_s']*1e9)
-            arm, hand = self.arm.at(stamp, age), self.hand.at(stamp, age)
-            if arm is not None:
-                out.arm_state = arm
-            if hand is not None:
-                out.hand_state = hand
-            if arm is not None and hand is not None:
-                try:
-                    arm_values = joint_values(arm, ARM_NAMES)
-                    hand_names = [n for n in JOINT_NAMES if n not in ARM_NAMES]
-                    hand_values = joint_values(hand, hand_names)
-                    mapping = dict(zip(ARM_NAMES, arm_values))
-                    mapping.update(zip(hand_names, hand_values))
-                    out.joints.name = list(JOINT_NAMES)
-                    out.joints.position = [mapping[n] for n in JOINT_NAMES]
-                    out.joints.header = deepcopy(min((arm, hand), key=lambda m: stamp_ns(m.header)).header)
-                    out.joints_valid = True
-                except (ValueError, KeyError) as error:
-                    self.last_input_error = f'joint state: {error}'
-            objects = self.objects.at(stamp, int(self.cfg['max_object_age_s']*1e9))
-            if objects is not None:
-                out.objects, out.objects_valid = objects, True
             self.publisher.publish(out)
             self.sequence += 1
             self.accepted += 1
             self.last_stamp, self.last_publish = stamp, now
-            self.status = ('RGB-D valid; joints=' + str(out.joints_valid)
-                           + ', objects=' + str(out.objects_valid)
-                           + ', camera_tf=' + str(out.camera_transform_valid)
+            self.status = ('RGB-D valid; camera_tf=' + str(out.camera_transform_valid)
                            + f', valid_depth={fraction:.3f}')
         except (ValueError, TypeError, OverflowError) as error:
             self.rejected += 1

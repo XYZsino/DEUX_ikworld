@@ -7,3 +7,5 @@ uint32 grasp_attempt
 uint32 scan_attempt
 uint32 ik_calls
 bool active
+# Explicit BT workflow identifier for operator displays.
+string workflow

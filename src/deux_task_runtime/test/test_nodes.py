@@ -22,7 +22,7 @@ from deux_task_msgs.msg import (
     BarcodeTarget,
     BarcodeRead,
 )
-from deux_task_msgs.action import PlanMotion, ExecuteMotion, BridgeMotion
+from deux_task_msgs.action import PlanMotion, ExecuteMotion
 from deux_task_core.synthetic import fixture
 from deux_task_core.model import JOINT_NAMES, HAND_NAMES, ARM_NAMES
 from deux_task_core.planning import scene_version
@@ -30,9 +30,7 @@ from deux_task_runtime.common import LATCHED, ros_time, seconds
 from deux_task_runtime.motion_planner_node import MotionPlannerNode
 from deux_task_runtime.execution_node import ExecutionNode
 from deux_task_runtime.task_node import TaskNode
-from deux_task_adapters.arm_bridge_node import ArmBridgeNode
-from deux_task_adapters.hand_bridge_node import HandBridgeNode
-from deux_task_perception.barcode_bridge_node import BarcodeBridgeNode
+from deux_task_perception.barcode_node import BarcodeNode
 
 
 def params(**kwargs):
@@ -57,6 +55,8 @@ class Harness:
         self.pub = self.source.create_publisher(
             StateObservation, "/task/state_observation", qos_profile_sensor_data
         )
+        self.arm_pub = self.source.create_publisher(JointState, '/arm/joint_states', qos_profile_sensor_data)
+        self.hand_pub = self.source.create_publisher(JointState, '/task/hand_state', qos_profile_sensor_data)
         self.q = np.zeros(28)
         self.sequence = 0
         self.publish_enabled = True
@@ -78,10 +78,12 @@ class Harness:
         obs.header.frame_id = "synthetic_optical"
         obs.sequence = self.sequence
         obs.joints_valid = True
-        obs.joints.header.stamp = now
-        obs.joints.name = list(JOINT_NAMES)
-        obs.joints.position = self.q.tolist()
-        obs.objects_valid = True
+        obs.joints_acquired_at = now
+        for pub, names in ((self.arm_pub, ARM_NAMES), (self.hand_pub, HAND_NAMES)):
+            msg = JointState(name=list(names), position=[float(self.q[JOINT_NAMES.index(n)]) for n in names])
+            msg.header.stamp = now
+            pub.publish(msg)
+        obs.objects_valid = getattr(self, "objects_enabled", True)
         obs.objects.header.stamp = now
         obs.objects.header.frame_id = "base_link"
         obs.objects.sequence = self.sequence
@@ -123,7 +125,7 @@ class Harness:
 def test_barcode_session_bounds(tmp_path):
     h = Harness(fixture(tmp_path))
     h.publish_enabled = False
-    barcode = h.add(BarcodeBridgeNode())
+    barcode = h.add(BarcodeNode(parameter_overrides=params(simulated=True, value_pattern=r'[A-Za-z0-9-]+')))
     reads = []
     subs = [
         h.source.create_subscription(
@@ -138,7 +140,7 @@ def test_barcode_session_bounds(tmp_path):
             and session.get_subscription_count() > 0
         )
         raw.publish(String(data="before"))
-        h.spin(lambda: barcode.session is None)
+        h.spin(lambda: barcode.controller.session is None)
         now = h.source.get_clock().now().nanoseconds * 1e-9
         s = ScanSession(
             session_id="scan1",
@@ -148,13 +150,13 @@ def test_barcode_session_bounds(tmp_path):
         )
         s.header.stamp = ros_time(now)
         session.publish(s)
-        h.spin(lambda: barcode.session is not None)
+        h.spin(lambda: barcode.controller.session is not None)
         raw.publish(String(data="12345"))
         h.spin(lambda: bool(reads))
         assert (
             reads[-1].session_id == "scan1"
             and reads[-1].track_id == "bag"
-            and not reads[-1].simulated
+            and reads[-1].simulated
         )
         count = len(reads)
         raw.publish(String(data="12345"))
@@ -163,7 +165,7 @@ def test_barcode_session_bounds(tmp_path):
         assert len(reads) == count
         s.active = False
         session.publish(s)
-        h.spin(lambda: not barcode.session.active)
+        h.spin(lambda: barcode.controller.session is None)
         raw.publish(String(data="after"))
         for _ in range(10):
             h.ex.spin_once(timeout_sec=0.01)
@@ -172,10 +174,12 @@ def test_barcode_session_bounds(tmp_path):
         h.close()
 
 
+@pytest.mark.parametrize("stage", ["Close", "Prepare"])
 def test_process_planner_and_dry_execution_rejects_stale_duplicate_and_changed_scene(
-    tmp_path,
+    tmp_path, stage,
 ):
     h = Harness(fixture(tmp_path))
+    h.objects_enabled = stage != "Prepare"
     planner = h.add(
         MotionPlannerNode(parameter_overrides=params(config_file=str(h.config_path)))
     )
@@ -191,7 +195,7 @@ def test_process_planner_and_dry_execution_rejects_stale_duplicate_and_changed_s
             and client.server_is_ready()
         )
         request = PlanMotion.Goal(
-            stage="Close",
+            stage=stage,
             target_id="bag",
             scene_version=scene_version(h.config),
             observation=h.observation,
@@ -221,7 +225,8 @@ def test_process_planner_and_dry_execution_rejects_stale_duplicate_and_changed_s
         request.scene_version = "wrong"
         assert not h.future(client.send_goal_async(request)).accepted
         request.scene_version = scene_version(h.config)
-        request.observation.joints_valid = False
+        h.publish_enabled = False
+        planner.joint_feedback.samples.clear()
         assert not h.future(client.send_goal_async(request)).accepted
     finally:
         h.close()
@@ -255,16 +260,9 @@ def test_hand_feedback_mapping_preserves_stamp_and_dispatch_disabled(tmp_path):
     path = tmp_path / "mapping.yaml"
     path.write_text(yaml.safe_dump(mapping))
     h = Harness(c)
-    hand = h.add(
-        HandBridgeNode(
-            parameter_overrides=params(
-                config_file=str(h.config_path), mapping_file=str(path)
-            )
-        )
-    )
-    arm = h.add(
-        ArmBridgeNode(parameter_overrides=params(config_file=str(h.config_path)))
-    )
+    execute = h.add(ExecutionNode(parameter_overrides=params(
+        config_file=str(h.config_path), mapping_file=str(path))))
+    arm, hand = execute.arm, execute.hand
     received = []
     sub = h.source.create_subscription(
         JointState, "/task/hand_state", received.append, qos_profile_sensor_data
@@ -277,7 +275,7 @@ def test_hand_feedback_mapping_preserves_stamp_and_dispatch_disabled(tmp_path):
     }
     try:
         h.spin(
-            lambda: hand.config is not None
+            lambda: hand.node.config is not None
             and all(p.get_subscription_count() for p in pubs.values())
         )
         stamp = h.source.get_clock().now().to_msg()
@@ -290,11 +288,10 @@ def test_hand_feedback_mapping_preserves_stamp_and_dispatch_disabled(tmp_path):
         h.spin(lambda: bool(received))
         np.testing.assert_allclose(received[-1].position, [0.1] * 14)
         assert received[-1].header.stamp == stamp
-        req = BridgeMotion.Goal(scene_version=hand.config_version)
         with pytest.raises(ValueError, match="disabled"):
-            hand.validate(req)
+            hand.validate(np.array([0., 1.]), np.zeros((2, 14)))
         with pytest.raises(ValueError, match="disabled"):
-            arm.validate(req)
+            arm.validate()
         msg.header.stamp = ros_time(1.0)
         hand.feedback("left", msg)
         assert hand.raw["left"][0].stamp == stamp
@@ -311,7 +308,7 @@ def test_task_requires_independent_lift_barcode_and_place_evidence(tmp_path, cas
     h = Harness(fixture(tmp_path))
     h.source.group = ReentrantCallbackGroup()
     task = h.add(TaskNode(parameter_overrides=params(config_file=str(h.config_path))))
-    barcode = h.add(BarcodeBridgeNode(parameter_overrides=params(simulated=True)))
+    barcode = h.add(BarcodeNode(parameter_overrides=params(simulated=True, value_pattern=r'[A-Za-z0-9-]+')))
     stages = []
 
     async def plan(goal):
@@ -400,9 +397,9 @@ def test_task_requires_independent_lift_barcode_and_place_evidence(tmp_path, cas
         h.close()
 
 
-@pytest.mark.parametrize("cancel", ["complete", "cancel", "feedback_loss"])
-def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel):
-    from rclpy.action import ActionServer, CancelResponse
+@pytest.mark.parametrize("cancel", ["complete", "preload", "cancel", "cancel_moving", "feedback_loss", "hand_loss", "arm_reject", "arm_failure", "late_accept"])
+def test_integrated_execution_with_synthetic_arm_hand_drivers(tmp_path, cancel):
+    from rclpy.action import ActionServer, CancelResponse, GoalResponse
     from rclpy.callback_groups import ReentrantCallbackGroup
     from control_msgs.action import FollowJointTrajectory
     from deux_hand_msgs.msg import HandCtlMessage
@@ -439,31 +436,13 @@ def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel
         )
     path = tmp_path / "mapping.yaml"
     path.write_text(yaml.safe_dump(mapping))
-    arm = h.add(
-        ArmBridgeNode(
-            parameter_overrides=params(
-                config_file=str(h.config_path),
-                hardware_enabled=True,
-                driver_action="/synthetic/arm",
-            )
-        )
-    )
-    hand = h.add(
-        HandBridgeNode(
-            parameter_overrides=params(
-                config_file=str(h.config_path),
-                hardware_enabled=True,
-                mapping_file=str(path),
-            )
-        )
-    )
-    execute = h.add(
-        ExecutionNode(
-            parameter_overrides=params(config_file=str(h.config_path), dry_run=False)
-        )
-    )
+    execute = h.add(ExecutionNode(parameter_overrides=params(
+        config_file=str(h.config_path), dry_run=False, hardware_enabled=True,
+        driver_action="/synthetic/arm", mapping_file=str(path))))
+    arm, hand = execute.arm, execute.hand
     driver_cancel = []
     hand_commands = []
+    hand_targets = []
     arm_starts = []
 
     async def arm_execute(goal):
@@ -477,6 +456,9 @@ def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel
                 driver_cancel.append(True)
                 goal.canceled()
                 return FollowJointTrajectory.Result(error_code=-1)
+            if cancel == "arm_failure" and elapsed > .15:
+                goal.abort()
+                return FollowJointTrajectory.Result(error_code=-1, error_string="injected driver fault")
             values = sample(t, q, max(0, elapsed))
             for name, value in zip(ARM_NAMES, values):
                 h.q[JOINT_NAMES.index(name)] = value
@@ -490,6 +472,7 @@ def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel
         FollowJointTrajectory,
         "/synthetic/arm",
         execute_callback=arm_execute,
+        goal_callback=lambda _: GoalResponse.REJECT if cancel == "arm_reject" else GoalResponse.ACCEPT,
         cancel_callback=lambda _: CancelResponse.ACCEPT,
         callback_group=h.source.group,
     )
@@ -497,11 +480,12 @@ def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel
     def hand_command(side, msg):
         assert msg.mode == 7 and msg.side == side
         hand_commands.append(seconds(msg.header.stamp))
+        hand_targets.append([0.2 - m.rad for m in msg.motors])
         for motor in msg.motors:
             name = [
                 n for n, m in mapping[side]["joints"].items() if m["id"] == motor.id
             ][0]
-            h.q[JOINT_NAMES.index(name)] = 0.2 - motor.rad
+            h.q[JOINT_NAMES.index(name)] = 0.2 - motor.rad - (0.02 if cancel == "preload" else 0.)
 
     subscribers = [
         h.source.create_subscription(
@@ -519,6 +503,7 @@ def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel
         for s in ("left", "right")
     }
     feedback_enabled = [True]
+    hand_feedback_enabled = [True]
 
     def feedback():
         if not feedback_enabled[0]:
@@ -529,6 +514,8 @@ def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel
         msg.name = list(ARM_NAMES)
         msg.position = [float(h.q[JOINT_NAMES.index(n)]) for n in ARM_NAMES]
         arm_pub.publish(msg)
+        if not hand_feedback_enabled[0]:
+            return
         for side, pub in hand_pubs.items():
             msg = JointState()
             msg.header.stamp = stamp
@@ -576,23 +563,55 @@ def test_execution_real_bridges_with_synthetic_arm_hand_drivers(tmp_path, cancel
             )
             for ti, row in zip(t, q)
         ]
+        if cancel == "late_accept":
+            from rclpy.task import Future
+            original_send = arm.send
+            def delayed_send(tr):
+                actual = original_send(tr)
+                delayed = Future()
+                def resolve():
+                    if actual.done() and not delayed.done():
+                        delayed.set_result(actual.result())
+                h.source.create_timer(.65, resolve)
+                return delayed
+            arm.send = delayed_send
         handle = h.future(client.send_goal_async(ExecuteMotion.Goal(plan=p)))
         assert handle.accepted
-        h.spin(lambda: bool(arm_starts))
-        if cancel == "cancel":
+        if cancel != "arm_reject":
+            h.spin(lambda: bool(arm_starts))
+        if cancel in ("cancel", "cancel_moving"):
+            if cancel == "cancel_moving":
+                h.spin(lambda: bool(hand_commands))
             response = h.future(handle.cancel_goal_async())
             assert response.goals_canceling
         elif cancel == "feedback_loss":
             feedback_enabled[0] = False
-            h.publish_enabled = False
+            # StateObservation stays fresh: raw driver loss must still stop execution.
+        elif cancel == "hand_loss":
+            h.spin(lambda: bool(hand_commands))
+            hand_feedback_enabled[0] = False
         result = h.future(handle.get_result_async(), 10).result
-        if cancel == "complete":
+        if cancel in ("complete", "preload"):
             assert result.success, result.reason
             assert hand_commands and min(hand_commands) >= arm_starts[0] - 0.01
-            np.testing.assert_allclose(h.q, q[-1], atol=0.005)
+            expected = q[-1].copy()
+            if cancel == "preload":
+                expected[[JOINT_NAMES.index(n) for n in HAND_NAMES]] -= .02
+            np.testing.assert_allclose(h.q, expected, atol=0.005)
+            # Final command stays at the preload target, not at measured stall angles.
+            np.testing.assert_allclose(hand_targets[-1], q[-1, 7:14], atol=1e-6)
         else:
             assert not result.success
-            assert driver_cancel
+            if cancel == "arm_reject":
+                assert "rejected" in result.reason and not hand_commands
+            elif cancel == "arm_failure":
+                assert "injected driver fault" in result.reason
+            else:
+                h.spin(lambda: bool(driver_cancel))
+            if cancel in ("cancel", "late_accept"):
+                assert not hand_commands
+        action_names = {name for name, _ in h.source.get_service_names_and_types()}
+        assert not any(name.startswith(("/task/arm_motion/", "/task/hand_motion/")) for name in action_names)
     finally:
         h.close()
 
@@ -606,15 +625,17 @@ def test_legacy_adapter_refuses_yaw_only_and_delayed_measurements(tmp_path):
         obs = h.observation
         obs.left_ee_valid = True
         obs.base_from_left_ee = deepcopy(obs.base_from_right_ee)
-        packet = legacy_packet(obs)
+        joints = JointState(name=list(JOINT_NAMES), position=h.q.tolist())
+        joints.header.stamp = obs.header.stamp
+        packet = legacy_packet(obs, joints=joints)
         assert packet["objects"][0]["camera"] == "external" and packet["cameras"] == {}
         obs.objects.detections[0].full_orientation = False
         with pytest.raises(ValueError, match="yaw-only"):
-            legacy_packet(obs)
+            legacy_packet(obs, joints=joints)
         obs.objects.detections[0].full_orientation = True
         obs.objects.header.stamp = ros_time(seconds(obs.header.stamp) - 1)
         with pytest.raises(ValueError, match="delayed"):
-            legacy_packet(obs)
+            legacy_packet(obs, joints=joints)
     finally:
         h.close()
 
@@ -629,19 +650,9 @@ def test_consumers_load_config_without_scene_topic_and_reject_version_mismatch(
         execution = h.add(
             ExecutionNode(parameter_overrides=params(config_file=str(h.config_path)))
         )
-        arm = h.add(
-            ArmBridgeNode(parameter_overrides=params(config_file=str(h.config_path)))
-        )
-        hand = h.add(
-            HandBridgeNode(parameter_overrides=params(config_file=str(h.config_path)))
-        )
-        assert execution.config == arm.config == hand.config
-        assert execution.config_version == arm.config_version == hand.config_version
+        assert execution.arm.node is execution and execution.hand.node is execution
         assert h.source.count_publishers("/task/scene") == 0
         assert h.source.count_subscribers("/task/scene") == 0
-        for bridge in (arm, hand):
-            with pytest.raises(ValueError, match="version mismatch"):
-                bridge.validate(BridgeMotion.Goal(scene_version="different"))
         assert not execution.set_parameters(params(config_file="different.yaml"))[
             0
         ].successful
@@ -707,13 +718,206 @@ def test_runtime_subscription_roles(tmp_path):
             (TaskNode, (1, 1, 0)),
             (MotionPlannerNode, (1, 0, 0)),
             (ExecutionNode, (1, 1, 1)),
-            (ArmBridgeNode, (0, 0, 1)),
-            (HandBridgeNode, (0, 0, 1)),
         ]
         topics = ('/task/state_observation', '/task/barcode_target', '/state/status')
         for cls, counts in expected:
             node = h.add(cls(parameter_overrides=params(config_file=str(h.config_path))))
             actual = Counter(sub.topic_name for sub in node.subscriptions)
             assert tuple(actual[t] for t in topics) == counts, node.get_name()
+    finally:
+        h.close()
+
+
+def test_preparation_once_only_after_success(tmp_path):
+    import asyncio
+    config = fixture(tmp_path)
+    config['prepare_before_first_task'] = True
+    h = Harness(config)
+    try:
+        node = h.add(TaskNode(parameter_overrides=params(config_file=str(h.config_path))))
+        calls = []
+        async def fail(*args):
+            calls.append('failed')
+            raise InterruptedError('canceled')
+        async def succeed(name, *args):
+            calls.append(name)
+        node.guard = lambda *args: None
+        node.stage = fail
+        with pytest.raises(InterruptedError):
+            asyncio.run(node.prepare_once(None, node.config_version))
+        assert not node.prepared
+        node.stage = succeed
+        asyncio.run(node.prepare_once(None, node.config_version))
+        asyncio.run(node.prepare_once(None, node.config_version))
+        assert node.prepared and calls == ['failed', 'Prepare']
+    finally:
+        h.close()
+
+
+def test_conveyor_guard_compares_prediction_and_rejects_spike_stale_and_exit(tmp_path):
+    from deux_task_msgs.msg import MotionPlan
+    c=fixture(tmp_path);c['moving_source']=True
+    c['conveyor_tracking']=dict(max_plan_horizon=8.,grasp_region=dict(min=[.3,-.7,-.1],max=[.7,0.,.1]))
+    h=Harness(c);node=h.add(ExecutionNode(parameter_overrides=params(config_file=str(h.config_path))))
+    try:
+        h.spin(lambda:node.observation is not None)
+        h.publish_enabled=False
+        observed=deepcopy(node.observation);now=node.now();observed.objects.header.stamp=ros_time(now)
+        obj=observed.objects.detections[0];obj.pose_filtered=True;obj.velocity_valid=True
+        obj.velocity.linear.y=-.08;obj.pose.pose.position.y=-.416
+        node.observation=observed
+        plan=MotionPlan(stage='TrackGrasp',target_id='bag',follows_conveyor=True,target_acquired_at=ros_time(now-.2))
+        plan.target_pose=deepcopy(obj.pose.pose);plan.target_pose.position.y=-.4;plan.target_velocity.linear.y=-.08
+        node.conveyor_guard(plan)
+        obj.pose.pose.position.y=-.55
+        with pytest.raises(ValueError,match='innovation'):node.conveyor_guard(plan)
+        obj.pose.pose.position.y=-.8
+        with pytest.raises(ValueError,match='region'):node.conveyor_guard(plan)
+        obj.pose.pose.position.y=-.416;obj.velocity_valid=False
+        with pytest.raises(ValueError,match='filtered'):node.conveyor_guard(plan)
+        obj.velocity_valid=True;observed.objects.header.stamp=ros_time(now-2.)
+        with pytest.raises(ValueError):node.conveyor_guard(plan)
+    finally:h.close()
+
+
+def test_interception_guard_allows_upstream_only_with_valid_future_arrival(tmp_path):
+    from deux_task_msgs.msg import MotionPlan
+    c=fixture(tmp_path);c['moving_source']=True
+    c['conveyor_tracking']=dict(max_plan_horizon=8.,boundary_margin=.01,
+        acquisition_region=dict(min=[.3,-.7,-.1],max=[.7,.3,.1]),
+        grasp_region=dict(min=[.3,-.7,-.1],max=[.7,0.,.1]))
+    h=Harness(c);node=h.add(ExecutionNode(parameter_overrides=params(config_file=str(h.config_path))))
+    try:
+        h.spin(lambda:node.observation is not None and len(node.joint_feedback.samples)==2);h.publish_enabled=False
+        obs=deepcopy(node.observation);now=node.now();obs.objects.header.stamp=ros_time(now)
+        obj=obs.objects.detections[0];obj.pose_filtered=True;obj.velocity_valid=True;obj.pose.pose.position.y=.1
+        node.observation=obs
+        plan=MotionPlan(stage='Approach',target_id='bag',follows_conveyor=True,target_acquired_at=ros_time(now-.2))
+        plan.target_pose=deepcopy(obj.pose.pose);plan.target_pose.position.y=.116;plan.target_velocity.linear.y=-.08
+        plan.trajectory.header.stamp=ros_time(now+.4)
+        plan.trajectory.points=[JointTrajectoryPoint(time_from_start=ros_time(1.6,Duration))]
+        node.conveyor_guard(plan)
+        plan.target_velocity.linear.y=.08
+        with pytest.raises(ValueError,match='forecast interception'):node.conveyor_guard(plan)
+        plan.target_velocity.linear.y=-.08;plan.stage='TrackGrasp'
+        with pytest.raises(ValueError,match='region'):node.conveyor_guard(plan)
+    finally:h.close()
+
+
+def test_occlusion_prediction_is_bounded_and_cannot_continue_into_descent(tmp_path):
+    from deux_task_msgs.msg import MotionPlan
+    c=fixture(tmp_path);c['moving_source']=True
+    c['conveyor_tracking']=dict(max_plan_horizon=8.,boundary_margin=.01,
+        occlusion_prediction_max_age=.8,prediction_acceleration_std=.03,
+        grasp_region=dict(min=[.3,-.7,-.1],max=[.7,0.,.1]))
+    h=Harness(c);node=h.add(ExecutionNode(parameter_overrides=params(config_file=str(h.config_path))))
+    try:
+        h.spin(lambda:node.observation is not None and len(node.joint_feedback.samples)==2);h.publish_enabled=False
+        obs=deepcopy(node.observation);now=node.now();original=ros_time(now-.7)
+        obs.objects.header.stamp=original
+        obj=obs.objects.detections[0];obj.pose_filtered=True;obj.velocity_valid=True
+        obj.motion_covariance_valid=True;obj.motion_covariance=(np.eye(8)*1e-6).ravel().tolist()
+        obj.pose.pose.position.y=-.4;obj.velocity.linear.y=-.08
+        node.conveyor_last_observation=deepcopy(obs)
+        node.observation=deepcopy(obs);node.observation.objects_valid=False
+        node.config['hand_open']=node.measured()[[JOINT_NAMES.index(n) for n in HAND_NAMES]].tolist()
+        plan=MotionPlan(stage='TrackGrasp',target_id='bag',follows_conveyor=True,target_acquired_at=original,
+                        phase_end_times=[1.,2.,3.])
+        plan.target_pose=deepcopy(obj.pose.pose);plan.target_velocity.linear.y=-.08
+        plan.trajectory.header.stamp=ros_time(now-.2)
+        node.conveyor_guard(plan)
+        assert not node.observation.objects_valid
+        assert node.conveyor_last_observation.objects.header.stamp==original
+        # A newer delayed packet must supersede an older cached packet.
+        node.conveyor_last_observation.objects.header.stamp=ros_time(now-.9)
+        node.observation.objects_valid=True
+        node.conveyor_guard(plan)
+        assert node.conveyor_last_observation.objects.header.stamp==original
+        node.observation.objects_valid=False
+        plan.phase_end_times=[.1,2.,3.]
+        with pytest.raises(ValueError):node.conveyor_guard(plan)
+        plan.phase_end_times=[1.,2.,3.]
+        saved=node.conveyor_last_observation.objects.detections[0]
+        saved.motion_covariance=(np.eye(8)*.1).ravel().tolist()
+        with pytest.raises(ValueError,match='uncertainty'):node.conveyor_guard(plan)
+        saved.motion_covariance=(np.eye(8)*1e-6).ravel().tolist()
+        node.conveyor_last_observation.objects.header.stamp=ros_time(now-.9)
+        with pytest.raises(ValueError):node.conveyor_guard(plan)
+    finally:h.close()
+
+
+@pytest.mark.parametrize('stage', ['TrackGrasp','Approach'])
+def test_belt_prediction_can_finish_closure_but_rejects_uncertainty_and_remote_hand(tmp_path,stage):
+    from types import SimpleNamespace
+    from deux_task_msgs.msg import MotionPlan
+    c=fixture(tmp_path);c['moving_source']=True
+    c['conveyor_tracking']=dict(max_plan_horizon=8.,boundary_margin=.01,
+        occlusion_prediction_max_age=3.,prediction_acceleration_std=.001,
+        prediction_yaw_acceleration_std=.005,occluded_grasp_enabled=True,
+        nominal_velocity=[0.,-.08,0.,0.],belt_velocity_std_m_s=.002,
+        belt_yaw_rate_std_rad_s=.005,belt_velocity_tolerance_m_s=.025,
+        occlusion_hand_distance_m=.25,approach_prediction_max_age=1.,
+        acquisition_region=dict(min=[.3,-.7,-.1],max=[.7,0.,.1]),
+        grasp_region=dict(min=[.3,-.7,-.1],max=[.7,0.,.1]))
+    h=Harness(c);node=h.add(ExecutionNode(parameter_overrides=params(config_file=str(h.config_path))))
+    try:
+        h.spin(lambda:node.observation is not None and len(node.joint_feedback.samples)==2);h.publish_enabled=False
+        obs=deepcopy(node.observation);now=node.now();original=ros_time(now-(2. if stage=='TrackGrasp' else .7))
+        obs.objects.header.stamp=original
+        obj=obs.objects.detections[0];obj.pose_filtered=True;obj.velocity_valid=True
+        obj.motion_covariance_valid=True;obj.motion_covariance=(np.eye(8)*1e-6).ravel().tolist()
+        obj.pose.pose.position.y=-.3;obj.velocity.linear.y=-.08
+        node.conveyor_last_observation=deepcopy(obs)
+        node.observation=deepcopy(obs);node.observation.objects_valid=False
+        ee=np.eye(4);ee[:3,3]=[obj.pose.pose.position.x,-.46,obj.pose.pose.position.z]
+        node.conveyor_robot=SimpleNamespace(ee={'right':'hand'},fk=lambda q:{'hand':ee})
+        plan=MotionPlan(stage=stage,target_id='bag',follows_conveyor=True,
+            target_acquired_at=original,phase_end_times=[0.,.7,2.5])
+        plan.trajectory.points=[JointTrajectoryPoint(time_from_start=ros_time(2.5,Duration))]
+        plan.target_pose=deepcopy(obj.pose.pose);plan.target_velocity.linear.y=-.08
+        plan.trajectory.header.stamp=ros_time(now-1.5)
+        node.conveyor_guard(plan) # closing, without pretending the acquisition is new
+        plan.trajectory.header.stamp=ros_time(now-2.51)
+        node.conveyor_guard(plan) # bounded final settling also retains the same source stamp
+        assert node.conveyor_last_observation.objects.header.stamp==original
+        assert not node.observation.objects_valid
+        ee[0,3]+=1.
+        if stage=='TrackGrasp':
+            with pytest.raises(ValueError,match='hand near'):node.conveyor_guard(plan)
+        else:node.conveyor_guard(plan)
+        ee[0,3]-=1.
+        saved=node.conveyor_last_observation.objects.detections[0]
+        saved.velocity.linear.y=.08
+        with pytest.raises(ValueError,match='disagrees'):node.conveyor_guard(plan)
+        saved.velocity.linear.y=-.08
+        saved.motion_covariance=(np.eye(8)*.1).ravel().tolist()
+        with pytest.raises(ValueError,match='uncertainty'):node.conveyor_guard(plan)
+        saved.motion_covariance=(np.eye(8)*1e-6).ravel().tolist()
+        node.conveyor_last_observation.objects.header.stamp=ros_time(now-3.1)
+        with pytest.raises(ValueError):node.conveyor_guard(plan)
+    finally:h.close()
+
+
+def test_integrated_arm_keeps_ownership_until_late_acceptance_or_cancel_finishes(tmp_path):
+    from rclpy.task import Future
+    from types import SimpleNamespace
+    h = Harness(fixture(tmp_path))
+    node = h.add(ExecutionNode(parameter_overrides=params(
+        config_file=str(h.config_path), hardware_enabled=True)))
+    arm = node.arm
+    arm.client.server_is_ready = lambda: True
+    try:
+        arm.pending = Future()
+        with pytest.raises(ValueError, match="acceptance pending"):
+            arm.validate()
+        terminal = Future()
+        arm.pending.set_result(SimpleNamespace(accepted=True, get_result_async=lambda: terminal))
+        with pytest.raises(ValueError, match="cancellation pending"):
+            arm.validate()
+        terminal.set_result(None)
+        arm.validate()
+        # Repeated validation must reuse the completed result, not request a
+        # new asynchronous result that temporarily looks unfinished again.
+        arm.validate()
     finally:
         h.close()

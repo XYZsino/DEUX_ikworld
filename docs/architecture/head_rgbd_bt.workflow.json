@@ -1,0 +1,226 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "헤드 RGB-D 기반 PickScan Behavior Tree",
+    "quality_profile": "showcase",
+    "animation": "none",
+    "viewBox": [
+      1254,
+      760
+    ]
+  },
+  "lanes": [
+    {
+      "id": "motion",
+      "label": "task_node → planner / execution / bridges"
+    },
+    {
+      "id": "vision",
+      "label": "영상: tracked_detection_node / icp_node"
+    },
+    {
+      "id": "reader",
+      "label": "barcode_bridge_node · 실제/가상 리더"
+    },
+    {
+      "id": "fault",
+      "label": "관측 소실·취소·제어 오류",
+      "variant": "exception"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "prepare",
+      "lane": "motion",
+      "col": 0,
+      "type": "backend",
+      "label": "Prepare · 준비",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "observe",
+      "lane": "motion",
+      "col": 1,
+      "type": "backend",
+      "label": "ObserveScene · 시야 확보",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "select",
+      "lane": "vision",
+      "col": 1,
+      "type": "backend",
+      "label": "TrackAndSelect · 대상 선택",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "estimate",
+      "lane": "vision",
+      "col": 2,
+      "type": "backend",
+      "label": "EstimatePose · ICP",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "grasp",
+      "lane": "motion",
+      "col": 2,
+      "type": "backend",
+      "label": "접근·하강·파지·상승",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "present",
+      "lane": "motion",
+      "col": 3,
+      "type": "backend",
+      "label": "ScanPose · 팔 펴기",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "verify",
+      "lane": "vision",
+      "col": 3,
+      "type": "backend",
+      "label": "봉투 재선택 · 시각 확인",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "trackcode",
+      "lane": "vision",
+      "col": 4,
+      "type": "backend",
+      "label": "TrackBarcode · 코드 추적",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "align",
+      "lane": "motion",
+      "col": 4,
+      "type": "backend",
+      "label": "AlignBarcode · 리더 정렬",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "read",
+      "lane": "reader",
+      "col": 4,
+      "type": "backend",
+      "label": "WaitBarcode · 읽기 완료",
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "failed",
+      "lane": "fault",
+      "col": 3,
+      "type": "security",
+      "label": "Canceled / Failed · 종료",
+      "width": 200,
+      "height": 76
+    }
+  ],
+  "mainPath": [
+    "prepare",
+    "observe",
+    "select",
+    "estimate",
+    "grasp",
+    "present",
+    "verify",
+    "trackcode",
+    "align",
+    "read"
+  ],
+  "edges": [
+    {
+      "id": "step-0",
+      "from": "prepare",
+      "to": "observe",
+      "role": "main"
+    },
+    {
+      "id": "step-1",
+      "from": "observe",
+      "to": "select",
+      "role": "main"
+    },
+    {
+      "id": "step-2",
+      "from": "select",
+      "to": "estimate",
+      "role": "main"
+    },
+    {
+      "id": "step-3",
+      "from": "estimate",
+      "to": "grasp",
+      "role": "main"
+    },
+    {
+      "id": "step-4",
+      "from": "grasp",
+      "to": "present",
+      "role": "main"
+    },
+    {
+      "id": "step-5",
+      "from": "present",
+      "to": "verify",
+      "role": "main"
+    },
+    {
+      "id": "step-6",
+      "from": "verify",
+      "to": "trackcode",
+      "role": "main"
+    },
+    {
+      "id": "step-7",
+      "from": "trackcode",
+      "to": "align",
+      "role": "main"
+    },
+    {
+      "id": "step-8",
+      "from": "align",
+      "to": "read",
+      "role": "main"
+    },
+    {
+      "id": "visual-failure",
+      "from": "verify",
+      "to": "failed",
+      "label": "유효 관측 없음",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "영상으로 확인하는 것",
+      "items": [
+        "선택 대상 mask·depth로 ICP. 원 취득 시각을 보존한 제한 시간 파지.",
+        "ReacquireHeldTarget → VerifyVisualPick: 손 근처 단일 상승 후보3회 관측 후 봉투·바코드 확인."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "실행 규칙",
+      "items": [
+        "파지 묶음: Approach → Descend → Close → Lift. planner / execution / bridges가 실행.",
+        "정렬 후 신선한 봉투+세션 판독 확인. 스캔 최대3회; 배치 성공을 뜻하지 않습니다."
+      ]
+    }
+  ]
+}

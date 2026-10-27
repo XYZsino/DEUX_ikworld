@@ -13,5 +13,5 @@ setup(
     maintainer_email="dev@xyz.local",
     license="Apache-2.0",
     description="DEUX task implementation",
-    entry_points={"console_scripts": []},
+    entry_points={"console_scripts": ["add_zed2i_urdf = deux_task_core.camera_mount:main"]},
 )

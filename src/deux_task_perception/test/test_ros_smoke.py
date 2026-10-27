@@ -46,7 +46,10 @@ def test_real_ros_transport_rgbd_without_urdf_or_joint_feedback():
         out = received[-1]
         assert out.rgb.encoding == 'rgb8' and out.depth.encoding == '32FC1'
         assert bytes(out.rgb.data[:3]) == bytes([3,2,1])
-        assert not out.camera_transform_valid and not out.joints_valid
+        assert not out.camera_transform_valid
+        assert not hasattr(out, "joints") and not hasattr(out, "objects")
+        topics = {s.topic_name for s in node.subscriptions}
+        assert not topics & {"/arm/joint_states", "/task/hand_state", "/task/object_detections"}
         assert out.header.frame_id == 'new_upper_camera_optical'
         assert out.valid_depth_fraction == 1.
     finally:

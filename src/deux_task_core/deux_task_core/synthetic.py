@@ -51,6 +51,7 @@ def fixture(directory):
     return dict(
         schema="deux.scene.v1",
         synthetic=True,
+        ik_backend="scipy",  # Lightweight synthetic tests explicitly select their engine.
         base_frame="base_link",
         model_id="synthetic-object",
         robot=robot,

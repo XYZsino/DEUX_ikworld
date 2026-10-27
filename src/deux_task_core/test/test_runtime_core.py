@@ -141,3 +141,82 @@ def test_loaded_motion_retains_closing_setpoint(tmp_path):
     indices=[JOINT_NAMES.index(n) for n in HAND_NAMES]
     np.testing.assert_allclose(result['path'][0,indices],c['hand_closed'])
     np.testing.assert_allclose(result['path'][-1,indices],c['hand_closed'])
+
+
+def test_prepare_uses_ready_pose_without_object_and_checks_collision(tmp_path):
+    c = fixture(tmp_path)
+    c['home_joints'] = [0.02] * 28
+    c['prepare_joint_waypoints'] = [[-0.01] * 28]
+    planner = Planner(c)
+    data = planner.plan('Prepare', np.zeros(28), None)
+    np.testing.assert_allclose(data['path'][0], np.zeros(28))
+    np.testing.assert_allclose(data['path'][-1], c['home_joints'])
+    assert np.min(data['path'][:, 0]) == pytest.approx(-0.01)
+    center = planner.robot.fk(np.zeros(28))[c['robot']['ee_links']['left']][:3, 3]
+    c['obstacles'] = [dict(min=(center-.1).tolist(), max=(center+.1).tolist())]
+    with pytest.raises(ValueError, match='collision'):
+        Planner(c).plan('Prepare', np.zeros(28), None)
+
+
+def test_loaded_scan_speed_scaling_preserves_endpoint_and_limits(tmp_path):
+    c=fixture(tmp_path)
+    c.update(perception_policy='head_rgbd',stationary_source_confirmed=True,grasp_pose_max_age=15.,
+             observe_right_joints=[0.]*7,scan_right_joints=[.3,0.,0.,-.2,0.,0.,0.])
+    fast=Planner(c).plan('ScanPose',np.zeros(28),None)
+    c['scan_motion_scale']=.35
+    slow=Planner(c).plan('ScanPose',np.zeros(28),None)
+    np.testing.assert_allclose(slow['path'][-1],fast['path'][-1])
+    assert slow['times'][-1] > fast['times'][-1]*2
+    assert np.max(np.abs(np.diff(slow['path'],axis=0)/np.diff(slow['times'])[:,None])) <= .35*np.max(Planner(c).robot.velocity)
+    for value in [0.,1.01,float('nan')]:
+        c['scan_motion_scale']=value
+        with pytest.raises(ValueError,match='scan_motion_scale'):validate_scene(c)
+
+
+@pytest.mark.parametrize('angles',[(0.,0.),(-45.,-45.)])
+def test_reader_roll_keeps_observed_point_and_beam_direction(tmp_path,angles):
+    from scipy.spatial.transform import Rotation
+    c=fixture(tmp_path);c['left_ee_from_reader']=np.eye(4).tolist();c['read_distance']=.02
+    c['barcode_reader_roll_candidates']=[np.pi];c['barcode_view_angles_deg']=[list(angles)]
+    planner=Planner(c);q=np.zeros(28)
+    pitch,skew=np.deg2rad(angles);ray=np.array([np.tan(skew),np.tan(pitch),1.]);ray/=np.linalg.norm(ray)
+    x=np.array([1.,0.,0.]);x-=ray*np.dot(x,ray);x/=np.linalg.norm(x)
+    basis=np.column_stack([x,np.cross(ray,x),ray])
+    offset=np.eye(4);offset[:3,:3]=basis@Rotation.from_rotvec([0.,0.,np.pi]).as_matrix()@np.diag([1.,-1.,-1.]);offset[:3,3]=.02*ray
+    label=planner.robot.fk(q)[planner.robot.ee['left']]@np.linalg.inv(offset)
+    result=planner.plan('AlignBarcode',q,np.array(c['scan_right_pose']),barcode_pose=label)
+    actual=planner.robot.fk(result['path'][-1])[planner.robot.ee['left']]
+    np.testing.assert_allclose(actual[:3,3],label[:3,3]+label[:3,:3]@ray*.02,atol=.002)
+    np.testing.assert_allclose(actual[:3,2],-label[:3,:3]@ray,atol=.02)
+    np.testing.assert_allclose(result['path'][:,14:21],0.,atol=1e-8)
+    for value in [[],[float('nan')],[4.],[[0.]]]:
+        c['barcode_reader_roll_candidates']=value
+        with pytest.raises(ValueError,match='roll_candidates'):validate_scene(c)
+
+
+def test_fast_ik_chain_matches_full_urdf_both_hands(tmp_path):
+    r=RobotModel(fixture(tmp_path)['robot']);rng=np.random.default_rng(901)
+    for _ in range(20):
+        q=rng.uniform(r.limits[:,0],r.limits[:,1])
+        all_links=r.fk(q)
+        for side in ('left','right'):
+            np.testing.assert_allclose(r.ee_fk(side,q),all_links[r.ee[side]],atol=1e-12)
+
+
+def test_lift_timing_preserves_endpoints_and_joint_dynamics():
+    knots=np.linspace([0.,0.],[.22,-.15],14)
+    limits=np.array([.4,.4]);acceleration=np.array([1.,1.])
+    old,_=hermite(knots,limits,acceleration,.02)
+    t,q=hermite(np.linspace(knots[0],knots[-1],5),limits,acceleration,.02,.06)
+    assert t[-1]<old[-1]*.75
+    velocity=np.diff(q,axis=0)/np.diff(t)[:,None]
+    accel=np.diff(np.vstack([np.zeros(2),velocity,np.zeros(2)]),axis=0)/np.r_[np.diff(t),np.diff(t)[-1]][:,None]
+    assert np.all(np.max(abs(velocity),axis=0)<=limits+1e-5)
+    assert np.all(np.max(abs(accel),axis=0)<=acceleration+1e-5)
+    np.testing.assert_allclose(q[[0,-1]],knots[[0,-1]])
+
+
+@pytest.mark.parametrize('key,value', [('lift_cartesian_step',.2),('lift_minimum_segment_duration',0.),('lift_start_lead',.05),('lift_start_lead',float('nan'))])
+def test_lift_settings_reject_invalid_timing(tmp_path,key,value):
+    c=fixture(tmp_path);c[key]=value
+    with pytest.raises(ValueError,match=key):validate_scene(c)

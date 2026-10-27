@@ -12,15 +12,15 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObjectDetection.msg" "msg/ObjectDetectionArray.msg" "msg/Observation.msg"
   "msg/BoundingBox.msg" "msg/DetectionFrame.msg"
   "msg/StateObservation.msg" "msg/PerceptionRequest.msg"
-  "msg/DetectionArray.msg" "msg/BarcodeTarget.msg"
+  "msg/VisualEvidence.msg" "msg/VisualEvidenceArray.msg" "msg/DetectionArray.msg" "msg/BarcodeTarget.msg"
   "msg/BarcodeRead.msg"
   "msg/ScanSession.msg"
   "msg/MotionPlan.msg"
   "msg/TaskStatus.msg"
   "action/PlanMotion.action"
   "action/ExecuteMotion.action"
-  "action/BridgeMotion.action"
   "action/RunTask.action"
+  "action/MoveToReady.action"
   DEPENDENCIES std_msgs sensor_msgs geometry_msgs trajectory_msgs builtin_interfaces action_msgs)
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()

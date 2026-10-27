@@ -1,0 +1,18 @@
+{
+  "file": "deux_1026_finetuned_from1021.pt",
+  "source": "User-provided deux_1026_finetuned_from1021.pt",
+  "sha256": "395b0f20e93eca32b20ff20c1d06f9ec2479c59b5360e43a8991596736d32eec",
+  "bytes": 20300421,
+  "task": "detect",
+  "classes": {
+    "0": "b1",
+    "1": "m1",
+    "2": "s1",
+    "3": "s1_1",
+    "4": "bar"
+  },
+  "intended_use": "Real-image object and barcode detection, as identified by the user",
+  "verification": "Ultralytics load and CPU inference on one blank 640x480 image; no detections; not an accuracy evaluation",
+  "hardware_verified": false,
+  "training_metrics": null
+}

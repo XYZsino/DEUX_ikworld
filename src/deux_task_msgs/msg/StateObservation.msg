@@ -9,9 +9,9 @@ bool perception_fresh
 bool camera_transform_valid
 geometry_msgs/TransformStamped base_from_camera
 bool joints_valid
-sensor_msgs/JointState joints
-sensor_msgs/JointState arm_state
-sensor_msgs/JointState hand_state
+# Summary only. Actual joint arrays go directly to planner/execution.
+builtin_interfaces/Time joints_acquired_at
+string joints_reason
 bool left_ee_valid
 geometry_msgs/TransformStamped base_from_left_ee
 bool right_ee_valid

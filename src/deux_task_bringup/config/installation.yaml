@@ -1,5 +1,6 @@
 # Template only. Each consumer loads this file at startup; missing measurements reject startup.
 schema: deux.scene.v1
+ik_backend: pyroki  # Alternatives: scipy or curobo. Shared timing/collision checks remain enabled.
 base_frame: base_link
 synthetic: false
 calibration_confirmed: false
@@ -27,6 +28,8 @@ retreat_left_pose: []
 destination_pose: []
 hand_open: []
 hand_closed: []
+prepare_joint_waypoints: []  # Optional calibrated 28-joint waypoints before home_joints.
+prepare_before_first_task: true  # Once per task_node lifetime, after measured success.
 # User-supplied home pose (rad), ordered per deux_task_core.model.JOINT_NAMES.
 # right_hand_thumb_joint_2 sign corrected to +1.0 per user; see user_home_pose.yaml.
 home_joints: [0.807611, -0.539279, -0.279199, 1.536379, -0.800389, -0.056719, -0.664892, 0.070002, 0.349999, 1.18, -1.400001, -0.9, 1.400001, 0.9, -1.072517, 0.92558, 0.511504, -1.776357, -0.481181, 0.539503, 0.646462, 0.0, 1.0, -1.0, 0.3, 0.2, -0.3, -0.2]

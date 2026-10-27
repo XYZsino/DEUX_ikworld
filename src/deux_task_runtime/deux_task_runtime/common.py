@@ -2,6 +2,7 @@
 
 import json
 import time
+from threading import Lock
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -184,7 +185,7 @@ class RuntimeNode(Node):
         ):
             raise ValueError("target rotated; replan")
 
-    def measured(self, obs=None):
+    def robot_ready(self, obs=None):
         obs = self.observation if obs is None else obs
         if self.config is None or obs is None:
             raise ValueError("scene/observation unavailable")
@@ -193,12 +194,19 @@ class RuntimeNode(Node):
         if not current(obs.header.stamp, now, c["max_observation_age"]):
             raise ValueError("stale/future observation")
         if not obs.joints_valid or not current(
-            obs.joints.header.stamp, now, c["max_joint_age"]
+            obs.joints_acquired_at, now, c["max_joint_age"]
         ):
-            raise ValueError("measured joints unavailable/stale")
-        return joint_array(obs.joints)
+            raise ValueError("measured joints unavailable/stale: " + obs.joints_reason)
 
-    def target(self, identity, obs=None, full=False):
+    def subscribe_joints(self):
+        from .joint_feedback import JointFeedback
+        self.joint_feedback = JointFeedback(self)
+
+    def measured(self, obs=None):
+        # A planning request carries object evidence, never joint arrays.
+        return self.joint_feedback.measured()
+
+    def target(self, identity, obs=None, full=False, max_age=None):
         obs = self.observation if obs is None else obs
         if self.config is None or obs is None or not obs.objects_valid:
             raise ValueError("objects unavailable")
@@ -208,7 +216,7 @@ class RuntimeNode(Node):
         ):
             raise ValueError("object frame/model origin mismatch")
         if not current(
-            obs.objects.header.stamp, self.now(), self.config["max_object_age"]
+            obs.objects.header.stamp, self.now(), self.config["max_object_age"] if max_age is None else max_age
         ):
             raise ValueError("object stale/future")
         obj = next((d for d in obs.objects.detections if d.track_id == identity), None)
@@ -218,7 +226,7 @@ class RuntimeNode(Node):
 
 
 class ExclusiveAction:
-    def __init__(self, node, action, name, execute, validate=lambda request: None):
+    def __init__(self, node, action, name, execute, validate=lambda request: None, gate=None):
         self.node, self.action, self.execute, self.validate = (
             node,
             action,
@@ -226,6 +234,7 @@ class ExclusiveAction:
             validate,
         )
         self.busy = False
+        self.gate = gate if gate is not None else Lock()
         self.server = ActionServer(
             node,
             action,
@@ -237,12 +246,13 @@ class ExclusiveAction:
         )
 
     def accept(self, request):
-        if self.busy:
+        if not self.gate.acquire(blocking=False):
             return GoalResponse.REJECT
         try:
             self.validate(request)
         except Exception as e:
             self.node.get_logger().warning(str(e))
+            self.gate.release()
             return GoalResponse.REJECT
         self.busy = True
         return GoalResponse.ACCEPT
@@ -268,6 +278,7 @@ class ExclusiveAction:
                 goal.abort()
         finally:
             self.busy = False
+            self.gate.release()
         return result
 
 

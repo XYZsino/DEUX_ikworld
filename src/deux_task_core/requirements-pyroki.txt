@@ -1,0 +1,16 @@
+# Install these first, then PyRoKi with --no-deps as documented.
+# Its upstream unpinned jaxls URL otherwise conflicts with the tested commit pin.
+numpy==1.26.4
+jax==0.6.2
+jaxlib==0.6.2
+jaxlie==1.5.0
+jaxls @ git+https://github.com/brentyi/jaxls.git@50a58be88c5ef74532f09e3f55268b4f02c490e3
+jax_dataclasses>=1.6.2
+jaxtyping
+loguru
+tyro
+robot_descriptions
+yourdfpy
+trimesh
+viser
+pyliblzfse

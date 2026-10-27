@@ -1,5 +1,281 @@
+최신 — 실기 코드 기본 IK를 PyRoKi로 통일 (2026-10-27)
+==================================================
+
+사용자 요청으로 ik_backend 생략 시 코드 기본값도 pyroki로 변경했다.
+실기/일반 launch 설정 로더가 기본값을 명시적으로 채워 scene_version에 포함한다.
+명시한 scipy/curobo는 유지하며, 합성 테스트 fixture는 scipy를 명시한다.
+task.launch.py도 head_rgbd와 동일하게 planner_python(Python3.12) 인자를 지원한다.
+선택 의존성이 없으면 시작 실패, SciPy 자동 대체 없음. 실제 로봇에는 연결하지 않았다.
+7패키지 /tmp/real-pyroki-install 빌드. ROS_DOMAIN_ID215에서266테스트 통과,
+task.launch --show-args에서 planner_python 확인. 최초 기본 도메인 실행은 GUI 통신 테스트
+1개가5초 timeout(265개 통과); 코드를 바꾸지 않고 독립 도메인 전체 재실행 통과.
+증거 validation/head-rgbd/real-pyroki-default/. 현재 관제 SIM은 그대로 유지했다.
+상세 docs/architecture/planner_backends.rst. 실기 Python3.12 환경에 PyRoKi 의존성 설치 필요.
+
+최신 — PyRoKi 기본값 및 관제 SIM 실행 (2026-10-27)
+=================================================
+
+사용자 요청으로 head_calibration.yaml과 bringup installation.yaml의 ik_backend를 pyroki로 변경.
+키가 없는 legacy 설정의 scipy 호환 동작은 유지한다. SIM/bringup 2패키지 재빌드.
+restart_live.py는 /tmp/backends-install, /opt/deux-planner-venv/bin/python 사용으로 갱신했고
+이전/현재 Python 경로의 같은 serve 프로세스를 확인하는 패턴으로 변경했다.
+현재 두 팔 PyRoKi 초기 준비 완료, ROS_DOMAIN_ID230, 8090 GUI Idle 확인.
+MuJoCo/ZED RGB 두 영상·준비자세 버튼·흐름 배치 및 모바일 검사 통과.
+기존 토큰 유지하여 브라우저 열기 성공. 자동 작업은 시작하지 않았다.
+이전 SIM 종료 요청은 이번 명시적 시작 요청으로 해제됨. 전체 PyRoKi 시나리오 검증은 아직 아님.
+증거 validation/head-rgbd/pyroki-live/{build.log,live-check.json,browser-check.json}.
+
+최신 — SciPy / PyRoKi / cuRobo IK 선택 및 비교 (2026-10-27)
+=========================================================
+
+사용자가 두 백엔드 구현·선택·비교 보고서를 요청했다. 도중 실행 중 SIM 종료 요청으로
+8090 serve 프로세스를 INT 종료하고 프로세스 없음 확인. 이후 SIM을 다시 시작하지 않았다.
+설치 YAML ik_backend: scipy|pyroki|curobo, 기본scipy. SIM CLI --ik-backend 제공.
+공통 컨베이어 예측/후보 평가/retiming/전체28관절 충돌 검사는 유지, IK만 교체했다.
+cuRobo native 모션/궤적 최적화는 사용하지 않는다. 다른 엔진으로 자동 fallback 없음.
+MotionPlan.ik_backend ABI 추가, 실행기는 설치와 다른 엔진 계획 거부. 전체 재빌드 필요.
+플래너 worker에서 양팔 초기 준비 및 버전별 모델/컴파일 캐시. 작업 접수 전 준비 완료.
+head_rgbd.launch.py planner_python으로 플래너만 Python3.12 venv 지정 가능.
+
+7패키지 빌드/264테스트 통과. 세 실제 라이브러리의 오프라인 URDF 검사와 ROS PlanMotion
+Lift 응답 검증 완료(ROS_DOMAIN_ID214, 실행노드/팔명령/MuJoCo 없음).
+36개 도달목표×3=108/108 통과, 도달불가4×3=12/12 거부, 세 방식 동일.
+IK 중앙값 SciPy5.33/PyRoKi CPU1.87/cuRobo GPU8.74ms. 전체5후보 검사 중앙값
+2.475/1.304/2.705초. 위치3개×2회 경로4/6 통과; X65cm는 TrackGrasp에서 모두 거부.
+같은 입력·허용 기준이나 내부 비용/seed 전략은 다름. CUDA native 배치 계획 비교 아님.
+전체 SIM/실기 미검증. 이번 입력에서는 다음 SIM 비교 후보로PyRoKi 권장, 기본SciPy 유지.
+
+증거 validation/head-rgbd/planner-backends/dashboard.html, benchmark-*.json, ros-*.json.
+보고서 차트·필터·모바일 검사 완료, 브라우저 열기 성공. 상세 docs/architecture/planner_backends.rst.
+컨테이너deux-head-rgbd 내 /tmp/backends-install 신규overlay,
+/opt/deux-planner-venv/bin/python(Python3.12) 선택환경,
+/opt/deux-curobo-source 로컬소스사본. cuRobo/DEUX 원본레포 수정 없음.
+PyRoKi CPU/JAX0.6.2, cuRoboV2 core78fd485f/Torch2.10cu130/Warp1.18.
+원래host cuRobo .venv3.11/pyroki conda3.10은 Jazzy노드에 바로 사용하면 안 됨.
+기존 restart_live.py는 아직 /tmp/candidates-install을 사용하므로 다음 실행 시 새overlay/
+원하는 백엔드/해당 Python을 명시해야 한다. 사용자 요청 없이 SIM 재시작하지 말 것.
+
+최신 — SIM 파지 후보 비교 및 Lift 사전 검증 (2026-10-27)
+======================================================
+
+기준/yaw±8도/접근X±1.5cm 다섯 후보를 접근→하강·닫힘→Lift까지 검사한다.
+이동량·최소 충돌 여유로 선택 후 최신 관측으로 전체 재검증, 접근 후에도 선택 자세의
+TrackGrasp/Lift를 재검증한다. 실행 감시는 유지. 첫 비교 궤적은 실행하지 않는다.
+SIM candidate_search.enabled=true, start_lead=.8초. 고정 XYZ gate는 계속 ik 정책.
+PlanMotion/MotionPlan grasp_candidate_id ABI 추가, /task/grasp_candidates JSON 진단.
+7패키지/257테스트 통과. 최종 SIM 43.350초에 스캔·개방·후퇴 완료. 실기 미검증.
+선택 approach_x_plus_15mm. 물리경고0/설비침투0/weld0, 물체침투23.14mm는 남음.
+초기 두 시도는 예약 시작 시각 누락으로 접근 전에 거절. 최종 최신 관측 재검증 적용.
+증거 validation/head-rgbd/grasp-candidates/scenario-03/dashboard.html.
+상세 docs/architecture/grasp_candidates.rst. overlay /tmp/candidates-install.
+cuRobo 비교 질문에는 V2 배치 경로계획 우선 검토를 답했고 실제 교체는 하지 않았다.
+기존8090 SIM은 장시간 물리 경고로 종료된 상태였고, 활성 프로세스 없음 확인 후 새 빌드로 실행.
+기존 토큰 유지, 관제 Idle·두 영상·모바일 배치 확인. 영상 대시보드/후보 행 선택/단계 이동 검증 후 브라우저 열기 성공.
+
+최신 — 고정 XYZ 작업 범위 제거, IK 경로 허용 (2026-10-27)
+==========================================================
+
+사용자 요청: IK로 갈 수 없는 지점 외에는 파지 시도. 기존 범위는 IK 산출값이 아닌 SIM 후보 박스였다.
+head_calibration.conveyor_tracking.workspace_policy=ik. 접근/파지/합류/실행/가림예측의 XYZ 박스 gate 제거.
+관절·속도·가속도·충돌·원시 피드백·관측 만료·예측 편차·불확실성 검사는 유지한다.
+이전 box 모드는 호환용(default). 실기 설치에도 ik를 명시해야 한다.
+RGB ROI/깊이박스 선택과 가까운 컨베이어 세로 범위 유지. 기존 박스는 ROI/순위에만 사용.
+7패키지/252테스트 통과. 실제 URDF 오프라인 X61cm·65cm 접근/하강/닫힘 경로 통과(구 상한60cm).
+MuJoCo+YOLO+ICP 스캔·개방·후퇴40.936초 완료. 적재 확인/실기 검증 아님.
+증거 validation/head-rgbd/ik-workspace/. 상세 docs/architecture/ik_workspace.rst.
+신규 /tmp/ik-workspace-install, 관제8090 비활성 확인 후 재시작/기존토큰 유지/브라우저 열기.
+restart_live.py는 신규 설치 사용. 확인 중 관제 작업이 Release로 진행되어 유지했다.
+
+최신 — 가까운 컨베이어만 RGB ROI 세로 확장 (2026-10-27)
+========================================================
+
+사용자 정정: 먼 쪽을 제외한 가까운 컨베이어만 포함.
+selection_roi_vertical_fraction=[0.55,1.0]. 640×480 기준 Y264~480, X117.68~640은 기존 투영 유지.
+전체 높이 [0,1] 시도는 폐기했다. 7패키지 재빌드, 비활성 확인 후8090 재시작·인증 브라우저 열기.
+실제 RGB metadata 및 이미지로 새 ROI 확인. 증거 roi-selection/near-conveyor-live-check.json,
+rgb-roi-near-conveyor.jpg. 움직임/성공률 추가 시험 없음. 계획기의 실제3D 영역 검사는 유지.
+
+최신 — RGB ROI + 3D 박스 단일 프레임 선택 (2026-10-27)
+=======================================================
+
+사용자가 기존 오른손 선택 영역의 RGB 투영을 ROI로 선택했다.
+head_calibration: target_selection_policy=rgb_roi_3d_bbox.
+검출 박스 중심이 ROI 안이고 같은 프레임의 depth/mask 3D 박스가 유효하면 즉시 선택.
+BT 추가 .5 신뢰도/3회 연속 관측/XYZ 선택 gate 제거. ICP 유효 속도 최소3회는 유지하되
+추가6회·속도 안정성창·BT 사전 예측 gate 생략. 플래너/실행기 영역·충돌·만료 검사는 유지.
+여러 후보는 오른손 영역을 통과하는 컨베이어 열 우선, 그 안에서 상류 순위. 제외 조건 아님.
+GUI에 노란 Pick ROI 상시 표시. GUI/선택 증거는 같은 visible_geometry 표면 박스 계산 사용.
+DetectionArray/VisualEvidence ABI 변경, 새 전체 빌드 /tmp/roi-install.
+7패키지/242테스트 통과, 순위 보완 관련26개 통과.
+SIM 대상 선택→접근→닫힘→Lift→ScanPose 확인, ReacquireHeldTarget 시간 초과27.676초.
+전체 시나리오 성공 미확인. 첫 실행은 옆 열 후보로 접근 계획 거부되어 순위를 보완했다.
+증거 validation/head-rgbd/roi-selection/. 상세 docs/architecture/rgb_roi_selection.rst.
+8090 관제는 비활성 확인 후 새 설치로 재시작, 기존 토큰 유지, RGB ROI/두 영상 확인 후 열었다.
+restart_live.py는 /tmp/roi-install 사용. 로컬 전달 프로세스는 detached 실행.
+
+최신 — 완료 이벤트 / 검출·ICP 통합 / 관절 중계 제거 (2026-10-27)
+===============================================================
+
+head-rgbd 경로는 perception_node 하나에서 Detection/ICP 두 worker를 실행한다.
+각 worker는 실행 1개 + 최신 대기 1개, 완료 GuardCondition으로 20ms 폴링 제거.
+/task/detection_frames 제거. 요청 세대·촬영 시각·lease·clock 검사로 이전 결과 차단.
+StateObservation의 joints/arm_state/hand_state 제거, 유효성·측정 시각·사유만 유지.
+플래너는 /arm/joint_states와 /task/hand_state 직접 수신. 실행기는 원본 피드백 유지.
+메시지 ABI 변경: 전체 재빌드와 생산자/소비자 동시 재시작 필요.
+7패키지/227테스트 통과, 강화한 동시성 부분집합6개 통과.
+동일 합성 640×480/65표본 ROS 비교 평균58.50→16.66ms, p95 67.31→17.74ms.
+이는 통신·스케줄링 비교이며 실제 모델/네트워크 지연 개선 수치가 아니다.
+실제 MuJoCo+YOLO+ICP: 스캔·개방·후퇴40.630초 완료. 적재 확인 없음.
+물리 경고0/설비 침투0/weld0, 물체 접촉 침투22.82mm는 남음. 실기 미검증.
+별도 /tmp/realtime-install, ROS_DOMAIN_ID212 사용. 기존8090 관제 SIM 유지.
+상세: docs/architecture/realtime_perception.rst. 증거: validation/head-rgbd/realtime-integration/.
+
+최신 — Newland 시리얼 barcode_node (2026-10-27)
+==============================================
+
+Downloads/barcode의 시작/중지 명령·동글 식별 기준으로 barcode_node 구현.
+기존 barcode_bridge_node 대체, REAL은 시리얼 직접 연결. /barcode/raw는 SIM에서만 구독.
+BT ScanSession/BarcodeRead 계약 유지. 판독 후 중지, 취소·만료·시계 역행·단절 처리.
+단절 후 새 세션 필요, 시작 전 quiet drain, ACK/제어 응답 제외. 기본숫자8·12~14자리.
+포트 기본비활성, barcode_enabled/barcode_port/barcode_serial_number launch 인자.
+7패키지 빌드/222테스트 통과(실제 pyserial+Linux PTY+ROS 포함). 실제 스캐너 미연결.
+최종 빌드 /tmp/barcode-final-install. ROS_DOMAIN_ID232 SIM 두 실행은 스캔 전 conveyor forecast expired로 중단.
+전체 SIM 완료 미확인. 기존8090 SIM 유지.
+설정/한계/실행: docs/architecture/barcode_scanner.rst. 증거: validation/head-rgbd/barcode-integration/.
+
+최신 — 실행 통합 / 영상 Observation 경량화 (2026-10-27)
+=====================================================
+
+arm/hand bridge를 execution 내부 ArmAdapter/HandAdapter로 통합했다.
+BridgeMotion 두 Action과 deux_task_adapters 패키지 제거, 실행·피드백·취소 감시 단일화.
+Observation에서 관절/물체/EE 필드와 구독을 제거하고 RGB-D·촬영 시각 카메라 TF만 유지.
+StateObservation/BT/planner/검출/ICP/barcode_bridge 구조는 유지했다.
+메시지 ABI 변경: overlay 전체 신규 빌드 및 생산자/소비자 동시 재시작 필요.
+검증은 /tmp/integrated-install 및 ROS_DOMAIN_ID231. 현재8090 SIM은 재시작하지 않았다.
+상세: docs/architecture/execution_integration.rst.
+7패키지 빌드/193테스트 통과. 최종 SIM41.038초에 스캔·개방·후퇴 완료, 적재 확인 없음.
+실제 그래프에서 브리지 제거·execution 직접 명령 확인. 실기 미검증.
+증거: validation/head-rgbd/execution-integration/. 대시보드 2절도 현재 경로로 갱신.
+
+실시간 관제와 수거함 적재
+========================
+
+헤드 RGB-D BT에 리더 후퇴·수거함 접근·개방·후퇴를 연결했습니다.
+사용자 요청으로 적재 확인과 단계 지정 시작은 제공하지 않습니다.
+브라우저 GUI에서 현재 단계와 시작/정지/준비자세 이동, 실제 MuJoCo 및 ZED RGB를 볼 수 있습니다.
+두 영상은 좌우, 작업 흐름은 아래에 표시합니다.
+선택 대상의 동기화된 mask/depth/TF에서 구한 가시 표면3D 범위를 RGB에 투영합니다.
+SIM/REAL은 같은 ROS 입력을 사용합니다. 실기 보정·하드웨어 검증 완료를 뜻하지 않습니다.
+실행·SSH: ``docs/architecture/task_gui.rst``, 적재: ``docs/architecture/head_placement.rst``.
+
+파지 · 스캔 · 수거함 적재 흐름 (이전 설계 정리)
+==============================
+
+현재 헤드 BT의 스캔까지 구현된 흐름과, 기존 수거함에 한 개씩 내려놓는
+적재 연결 제안을 구분해 정리했습니다. 단계별 노드/ROS 메시지, 기존 SIM 영상과
+로그, 실기 교체·검증 항목은 ``validation/pick-scan-place-flow/dashboard.html``에서
+볼 수 있습니다. 상세 문서는 ``docs/architecture/pick_scan_place_flow.rst``입니다.
+이번 작업은 문서·시각화이며 헤드 BT 적재 기능을 구현한 결과는 아닙니다.
+
+준비자세 손목 각도를 유지하는 스캔
+=================================
+
+왼팔5~7번 관절을 준비 각도로 고정하고1~4번으로 바코드를 조준합니다.
+사용자가 허용한 이동 중약13도 기울임 범위로 SIM 스캔/가상 판독까지 진행했습니다.
+측정 최대 기울기12.8도, 스캔 자세3.5도, 손목 관절 최대 편차0.20도입니다.
+설정/검증 범위: ``docs/architecture/fixed_wrist_scan.rst``.
+
+ScanPose 높이15cm 추가
+======================
+
+직전 ScanPose에서 Z축으로15cm 더 높였습니다(최초 대비총약25cm).
+XY와 손등 위쪽 방향을 유지하며, 새 높이에서 SIM 왼손 리더 정렬과 가상 판독까지
+진행했습니다. 상세: ``docs/architecture/scan_plus_15cm.rst``.
+
+왼손 스캔 정렬까지 실행한 SIM
+============================
+
+빠른 Lift와 손등 위쪽 ScanPose 이후 왼손 리더 정렬 및 가상 판독까지 진행했습니다.
+스캔 자세로 회전할 때 봉투가 빠지던 문제에 SIM 오른손 유지강도4배를 적용했습니다.
+마찰/토크상한/손가락 자세는 유지하며 물체 강제 부착은 사용하지 않습니다.
+단일 SIM 결과이고 실기·실영상 바코드 디코딩·반복 성공률 검증은 아닙니다.
+상세: ``docs/architecture/scan_attempt_validation.rst``.
+
+빠른 상승과 높인 ScanPose
+========================
+
+손 닫힘 후 파지 성공 판정을 기다리지 않고 Lift로 진행합니다.
+동일 시작 자세의 상승 계획을4.68→2.18초로 단축했으며 관절 제한을 유지합니다.
+ScanPose는 기존보다10cm 높이고 손등이 위를 향하도록 변경했습니다.
+SIM에서 해당 동작까지 확인했으나 이후 봉투 재인식은 시간 초과로 종료했습니다.
+자세/검증 범위: ``docs/architecture/quick_lift_upright_scan.rst``.
+
+반닫힘 준비와 직접 추종 하강
+===========================
+
+준비 완료 시 엄지·검지를 반쯤 닫고, 별도 Track 구간 없이 예측 접근 후
+하강하며 컨베이어 이동을 따라가도록 변경했습니다. 손가림 등 관측 소실 시
+제한된 예측을 사용합니다. ROS2/MuJoCo에서 하강·닫힘·Lift·ScanPose까지 진행했고
+이후 봉투 재인식 시간 초과로 종료했습니다. 전체 파지/스캔 성공은 미검증입니다.
+설정과 검증 범위: ``docs/architecture/pregrasp_direct_descent.rst``.
+
+낮춘 준비자세와 예측 접근
+========================
+
+영상 기반 sim의 오른손 준비 EE를약7.3cm 낮추고 손을 미리 열도록 변경했습니다.
+준비 중 상류 물체를 추적하고, 예측 접근 뒤 새 ICP/Kalman 관측으로
+Track→Descend→Close 경로를 다시 계획합니다. GUI에Track 단계를 표시합니다.
+설정과 검증 범위: ``docs/architecture/low_ready_intercept.rst``.
+
+진행 중 — ZED 2i 및 이동 컨베이어
+==================================
+
+ZED 2i URDF 조립체와 sim RGB-D 입력을 추가했습니다. 하향45°, 카메라 바닥과
+눈 디스플레이 상단의 수직 간격3mm이며, 절대 장착 좌표는 sim 추정값입니다.
+설정/생성/실기 전환 조건: ``docs/architecture/zed2i_mount.rst``.
+장착 미리보기: ``validation/head-rgbd/zed-mount-check/index.html``.
+8cm/s 컨베이어 추종은 별도 검증 진행 중이며 아래 scenario-15 성공은 기존
+카메라/정지 컨베이어 결과입니다. 새 구성을 실기 검증 완료로 해석하지 마십시오.
+
+최신 헤드 RGB-D PickScan 검증
+============================
+
+물체 정답 pose 상시 입력 대신 sim 학습 YOLO11n-seg + ByteTrack, 선택 대상
+ICP, 파지 후 영상 확인과 바코드 표면 기반 리더 정렬을 구현했습니다.
+scenario-15는34.340초에 세션 판독까지 완료됐습니다.
+ICP2회는 집기 전에만 발행됐으며,82개 회귀 테스트와8개 overlay 빌드가 통과했습니다.
+실기/실영상 디코딩 검증은 아니며 가상 광학 리더가 fixture EAN을 반환합니다.
+현재 동작·학습·증거·실기 전환: docs/architecture/head_rgbd_validation.rst.
+영상/메시지: validation/head-rgbd/scenario-15/dashboard-rgbd.html.
+MP4: 같은 폴더의 scenario-rgbd.mp4(35.394초).
+구조도: docs/architecture/head_rgbd_nodes.html, head_rgbd_bt.html.
+아래 legacy truth/이송 검증 내용은 기존 경로와 과거 결과입니다.
+
+브라우저 작업 제어 GUI
+=====================
+
+sim/real 공통 ``/task/status`` 및 ``/task/run``에 연결하는 GUI를 추가했습니다.
+현재 BT 단계 확인, 작업 시작/중단/재시작만 제공합니다.
+실행: ``ros2 run deux_task_gui task_gui --ros-args -p deployment:=sim``.
+원격에서는 SSH 터널로 접속합니다. 실행 방법과 제어 범위는
+``docs/architecture/task_gui.rst``를 참고하십시오.
+기본 head-rgbd 경로의 인터랙티브 sim은 ``ros2 run deux_task_sim serve_sim --sim-repository PATH --output PATH --weights MODEL.pt``입니다.
+
 ROS 2 시뮬레이션 녹화와 메시지 타임라인
 ======================================
+
+최신 준비 자세 기준은 **후퇴 전 차렷 자세(URDF 관절0)의 EE XY**입니다.
+로봇20cm 후퇴 상태에서 팔꿈치를 굽혀 해당 XY를 유지하며, 손끝 높이는 약24.2cm 상승합니다.
+어깨·팔꿈치·손을 함께 움직여 영상3.47초에 안정화,3.64초에 Ready가 됩니다.
+4초 부근 sim 측정 EE XY 오차 왼쪽0.207mm/오른쪽0.143mm.
+새 영상: ``validation/ros2-sim-ready-4s/preparation-recording/dashboard.html``.
+이전 ee-preserved 영상은 준비 자세를 기준으로 했던 과거 결과입니다.
+
+최초 준비 이동 추가: 관절0 → 준비 자세, 같은 task_node 프로세스에서 성공 후 재실행 생략.
+sim 로봇을 뒤로20cm 이동하고 컨베이어/상자는 유지했습니다.
+새 준비 영상: ``validation/ros2-sim-ready/preparation-recording/dashboard.html``.
+Jazzy8개 패키지 빌드,56개 테스트 및 준비 이동·유지 시험 통과.
+세부 설정과 실기 적용 조건은 ``docs/architecture/simulation.rst`` 마지막 절을 참고하십시오.
 
 미사용 구독 정리 후 재검증: Jazzy8개 패키지 빌드,53개 테스트 통과.
 새 sim 기록은 ``validation/ros2-sim-subscriptions/scenario-recording/dashboard.html``입니다.

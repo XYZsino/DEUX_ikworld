@@ -8,3 +8,5 @@ geometry_msgs/Pose pose
 float64 plane_rmse_m
 float64 valid_fraction
 bool orientation_valid
+# Identity of the currently observed barcode image track.
+string barcode_track_id

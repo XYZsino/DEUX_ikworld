@@ -1,0 +1,4 @@
+# Install a PyTorch build compatible with the target CPU/GPU before this file.
+# Validated on Jazzy/Python 3.12 with torch 2.10.0+cu130 (GB10).
+ultralytics==8.3.228
+lap==0.5.13

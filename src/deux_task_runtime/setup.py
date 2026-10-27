@@ -15,6 +15,7 @@ setup(
     description="DEUX task implementation",
     entry_points={
         "console_scripts": [
+            "head_task_node = deux_task_runtime.head_task_node:main",
             "task_node = deux_task_runtime.task_node:main",
             "motion_planner_node = deux_task_runtime.motion_planner_node:main",
             "execution_node = deux_task_runtime.execution_node:main",

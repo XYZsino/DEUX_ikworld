@@ -14,12 +14,19 @@ def rot(theta):
     return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1.]])
 
 
-def downsample(points, limit=1600):
+def voxel_downsample(points, voxel_size_m=.003):
+    """Keep the first input point in each reference-frame voxel."""
+    if not np.isfinite(voxel_size_m) or voxel_size_m <= 0:
+        raise ValueError('voxel size must be positive and finite')
     if not len(points):
         return points
-    _, indices = np.unique(np.floor(points / .003).astype(int), axis=0,
+    _, indices = np.unique(np.floor(points / voxel_size_m).astype(int), axis=0,
                            return_index=True)
-    points = points[np.sort(indices)]
+    return points[np.sort(indices)]
+
+
+def downsample(points, limit=1600, voxel_size_m=.003):
+    points = voxel_downsample(points, voxel_size_m)
     if len(points) > limit:
         points = points[np.linspace(0, len(points) - 1, limit).astype(int)]
     return points
@@ -114,7 +121,9 @@ def roi_points(depth, projection, box, reference_from_camera, min_height, max_di
 
 class LatestWorker:
     """One active job plus one replaceable pending frame; executor owns all state."""
-    def __init__(self, function):
+    def __init__(self, function, notify=None):
+        self.notify = notify
+        self.closed = False
         self.function = function
         self.pool = ThreadPoolExecutor(max_workers=1)
         self.future = None
@@ -122,20 +131,31 @@ class LatestWorker:
         self.dropped = 0
 
     def submit(self, value):
-        if self.pending is not None:
-            self.dropped += 1
-        self.pending = value
+        if self.closed:
+            return
+        if self.future is None:
+            self._start(value)
+        else:
+            if self.pending is not None:
+                self.dropped += 1
+            self.pending = value
+
+    def _start(self, value):
+        self.future = self.pool.submit(self.function, value)
+        if self.notify is not None:
+            self.future.add_done_callback(lambda _: self.notify())
 
     def poll(self):
         completed = self.future if self.future is not None and self.future.done() else None
         if completed is not None:
             self.future = None
         if self.future is None and self.pending is not None:
-            self.future = self.pool.submit(self.function, self.pending)
-            self.pending = None
+            value, self.pending = self.pending, None
+            self._start(value)
         return completed
 
     def close(self):
+        self.closed = True
         self.pending = None
         self.pool.shutdown(wait=True, cancel_futures=True)
 
@@ -165,3 +185,22 @@ class Tracker:
                 self.counter += 1
             self.tracks[ids[i]] = (np.array(position), stamp)
         return ids
+
+
+def masked_depth(depth, polygon_xy):
+    """Apply an image model's visible-instance polygon to registered metric depth."""
+    import cv2
+    polygon = np.asarray(polygon_xy, dtype=float)
+    if polygon.size < 6 or polygon.size % 2 or not np.isfinite(polygon).all():
+        raise ValueError('invalid instance polygon')
+    polygon = polygon.reshape(-1, 2)
+    h, w = depth.shape
+    if np.any(polygon < 0) or np.any(polygon > [w, h]):
+        raise ValueError('instance polygon outside registered image')
+    mask = np.zeros((h, w), dtype=np.uint8)
+    cv2.fillPoly(mask, [np.round(polygon).astype(np.int32)], 1)
+    # Erode the outline to remove mixed foreground/background depth pixels.
+    mask = cv2.erode(mask, np.ones((3, 3), dtype=np.uint8))
+    result = depth.astype(np.float32, copy=True)
+    result[mask == 0] = np.nan
+    return result

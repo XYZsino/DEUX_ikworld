@@ -52,6 +52,10 @@ class StateObservationNode(Node):
             if not 0 < stamp_ns(msg.header) <= now:
                 raise ValueError('invalid object acquisition time')
             self.objects.add(msg)
+            # Forward a new acquired pose immediately; the periodic tick alone
+            # adds avoidable latency at the camera/control phase boundary.
+            self.publish_state()
+            self.timer.reset()
         except ValueError:
             self.rejected += 1
 
@@ -67,18 +71,18 @@ class StateObservationNode(Node):
             out.objects_valid = out.perception_fresh = True
         age = int(self.cfg['max_joint_age_s']*1e9)
         arm, hand = self.arm.at(now, age), self.hand.at(now, age)
-        if arm is not None: out.arm_state = arm
-        if hand is not None: out.hand_state = hand
+        out.joints_reason = "arm/hand feedback missing or stale"
         if arm is not None and hand is not None:
             try:
                 hand_names = [n for n in JOINT_NAMES if n not in ARM_NAMES]
                 values = dict(zip(ARM_NAMES, joint_values(arm, ARM_NAMES)))
                 values.update(zip(hand_names, joint_values(hand, hand_names)))
-                out.joints.name = list(JOINT_NAMES)
-                out.joints.position = [values[n] for n in JOINT_NAMES]
-                out.joints.header = deepcopy(min((arm, hand), key=lambda m: stamp_ns(m.header)).header)
+                out.joints_acquired_at = deepcopy(min((arm, hand), key=lambda m: stamp_ns(m.header)).header.stamp)
                 out.joints_valid = True
-            except (ValueError, KeyError): self.rejected += 1
+                out.joints_reason = ""
+            except (ValueError, KeyError) as error:
+                out.joints_reason = f"invalid joint feedback: {error}"
+                self.rejected += 1
         when = Time.from_msg(out.header.stamp, clock_type=self.get_clock().clock_type)
         for cfg_key, field, valid in [('camera_frame', 'base_from_camera', 'camera_transform_valid'),
                                       ('left_ee_frame', 'base_from_left_ee', 'left_ee_valid'),

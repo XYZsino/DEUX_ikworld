@@ -1,0 +1,6 @@
+# Dedicated preparation operation. No arbitrary stage selection.
+---
+bool success
+string reason
+---
+string state

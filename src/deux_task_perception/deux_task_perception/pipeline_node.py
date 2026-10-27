@@ -2,6 +2,9 @@
 import math
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
+
+LATEST_QOS = QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT)
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from .core import stamp_ns
 from .perception_core import LatestWorker
@@ -22,7 +25,7 @@ class PipelineNode(Node):
         self.status = 'waiting for input'
         self.worker = None
         self.diag = self.create_publisher(DiagnosticArray, f'/task/{name}/diagnostics', 10)
-        self.timer = self.create_timer(.02, self._poll)
+        self.completion = self.create_guard_condition(self._poll)
         self.diag_timer = self.create_timer(.5, self._diagnostic)
 
     def positive(self, *keys):
@@ -31,7 +34,7 @@ class PipelineNode(Node):
                 raise ValueError(f'{key} must be positive and finite')
 
     def start_worker(self, function):
-        self.worker = LatestWorker(lambda job: (job[0], function(job[1])))
+        self.worker = LatestWorker(lambda job: (job[0], function(job[1])), self.completion.trigger)
 
     def now(self):
         now = self.get_clock().now().nanoseconds
