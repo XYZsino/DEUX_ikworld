@@ -17,6 +17,7 @@ from rclpy.clock import Clock, ClockType
 from rclpy.qos import QoSProfile, DurabilityPolicy
 from deux_task_msgs.action import RunTask, MoveToReady
 from deux_task_msgs.msg import TaskStatus
+from std_msgs.msg import String
 
 
 class TaskGui(Node):
@@ -38,6 +39,8 @@ class TaskGui(Node):
         self.frame = None; self.frame_received = 0.; self.frame_time = 0.
         self.status = {}; self.received = 0.; self.sequence = 0
         self.history = deque(maxlen=100)
+        self.time_candidates = None
+        self.candidate_sub = self.create_subscription(String,'/task/grasp_candidates',self.on_candidates,10)
         self.goal_handle = None; self.sending = False; self.canceling = False
         self.restart_target = None; self.await_idle_after = None
         self.ready_pending = False
@@ -58,11 +61,24 @@ class TaskGui(Node):
         port = self.http.server_address[1]
         self.get_logger().info(f'GUI: http://127.0.0.1:{port}/#token={self.token}')
 
+    def on_candidates(self, msg):
+        try:
+            data=json.loads(msg.data)
+            if not isinstance(data,dict) or not data.get('time_search'):return
+            if data.get('time_bins_s') and len(data.get('candidates',[]))<=300:
+                self.time_candidates=data
+            elif self.time_candidates and data.get('target_id')==self.time_candidates.get('target_id'):
+                self.time_candidates=dict(self.time_candidates,latest_validation=data['scope'],
+                    validation_ok=all(row.get('feasible',False) for row in data.get('candidates',[])))
+        except (ValueError,TypeError,KeyError):return
+
     def on_status(self, msg):
         self.received = time.monotonic(); self.sequence += 1
         data = {k: getattr(msg, k) for k in ('state','target_id','reason','active','grasp_attempt','scan_attempt','ik_calls','workflow')}
         if data.get('state') != self.status.get('state'):
             self.history.append(dict(state=msg.state, at=time.time()))
+        if msg.state=='Idle' or (self.status.get('target_id') and self.status.get('target_id')!=msg.target_id):
+            self.time_candidates=None
         self.status = data
 
     def snapshot(self):
@@ -213,6 +229,7 @@ class TaskGui(Node):
             self.view.update(frame_available=self.frame is not None,
                              frame_fresh=time.monotonic()-self.frame_received < 3.,
                              simulation_time=self.frame_time)
+            self.view['time_candidates'] = self.time_candidates
             self.view['rgb'] = dict(self.rgb.metadata, available=self.rgb.jpeg is not None,
                                     fresh=self.rgb.snapshot() is not None)
 

@@ -6,6 +6,9 @@ string stage
 # IK engine only. Conveyor timing and full-body path checks are shared.
 string ik_backend
 string grasp_candidate_id
+# Optional absolute handoff and fixed Track/Descend/Close durations for timed search.
+builtin_interfaces/Time grasp_start_at
+float64[] grasp_phase_durations
 string model_id
 builtin_interfaces/Time valid_until
 geometry_msgs/Pose target_pose

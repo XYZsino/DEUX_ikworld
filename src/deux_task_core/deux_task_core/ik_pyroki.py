@@ -33,13 +33,22 @@ class PyrokiIK(CheckedIK):
             problem = jaxls.LeastSquaresProblem(costs,[variable]).analyze()
             values = problem.solve(initial_vals=jaxls.VarValues.make([variable.with_value(seed)]),verbose=False)
             return values[variable]
-        return solve,to_engine,to_common
+        return solve,to_engine,to_common,jax.jit(jax.vmap(solve,in_axes=(0,0,0,None)))
 
     def solve_arm(self, engine, target, seed, continuity_weight):
-        solve,to_engine,to_common = engine
+        solve,to_engine,to_common,_ = engine
         xyzw = Rotation.from_matrix(target[:3,:3]).as_quat()
         values = solve(jnp.asarray(seed[to_engine],dtype=jnp.float32),
                        jnp.asarray(xyzw[[3,0,1,2]],dtype=jnp.float32),
                        jnp.asarray(target[:3,3],dtype=jnp.float32),
                        jnp.asarray(continuity_weight,dtype=jnp.float32))
         return np.asarray(values)[to_common]
+
+    def solve_arm_batch(self, side, targets, seeds, continuity_weight):
+        _,to_engine,to_common,solve=self.engine(side)
+        xyzw=Rotation.from_matrix(targets[:,:3,:3]).as_quat()
+        values=solve(jnp.asarray(seeds[:,to_engine],dtype=jnp.float32),
+                     jnp.asarray(xyzw[:,[3,0,1,2]],dtype=jnp.float32),
+                     jnp.asarray(targets[:,:3,3],dtype=jnp.float32),
+                     jnp.asarray(continuity_weight,dtype=jnp.float32))
+        return np.asarray(values)[:,to_common], ['']*len(targets)

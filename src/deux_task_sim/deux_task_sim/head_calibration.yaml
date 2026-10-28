@@ -397,6 +397,22 @@ conveyor_tracking:
   workspace_policy: ik
   candidate_search:
     enabled: true
+    time_search:
+      enabled: true
+      arrival_min_s: 1.0
+      arrival_max_s: 5.0
+      step_s: 0.25
+      handoff_s: 0.5
+      prefetch_grasp: true
+      reuse_validated_path: true
+      full_path_candidates: 5
+      max_prediction_std_m: 0.04
+      planning_budget:
+        initial_search_wall_s: 2.5
+        initial_revalidation_wall_s: 0.05
+        safety_factor: 1.25
+        dispatch_lead_s: 0.25
+        max_research_attempts: 2
     selection_start_lead_s: 1.0
     joint_travel_weight: 1.0
     clearance_weight: 2.0
@@ -407,6 +423,12 @@ conveyor_tracking:
     - {id: yaw_plus_8, yaw_deg: 8.0, approach_offset_base_m: [0.0, 0.0, 0.0]}
     - {id: approach_x_minus_15mm, yaw_deg: 0.0, approach_offset_base_m: [-0.015, 0.0, 0.0]}
     - {id: approach_x_plus_15mm, yaw_deg: 0.0, approach_offset_base_m: [0.015, 0.0, 0.0]}
+    - {id: yaw_minus_16, yaw_deg: -16.0, approach_offset_base_m: [0.0, 0.0, 0.0]}
+    - {id: yaw_plus_16, yaw_deg: 16.0, approach_offset_base_m: [0.0, 0.0, 0.0]}
+    - {id: yaw_minus_24, yaw_deg: -24.0, approach_offset_base_m: [0.0, 0.0, 0.0]}
+    - {id: yaw_plus_24, yaw_deg: 24.0, approach_offset_base_m: [0.0, 0.0, 0.0]}
+    - {id: approach_y_minus_15mm, yaw_deg: 0.0, approach_offset_base_m: [0.0, -0.015, 0.0]}
+    - {id: approach_y_plus_15mm, yaw_deg: 0.0, approach_offset_base_m: [0.0, 0.015, 0.0]}
   occlusion_prediction_max_age: 3.0
   prediction_acceleration_std: 0.001
   nominal_velocity:
@@ -452,7 +474,8 @@ conveyor_tracking:
   intercept_trigger_distance_m: 0.025
   intercept_height_tolerance_m: 0.02
   intercept_wait_timeout_s: 4.0
-  close_descent_overlap: 0.0
+  close_descent_overlap: 0.5
+  grasp_planning_ratio: 0.9
   occluded_grasp_enabled: true
   occlusion_hand_distance_m: 0.25
   approach_prediction_max_age: 1.0

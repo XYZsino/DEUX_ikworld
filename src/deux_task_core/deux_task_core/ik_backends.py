@@ -81,6 +81,11 @@ class CheckedIK:
             raise ValueError('invalid IK continuity weight')
         names = arm_names(side);indices = np.array([JOINT_NAMES.index(n) for n in names])
         values = vector(self.solve_arm(self.engine(side), target, q[indices], continuity_weight),7)
+        return self.checked(side, target, q, values)
+
+    def checked(self, side, target, q, values):
+        q = vector(q,28).copy();values = vector(values,7)
+        indices = np.array([JOINT_NAMES.index(n) for n in arm_names(side)])
         if np.any(values < self.robot.limits[indices,0]-1e-6) or np.any(values > self.robot.limits[indices,1]+1e-6):
             raise ValueError('IK backend joint limit violation')
         q[indices] = np.clip(values,self.robot.limits[indices,0],self.robot.limits[indices,1])
@@ -90,6 +95,23 @@ class CheckedIK:
         if position_error > .002 or angle_error > .02:
             raise ValueError(f'IK backend residual exceeds tolerance: {position_error:.6f}m, {angle_error:.6f}rad')
         return q
+
+
+    def solve_batch(self, side, targets, seeds, continuity_weight=.005):
+        targets = np.array([pose(t) for t in targets]);seeds = np.array([vector(q,28) for q in seeds])
+        if len(targets)!=len(seeds) or not len(targets):raise ValueError('invalid IK batch shape')
+        if not np.isfinite(continuity_weight) or continuity_weight<0:raise ValueError('invalid continuity weight')
+        indices = np.array([JOINT_NAMES.index(n) for n in arm_names(side)])
+        values, errors = self.solve_arm_batch(side, targets, seeds[:,indices], continuity_weight)
+        output=seeds.copy();reasons=[]
+        for i in range(len(targets)):
+            try:
+                if errors[i]:raise ValueError(errors[i])
+                output[i]=self.checked(side,targets[i],seeds[i],values[i])
+                reasons.append('')
+            except ValueError as error:reasons.append(str(error))
+        self.robot.ik_calls += len(targets)
+        return output,reasons
 
 
 def attach_backend(robot, config):
@@ -112,4 +134,9 @@ def warmup(planner):
     for side in ('left','right'):
         target = planner.robot.ee_fk(side,q)
         planner.robot.ik(side,target,q,continuity_weight=.02)
+    temporal=planner.config.get('conveyor_tracking',{}).get('candidate_search',{}).get('time_search',{})
+    if temporal.get('enabled',False):
+        from .time_candidates import time_grid
+        count=len(time_grid(temporal))*len(planner.config['conveyor_tracking']['candidate_search']['candidates'])
+        planner.robot.ik_solver.solve_batch('right',np.repeat(planner.robot.ee_fk('right',q)[None],count,axis=0),np.repeat(q[None],count,axis=0))
     planner.robot.ik_calls = 0

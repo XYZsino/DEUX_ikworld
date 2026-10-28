@@ -143,6 +143,7 @@ class TaskNode(RuntimeNode):
                     self.state=stage;self.publish_status()
         send = client.send_goal_async(request,feedback_callback=feedback)
         handle = None
+        terminal = False
         try:
             handle = await wait(self, send, 3.0)
             if not handle.accepted:
@@ -156,6 +157,7 @@ class TaskNode(RuntimeNode):
                     raise TimeoutError("task child timeout")
                 await pause(self)
             result = future.result()
+            terminal = result.status in (GoalStatus.STATUS_SUCCEEDED,GoalStatus.STATUS_ABORTED,GoalStatus.STATUS_CANCELED)
             if (
                 result.status != GoalStatus.STATUS_SUCCEEDED
                 or not result.result.success
@@ -164,7 +166,7 @@ class TaskNode(RuntimeNode):
                 raise ValueError(result.result.reason)
             return result.result
         finally:
-            if handle is not None:
+            if handle is not None and not terminal:
                 await cancel_children(self, [handle])
             elif not send.done():
                 send.add_done_callback(
@@ -178,6 +180,7 @@ class TaskNode(RuntimeNode):
         return deepcopy(self.observation)
 
     async def stage(self, name, goal, version):
+        from .common import ros_time
         self.guard(goal, version)
         self.state = name
         self.publish_status()
@@ -188,6 +191,8 @@ class TaskNode(RuntimeNode):
                 target_id=self.target_id,
                 scene_version=version,
                 grasp_candidate_id=getattr(self,'grasp_candidate_id','') if name=='TrackGrasp' else '',
+                grasp_start_at=getattr(self,'grasp_start_at',ros_time(0.)) if name=='TrackGrasp' else ros_time(0.),
+                grasp_phase_durations=getattr(self,'grasp_phase_durations',[]) if name=='TrackGrasp' else [],
                 observation=self.planning_observation(name),
                 barcode_target=deepcopy(self.label) if name == "AlignBarcode" and self.label else BarcodeTarget(),
             ),
@@ -198,6 +203,8 @@ class TaskNode(RuntimeNode):
         self.ik_calls += result.plan.ik_calls
         if name=='Approach':
             self.grasp_candidate_id=result.plan.grasp_candidate_id
+            self.grasp_start_at=result.plan.grasp_start_at
+            self.grasp_phase_durations=list(result.plan.grasp_phase_durations)
         if result.plan.grasp_candidate_id:
             self.reason=f'{result.plan.ik_backend or "scipy"} · 파지 후보 {result.plan.grasp_candidate_id} · Lift까지 경로 검증 완료'
             self.publish_status()

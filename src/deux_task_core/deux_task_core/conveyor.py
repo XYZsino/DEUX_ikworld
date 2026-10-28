@@ -73,6 +73,23 @@ def rendezvous_ready(object_pose, velocity, age, measured_ee, config):
             and abs(ee[2,3]-grasp[2,3]-config['approach_height'])<=cfg['intercept_height_tolerance_m'])
 
 
+def joint_approach_path(robot, start, goal, hand_goal, duration, sample_period):
+    """Same sampled joint approach for screening and executable validation."""
+    q=vector(start,28);goal=vector(goal,28)
+    kt=np.linspace(0,duration,max(3,int(np.ceil(duration/.15))+1))
+    u=kt/duration;b=10*u**3-15*u**4+6*u**5
+    knots=q[None]+b[:,None]*(goal-q)[None]
+    hands=[JOINT_NAMES.index(n) for n in HAND_NAMES]
+    knots[:,hands]=q[hands][None]+b[:,None]*(np.asarray(hand_goal)-q[hands])[None]
+    slope=np.gradient(knots,kt,axis=0);slope[0]=slope[-1]=0.
+    ts=np.linspace(0,duration,int(np.ceil(duration/sample_period))+1)
+    path=CubicHermiteSpline(kt,knots,slope)(ts)
+    v=np.diff(path,axis=0)/np.diff(ts)[:,None]
+    a=np.diff(np.vstack([np.zeros(28),v,np.zeros(28)]),axis=0)/np.r_[np.diff(ts),np.diff(ts)[-1]][:,None]
+    factor=max(float(np.max(abs(v)/robot.velocity)),float(np.max(abs(a)/robot.acceleration)))
+    return ts,path,factor
+
+
 def plan_conveyor(planner,stage,start,object_pose,velocity,lead):
     if stage not in ('Approach','Descend','Close'):raise ValueError('invalid conveyor stage')
     c=planner.config;cfg=c['conveyor_tracking'];robot=planner.robot
@@ -81,7 +98,8 @@ def plan_conveyor(planner,stage,start,object_pose,velocity,lead):
     if uses_workspace_box(c) and not inside(obj[:3,3],cfg['acquisition_region'] if stage=='Approach' else cfg['grasp_region']):raise ValueError('target outside permitted acquisition/grasp region')
     first=robot.fk(q)[robot.ee['right']]
     hands=[JOINT_NAMES.index(n) for n in HAND_NAMES]
-    duration=cfg['durations'][stage]
+    duration=cfg.get('fixed_approach_duration_s',cfg['durations'][stage]) if stage=='Approach' else cfg['durations'][stage]
+    if not np.isfinite(duration) or duration<=0:raise ValueError('arrival deadline elapsed')
     for attempt in range(5):
         horizon=lead+duration+(cfg.get('intercept_wait_s',0.) if stage=='Approach' else 0.)
         if horizon>cfg['max_plan_horizon']:raise ValueError('conveyor planning horizon exceeded')
@@ -96,6 +114,13 @@ def plan_conveyor(planner,stage,start,object_pose,velocity,lead):
         hand_goal=np.asarray(c['hand_closed'] if stage=='Close' else c.get('hand_pregrasp',c['hand_open']))
         try:approach_goal=robot.ik('right',target,q,continuity_weight=.005) if stage=='Approach' else None
         except ValueError as error:raise ValueError(f'conveyor intercept IK: target={target.tolist()}, object={obj.tolist()}, velocity={v.tolist()}, horizon={horizon}') from error
+        if approach_goal is not None:
+            ts,path,factor=joint_approach_path(robot,q,approach_goal,hand_goal,duration,c['sample_period'])
+            if factor>.98:
+                if 'fixed_approach_duration_s' in cfg:raise ValueError('arrival time infeasible under joint dynamics')
+                duration*=1.3;continue
+            clearance=min(robot.clearance(row,c['obstacles'],c['collision_margin'],0.) for row in path)
+            return dict(times=ts,path=path,minimum_clearance=clearance,ik_calls=robot.ik_calls)
         for t in kt[1:]:
             u=t/duration;b=10*u**3-15*u**4+6*u**5
             current=forecast(obj,v,lead+t)@pose(c['grasp_object_from_right_ee'])
@@ -117,6 +142,7 @@ def plan_conveyor(planner,stage,start,object_pose,velocity,lead):
         vv=np.diff(path,axis=0)/np.diff(ts)[:,None]
         aa=np.diff(np.vstack([np.zeros(28),vv,np.zeros(28)]),axis=0)/np.r_[np.diff(ts),np.diff(ts)[-1]][:,None]
         if np.any(abs(vv)>robot.velocity*.98) or np.any(abs(aa)>robot.acceleration*.98):
+            if 'fixed_approach_duration_s' in cfg:raise ValueError('arrival time infeasible under joint dynamics')
             duration*=1.3;continue
         clearance=min(robot.clearance(row,c['obstacles'],c['collision_margin'],0.) for row in path)
         return dict(times=ts,path=path,minimum_clearance=clearance,ik_calls=robot.ik_calls)
@@ -146,12 +172,15 @@ def plan_track_grasp(planner,start,object_pose,velocity,lead):
     if np.linalg.norm(v[:3])>cfg['max_speed']:raise ValueError('conveyor speed outside configured bound')
     if uses_workspace_box(c) and not inside(obj[:3,3],cfg['grasp_region']):raise ValueError('target outside right grasp region')
     hands=[JOINT_NAMES.index(n) for n in HAND_NAMES]
-    durations=np.array([cfg['durations'][s] for s in ('Track','Descend','Close')])
+    from .grasp_timing import initial_durations,knots as grasp_knots
+    durations=initial_durations(c,r)
+    if durations.shape!=(3,) or not np.isfinite(durations).all() or durations[0]<0 or np.any(durations[1:]<=0):raise ValueError('invalid fixed grasp timing')
     pregrasp=np.asarray(c.get('hand_pregrasp',c['hand_open']))
     transform=pose(c['grasp_object_from_right_ee'])
     for attempt in range(6):
         ends=np.cumsum(durations);total=ends[-1]
-        if lead+total>cfg['max_plan_horizon']:raise ValueError('conveyor planning horizon exceeded')
+        if lead+total>cfg['max_plan_horizon']:
+            raise ValueError(f'conveyor planning horizon exceeded: lead={lead:.3f}s, phases={durations.tolist()}, total={lead+total:.3f}s > {cfg["max_plan_horizon"]:.3f}s')
         if uses_workspace_box(c) and not inside(forecast(obj,v,lead+total)[:3,3],cfg['grasp_region'],cfg['boundary_margin']):
             raise ValueError(f'target exits grasp region before fingers close: phases={durations.tolist()}, lead={lead}, velocity={v.tolist()}')
         approach=forecast(obj,v,lead+ends[0])@transform;approach[2,3]+=c['approach_height']
@@ -164,7 +193,7 @@ def plan_track_grasp(planner,start,object_pose,velocity,lead):
         initial=r.fk(q)[r.ee['right']]
         initial_target=forecast(obj,v,lead)@transform
         initial_rotation=Rotation.from_matrix(initial[:3,:3]@initial_target[:3,:3].T).as_rotvec()
-        kt=np.unique(np.r_[0.,ends[1]-durations[1]*cfg.get('close_descent_overlap',0.),*[np.linspace(a,b,max(3,int(np.ceil((b-a)/.12))+1))[1:] for a,b in zip(np.r_[0.,ends[:-1]],ends)]])
+        kt,_=grasp_knots(durations,cfg.get('close_descent_overlap',0.))
         knots=[q.copy()];seed=q.copy()
         for t in kt[1:]:
             if t<=ends[0]:
@@ -206,7 +235,11 @@ def plan_track_grasp(planner,start,object_pose,velocity,lead):
         aa=np.diff(np.vstack([np.zeros(28),vv,np.zeros(28)]),axis=0)/np.r_[np.diff(ts),np.diff(ts)[-1]][:,None]
         factor=max(np.max(abs(vv)/r.velocity),np.sqrt(np.max(abs(aa)/r.acceleration)))
         planner.tracking_diagnostics=dict(duration=float(total),factor=float(factor),max_acceleration=float(np.max(abs(aa))),acceleration_index=list(map(int,np.unravel_index(np.argmax(abs(aa)/r.acceleration),aa.shape))))
-        if factor> .98:
+        limit=.98 if 'fixed_grasp_durations_s' in cfg else cfg.get('grasp_planning_ratio',.98)
+        if factor>limit:
+            if 'fixed_grasp_durations_s' in cfg:
+                joint=int(np.unravel_index(np.argmax(abs(aa)/r.acceleration),aa.shape)[1])
+                raise ValueError(f'closing deadline infeasible under joint dynamics: factor={factor:.3f}, acceleration_joint={JOINT_NAMES[joint]}, phases={durations.tolist()}')
             # Retiming only the constrained phase avoids extending the whole
             # prediction horizon because one descent or finger joint is slower.
             for index,(begin,end) in enumerate(zip(np.r_[0.,ends[:-1]],ends)):
@@ -214,7 +247,7 @@ def plan_track_grasp(planner,start,object_pose,velocity,lead):
                 accel_mask=(ts>=begin-1e-9)&(ts<=end+1e-9)
                 velocity_mask=(ts[:-1]>=begin-1e-9)&(ts[:-1]<=end+1e-9)
                 local=max(np.max(abs(vv[velocity_mask])/r.velocity),np.sqrt(np.max(abs(aa[accel_mask])/r.acceleration)))
-                if local>.98:durations[index]*=max(1.03,float(local)*1.05)
+                if local>limit:durations[index]*=max(1.03,float(local)/limit*1.03)
             continue
         clearance=min(r.clearance(row,c['obstacles'],c['collision_margin'],0.) for row in path)
         return dict(times=ts,path=path,phase_end_times=ends,minimum_clearance=clearance,ik_calls=r.ik_calls)

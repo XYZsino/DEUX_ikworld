@@ -48,6 +48,29 @@ def test_all_failed_candidates_return_no_trajectory(monkeypatch):
     data = select_candidate(planner, q, obj, [0.,-.08,0.,0.], .5)
     assert 'planning_error' in data and 'path' not in data
     assert all(c['rejected_stage'] == 'Approach' for c in data['candidate_report']['candidates'])
+    assert 'Approach [nominal, tilted]: IK unreachable' in data['planning_error']
+    for report in data['candidate_report']['candidates']:
+        assert report['root_reason'] == 'IK unreachable'
+        assert 'conveyor intercept IK:' in report['reason_chain'][0]
+        assert report['reason_chain'][-1] == 'IK unreachable'
+
+
+@pytest.mark.parametrize('failed_stage', ['TrackGrasp', 'Lift'])
+def test_revalidation_failure_keeps_stage_and_cause(monkeypatch, failed_stage):
+    import deux_task_core.grasp_candidates as candidates
+    planner, q, obj = fixture()
+    def fail(*args, **kwargs):
+        raise ValueError('collision clearance')
+    if failed_stage == 'TrackGrasp':
+        monkeypatch.setattr(candidates, 'plan_track_grasp', fail)
+    else:
+        monkeypatch.setattr(Planner, 'plan', fail)
+    data = revalidate_grasp(planner, 'nominal', q, obj, [0.,-.08,0.,0.], .5)
+    assert 'path' not in data
+    assert f'{failed_stage} [nominal]: collision clearance' in data['planning_error']
+    report = data['candidate_report']['candidates'][0]
+    assert report['rejected_stage'] == failed_stage
+    assert report['root_reason'] == 'collision clearance'
 
 
 def test_ranking_rewards_short_motion_and_clearance():

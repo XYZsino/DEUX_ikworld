@@ -206,6 +206,14 @@ class ExecutionNode(RuntimeNode):
         robot = RobotModel(c["robot"])
         from .trajectory import validate_limits
         validate_limits(plan.trajectory, JOINT_NAMES, robot)
+        if plan.grasp_phase_durations and plan.stage=='TrackGrasp':
+            phases=np.asarray(plan.grasp_phase_durations)
+            if (phases.shape!=(3,) or not np.isfinite(phases).all() or phases[0]<0
+                    or np.any(phases[1:]<=0) or len(plan.phase_end_times)!=3
+                    or not np.allclose(np.cumsum(phases),plan.phase_end_times,atol=1e-6)
+                    or abs(seconds(plan.trajectory.header.stamp)-seconds(plan.grasp_start_at))>1e-6
+                    or abs(t[-1]-phases.sum())>1e-6):
+                raise ValueError('timed grasp schedule mismatch')
         if np.any(np.diff(t) > c["sample_period"] * 1.01):
             raise ValueError("trajectory sampling too sparse")
         attached = (

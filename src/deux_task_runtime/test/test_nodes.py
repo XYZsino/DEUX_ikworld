@@ -226,6 +226,10 @@ def test_process_planner_and_dry_execution_rejects_stale_duplicate_and_changed_s
         assert not h.future(client.send_goal_async(request)).accepted
         request.scene_version = scene_version(h.config)
         h.publish_enabled = False
+        # Drain already queued DDS samples and let their real timestamps expire.
+        # Clearing the cache alone races the last in-flight joint publication.
+        stale_at=time.monotonic()+h.config['max_joint_age']+.1
+        h.spin(lambda:time.monotonic()>=stale_at)
         planner.joint_feedback.samples.clear()
         assert not h.future(client.send_goal_async(request)).accepted
     finally:

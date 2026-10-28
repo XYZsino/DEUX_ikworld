@@ -93,6 +93,7 @@ def validate_scene(config):
                 for key in ('intercept_wait_s','intercept_trigger_distance_m','intercept_height_tolerance_m','intercept_wait_timeout_s'):
                     if not np.isfinite(tracking[key]) or tracking[key]<=0:raise ValueError('invalid rendezvous limits')
             if not 0<=tracking.get('close_descent_overlap',0.)<=.5:raise ValueError('invalid descent closure overlap')
+            if not .5<=tracking.get('grasp_planning_ratio',.98)<=.98:raise ValueError('invalid grasp planning dynamics margin')
             if not 0<tracking['prediction_acceleration_std']<=1.:raise ValueError('invalid prediction process noise')
             if np.linalg.norm(vector(tracking['nominal_velocity'],4)[:3])>tracking['max_speed']:raise ValueError('conveyor prior exceeds speed limit')
             for key in ('max_speed','start_lead','max_plan_horizon','boundary_margin','velocity_stability_m_s'):

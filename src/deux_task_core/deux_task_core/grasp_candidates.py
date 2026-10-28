@@ -11,10 +11,35 @@ def settings(config):
     return config.get('conveyor_tracking', {}).get('candidate_search', {})
 
 
+def rejection(stage, error):
+    # Preserve wrapped IK errors: the outer exception contains the target,
+    # while its cause contains the actual residual or joint-limit failure.
+    chain = []
+    seen = set()
+    while error is not None and id(error) not in seen:
+        seen.add(id(error))
+        chain.append(str(error))
+        error = error.__cause__
+    return dict(rejected_stage=stage, reason=chain[0], root_reason=chain[-1],
+                reason_chain=chain)
+
+
+def failure_summary(reports):
+    groups = {}
+    for item in reports:
+        if not item.get('feasible', False):
+            key = (item['rejected_stage'], item.get('root_reason', item['reason']))
+            groups.setdefault(key, []).append(item['candidate_id'])
+    return '\n'.join(f"{stage} [{', '.join(ids)}]: {reason}"
+                     for (stage, reason), ids in groups.items())
+
+
 def validate(config):
     cfg = settings(config)
     if not cfg.get('enabled', False):
         return
+    from .time_candidates import validate_time_search
+    validate_time_search(config)
     candidates = cfg['candidates']
     if not 1 <= len(candidates) <= 12:
         raise ValueError('invalid grasp candidate count')
@@ -100,24 +125,34 @@ def select_candidate(planner, start, target, velocity, lead, identity=''):
                           ee_paths=preview(planner.robot, plans))
             feasible.append((report['score'], item['id'], approach))
         except ValueError as error:
-            report.update(rejected_stage=stage, reason=str(error))
+            report.update(rejection(stage, error))
     diagnostics = dict(candidates=reports, selected_candidate_id='',
                        scope=('fresh selected Approach + TrackGrasp + Lift revalidation' if identity
                               else 'Approach + TrackGrasp + Lift candidate comparison'))
     if not feasible:
-        return dict(planning_error='no feasible grasp candidate through Lift', candidate_report=diagnostics)
+        return dict(planning_error='no feasible grasp candidate through Lift\n' + failure_summary(reports),
+                    candidate_report=diagnostics)
     _, identity, approach = min(feasible, key=lambda item: (item[0], item[1]))
     diagnostics['selected_candidate_id'] = identity
     return dict(approach, candidate_id=identity, candidate_report=diagnostics, ik_calls=planner.robot.ik_calls)
 
 
-def revalidate_grasp(planner, identity, start, target, velocity, lead):
+def revalidate_grasp(planner, identity, start, target, velocity, lead, timing=None):
     """Keep the selected grip, but recompute from the NEW measured snapshot."""
     from .planning import Planner
     selected = candidate_config(planner.config, identity)
+    if timing is not None:selected['conveyor_tracking']['fixed_grasp_durations_s']=timing['phase_durations']
     trial = SimpleNamespace(config=selected, robot=planner.robot)
-    grasp = plan_track_grasp(trial, start, target, velocity, lead)
-    lift = Planner.plan(trial, 'Lift', grasp['path'][-1], np.eye(4))
+    stage = 'TrackGrasp'
+    try:
+        grasp = plan_track_grasp(trial, start, target, velocity, lead)
+        stage = 'Lift'
+        lift = Planner.plan(trial, stage, grasp['path'][-1], np.eye(4))
+    except ValueError as error:
+        rejected = dict(candidate_id=identity, feasible=False, **rejection(stage, error))
+        return dict(planning_error='grasp candidate revalidation failed\n' + failure_summary([rejected]),
+                    candidate_report=dict(selected_candidate_id=identity,
+                        scope='fresh TrackGrasp + Lift revalidation', candidates=[rejected]))
     report = dict(selected_candidate_id=identity, scope='fresh TrackGrasp + Lift revalidation',
                   **metrics(planner.robot, (grasp, lift), settings(planner.config)),
                   close_forecast_s=float(lead + grasp['times'][-1]),

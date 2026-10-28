@@ -332,7 +332,11 @@ class HeadTaskNode(TaskNode):
                 # for the speed-matched tracking/descent/closure trajectory.
                 await self.stage('Approach',goal,version)
                 cfg=self.config['conveyor_tracking']
-                if cfg.get('intercept_wait_s',0.):
+                from deux_task_core.time_candidates import settings as time_settings
+                if (cfg.get('candidate_search',{}).get('enabled',False)
+                        and time_settings(self.config).get('enabled',False)):
+                    pass  # Selected absolute handoff replaces the fixed rendezvous wait.
+                elif cfg.get('intercept_wait_s',0.):
                     self.set_state('WaitIntercept')
                     await self.await_condition(self.rendezvous_ready,goal,version,cfg['intercept_wait_timeout_s'])
                 else:

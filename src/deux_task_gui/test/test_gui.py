@@ -16,8 +16,11 @@ from deux_task_gui.node import TaskGui
 
 
 class Harness:
+    next_domain = 174
+
     def __init__(self):
-        rclpy.init(domain_id=174)
+        rclpy.init(domain_id=Harness.next_domain)
+        Harness.next_domain += 1
         self.ex = SingleThreadedExecutor()
         self.server = rclpy.create_node('gui_test_task')
         self.active=False; self.enabled=True; self.accept=True; self.goals=[]; self.cancels=0

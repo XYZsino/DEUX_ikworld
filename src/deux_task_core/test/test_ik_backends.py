@@ -89,3 +89,18 @@ def test_missing_optional_dependency_never_falls_back(tmp_path,monkeypatch):
     monkeypatch.setattr(builtins,'__import__',blocked)
     config=fixture(tmp_path);config['ik_backend']='pyroki'
     with pytest.raises(ValueError,match='dependencies unavailable'):Planner(config)
+
+
+def test_batch_preserves_other_joints_and_reports_per_target_errors(tmp_path):
+    class BatchAnswers(FixedAnswer):
+        def solve_arm_batch(self,side,targets,seeds,continuity_weight):
+            result=seeds.copy();result[1,0]+=1.
+            return result,['']*len(seeds)
+    robot=RobotModel(fixture(tmp_path)['robot']);solver=BatchAnswers(robot)
+    q=np.zeros((2,28));q[:,7:14]=.1
+    target=np.array([robot.ee_fk('right',row) for row in q])
+    solved,errors=solver.solve_batch('right',target,q)
+    assert errors[0]=='' and 'residual' in errors[1]
+    np.testing.assert_array_equal(solved[0],q[0])
+    np.testing.assert_array_equal(solved[1],q[1])
+    assert robot.ik_calls==2
