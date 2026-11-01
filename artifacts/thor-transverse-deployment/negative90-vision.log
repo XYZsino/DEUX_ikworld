@@ -1,0 +1,12 @@
+[INFO] [1793504845.850754615] [grid_grasp_trial]: Loaded installation config version 0725b9f1594262f4b1849f0ca9fbc9288588ca25e242d26a7a002340c90a5394
+{
+  "synthetic_only": true,
+  "fake_hand": true,
+  "fake_controller": true,
+  "action_success": true,
+  "first_close_s": 2.50150728225708,
+  "last_close_s": 3.001392126083374,
+  "hand_commands": 24,
+  "reason": "Stored arm path and parallel hand commands completed; physical grasp success unverified"
+}
+PASS: XY drift, changed target ID and complete tracking loss did not cancel stored replay

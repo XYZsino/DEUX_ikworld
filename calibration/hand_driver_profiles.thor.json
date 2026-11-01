@@ -1,0 +1,262 @@
+{
+  "left": {
+    "hand_side": "left",
+    "leader_modes.ids": [
+      1,
+      2,
+      3
+    ],
+    "leader_grip.alpha": 1.0,
+    "leader_grip.period_ms": 20,
+    "zero_raw": [
+      2048,
+      2048,
+      2048,
+      2503,
+      2048,
+      1593,
+      2048
+    ],
+    "leader_mode_1.initial_deg": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "leader_mode_1.target_deg": [
+      0.0,
+      40.0,
+      40.0,
+      -80.0,
+      -55.0,
+      80.0,
+      55.0
+    ],
+    "leader_mode_1.velocity_rad_s": 7.0,
+    "leader_mode_1.goal_current_raw": [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    "leader_mode_1.initial_goal_current_raw": [
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500
+    ],
+    "leader_mode_2.initial_deg": [
+      0.0,
+      32.6,
+      64.2,
+      -53.8,
+      -45.0,
+      90.0,
+      62.0
+    ],
+    "leader_mode_2.target_deg": [
+      0.0,
+      32.6,
+      64.2,
+      -78.0,
+      -45.0,
+      130.0,
+      62.0
+    ],
+    "leader_mode_2.velocity_rad_s": 7.0,
+    "leader_mode_2.goal_current_raw": [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    "leader_mode_2.initial_goal_current_raw": [
+      500,
+      500,
+      500,
+      300,
+      300,
+      100,
+      100
+    ],
+    "leader_mode_3.initial_deg": [
+      0.0,
+      32.6,
+      64.2,
+      -53.8,
+      -45.0,
+      90.0,
+      62.0
+    ],
+    "leader_mode_3.target_deg": [
+      0.0,
+      32.6,
+      64.2,
+      -78.0,
+      -45.0,
+      130.0,
+      62.0
+    ],
+    "leader_mode_3.velocity_rad_s": 7.0,
+    "leader_mode_3.goal_current_raw": [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    "leader_mode_3.initial_goal_current_raw": [
+      500,
+      500,
+      500,
+      300,
+      300,
+      100,
+      100
+    ]
+  },
+  "right": {
+    "hand_side": "right",
+    "leader_modes.ids": [
+      1,
+      2,
+      3
+    ],
+    "leader_grip.alpha": 1.0,
+    "leader_grip.period_ms": 20,
+    "zero_raw": [
+      2048,
+      2048,
+      2048,
+      1593,
+      2048,
+      2503,
+      2048
+    ],
+    "leader_mode_1.initial_deg": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "leader_mode_1.target_deg": [
+      0.0,
+      -40.0,
+      -35.0,
+      85.0,
+      50.0,
+      -80.0,
+      -50.0
+    ],
+    "leader_mode_1.velocity_rad_s": 7.0,
+    "leader_mode_1.goal_current_raw": [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    "leader_mode_1.initial_goal_current_raw": [
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500
+    ],
+    "leader_mode_2.initial_deg": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -130.0,
+      -90.0
+    ],
+    "leader_mode_2.target_deg": [
+      0.0,
+      -80.0,
+      20.0,
+      130.0,
+      -50.0,
+      -130.0,
+      -90.0
+    ],
+    "leader_mode_2.velocity_rad_s": 7.0,
+    "leader_mode_2.goal_current_raw": [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    "leader_mode_2.initial_goal_current_raw": [
+      500,
+      500,
+      500,
+      500,
+      500,
+      100,
+      100
+    ],
+    "leader_mode_3.initial_deg": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "leader_mode_3.target_deg": [
+      0.0,
+      -80.0,
+      20.0,
+      130.0,
+      -50.0,
+      -130.0,
+      50.0
+    ],
+    "leader_mode_3.velocity_rad_s": 7.0,
+    "leader_mode_3.goal_current_raw": [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    "leader_mode_3.initial_goal_current_raw": [
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500
+    ]
+  }
+}

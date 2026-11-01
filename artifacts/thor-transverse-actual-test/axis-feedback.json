@@ -1,0 +1,401 @@
+[
+  {
+    "elapsed_s": 2.0480754375457764,
+    "actual_axis_yaw_deg": -89.87797315522421,
+    "actual_vs_stored_axis_error_deg": 0.12202684477578885,
+    "actual_vs_observed_bag_axis_error_deg": 1.1457987965770116,
+    "actual_vs_fixed_target_rotation_deg": 0.6396317948311853
+  },
+  {
+    "elapsed_s": 2.1041407585144043,
+    "actual_axis_yaw_deg": -89.7972825430347,
+    "actual_vs_stored_axis_error_deg": 0.20271745696530274,
+    "actual_vs_observed_bag_axis_error_deg": 1.0651081843874977,
+    "actual_vs_fixed_target_rotation_deg": 1.0319393832950412
+  },
+  {
+    "elapsed_s": 2.154726028442383,
+    "actual_axis_yaw_deg": -89.97161572897555,
+    "actual_vs_stored_axis_error_deg": 0.02838427102444996,
+    "actual_vs_observed_bag_axis_error_deg": 1.2394413703283504,
+    "actual_vs_fixed_target_rotation_deg": 1.3850473735902191
+  },
+  {
+    "elapsed_s": 2.205282688140869,
+    "actual_axis_yaw_deg": -90.27038772784468,
+    "actual_vs_stored_axis_error_deg": 0.27038772784467824,
+    "actual_vs_observed_bag_axis_error_deg": 1.5382133691974786,
+    "actual_vs_fixed_target_rotation_deg": 1.7258637921350528
+  },
+  {
+    "elapsed_s": 2.255621910095215,
+    "actual_axis_yaw_deg": -90.59586049316529,
+    "actual_vs_stored_axis_error_deg": 0.59586049316529,
+    "actual_vs_observed_bag_axis_error_deg": 1.8636861345180904,
+    "actual_vs_fixed_target_rotation_deg": 1.774527785686375
+  },
+  {
+    "elapsed_s": 2.3114614486694336,
+    "actual_axis_yaw_deg": -90.83647865269847,
+    "actual_vs_stored_axis_error_deg": 0.8364786526984744,
+    "actual_vs_observed_bag_axis_error_deg": 2.104304294051275,
+    "actual_vs_fixed_target_rotation_deg": 1.7917127237227586
+  },
+  {
+    "elapsed_s": 2.362497091293335,
+    "actual_axis_yaw_deg": -90.85493081862454,
+    "actual_vs_stored_axis_error_deg": 0.8549308186245383,
+    "actual_vs_observed_bag_axis_error_deg": 2.1227564599773387,
+    "actual_vs_fixed_target_rotation_deg": 1.33881339037962
+  },
+  {
+    "elapsed_s": 2.4181318283081055,
+    "actual_axis_yaw_deg": -90.6835976416437,
+    "actual_vs_stored_axis_error_deg": 0.6835976416437006,
+    "actual_vs_observed_bag_axis_error_deg": 1.951423282996501,
+    "actual_vs_fixed_target_rotation_deg": 0.8617065989314995
+  },
+  {
+    "elapsed_s": 2.4689950942993164,
+    "actual_axis_yaw_deg": -90.61432182403728,
+    "actual_vs_stored_axis_error_deg": 0.6143218240372761,
+    "actual_vs_observed_bag_axis_error_deg": 1.8821474653900765,
+    "actual_vs_fixed_target_rotation_deg": 0.7102792449416925
+  },
+  {
+    "elapsed_s": 2.5214054584503174,
+    "actual_axis_yaw_deg": -90.31123735342851,
+    "actual_vs_stored_axis_error_deg": 0.3112373534285098,
+    "actual_vs_observed_bag_axis_error_deg": 1.5790629947813102,
+    "actual_vs_fixed_target_rotation_deg": 0.9208329811879213
+  },
+  {
+    "elapsed_s": 2.5734565258026123,
+    "actual_axis_yaw_deg": -90.05275412489074,
+    "actual_vs_stored_axis_error_deg": 0.05275412489073972,
+    "actual_vs_observed_bag_axis_error_deg": 1.3205797662435401,
+    "actual_vs_fixed_target_rotation_deg": 1.1127917003156105
+  },
+  {
+    "elapsed_s": 2.626103639602661,
+    "actual_axis_yaw_deg": -89.78133819575886,
+    "actual_vs_stored_axis_error_deg": 0.2186618042411368,
+    "actual_vs_observed_bag_axis_error_deg": 1.0491638371116636,
+    "actual_vs_fixed_target_rotation_deg": 0.9688136202541251
+  },
+  {
+    "elapsed_s": 2.6826870441436768,
+    "actual_axis_yaw_deg": -89.75806088176874,
+    "actual_vs_stored_axis_error_deg": 0.24193911823125802,
+    "actual_vs_observed_bag_axis_error_deg": 1.0258865231215424,
+    "actual_vs_fixed_target_rotation_deg": 1.2116770357081565
+  },
+  {
+    "elapsed_s": 2.7363698482513428,
+    "actual_axis_yaw_deg": -89.77595083527459,
+    "actual_vs_stored_axis_error_deg": 0.22404916472541458,
+    "actual_vs_observed_bag_axis_error_deg": 1.0437764766273858,
+    "actual_vs_fixed_target_rotation_deg": 0.9347533231945793
+  },
+  {
+    "elapsed_s": 2.7892441749572754,
+    "actual_axis_yaw_deg": -89.77552659985703,
+    "actual_vs_stored_axis_error_deg": 0.22447340014296913,
+    "actual_vs_observed_bag_axis_error_deg": 1.0433522412098313,
+    "actual_vs_fixed_target_rotation_deg": 0.614824392380286
+  },
+  {
+    "elapsed_s": 2.8439741134643555,
+    "actual_axis_yaw_deg": -89.71746589438588,
+    "actual_vs_stored_axis_error_deg": 0.2825341056141184,
+    "actual_vs_observed_bag_axis_error_deg": 0.985291535738682,
+    "actual_vs_fixed_target_rotation_deg": 0.40355620324351804
+  },
+  {
+    "elapsed_s": 2.8942625522613525,
+    "actual_axis_yaw_deg": -89.92935585453489,
+    "actual_vs_stored_axis_error_deg": 0.07064414546510989,
+    "actual_vs_observed_bag_axis_error_deg": 1.1971814958876905,
+    "actual_vs_fixed_target_rotation_deg": 0.5172341780821333
+  },
+  {
+    "elapsed_s": 2.9451491832733154,
+    "actual_axis_yaw_deg": -90.14770536451657,
+    "actual_vs_stored_axis_error_deg": 0.14770536451656824,
+    "actual_vs_observed_bag_axis_error_deg": 1.4155310058693686,
+    "actual_vs_fixed_target_rotation_deg": 0.696721080398732
+  },
+  {
+    "elapsed_s": 2.99780535697937,
+    "actual_axis_yaw_deg": -90.2220575807921,
+    "actual_vs_stored_axis_error_deg": 0.2220575807920966,
+    "actual_vs_observed_bag_axis_error_deg": 1.489883222144897,
+    "actual_vs_fixed_target_rotation_deg": 0.9670623554834405
+  },
+  {
+    "elapsed_s": 3.0492656230926514,
+    "actual_axis_yaw_deg": -90.26426099863465,
+    "actual_vs_stored_axis_error_deg": 0.26426099863465424,
+    "actual_vs_observed_bag_axis_error_deg": 1.5320866399874546,
+    "actual_vs_fixed_target_rotation_deg": 1.289021603419411
+  },
+  {
+    "elapsed_s": 3.1013498306274414,
+    "actual_axis_yaw_deg": -90.20878669097581,
+    "actual_vs_stored_axis_error_deg": 0.20878669097581337,
+    "actual_vs_observed_bag_axis_error_deg": 1.4766123323286138,
+    "actual_vs_fixed_target_rotation_deg": 1.5477596445257953
+  },
+  {
+    "elapsed_s": 3.1525681018829346,
+    "actual_axis_yaw_deg": -90.38427915396535,
+    "actual_vs_stored_axis_error_deg": 0.38427915396535184,
+    "actual_vs_observed_bag_axis_error_deg": 1.6521047953181522,
+    "actual_vs_fixed_target_rotation_deg": 1.6939050235989077
+  },
+  {
+    "elapsed_s": 3.2026307582855225,
+    "actual_axis_yaw_deg": -90.58002546248308,
+    "actual_vs_stored_axis_error_deg": 0.5800254624830785,
+    "actual_vs_observed_bag_axis_error_deg": 1.847851103835879,
+    "actual_vs_fixed_target_rotation_deg": 1.7299773657130266
+  },
+  {
+    "elapsed_s": 3.253164052963257,
+    "actual_axis_yaw_deg": -90.66433164890637,
+    "actual_vs_stored_axis_error_deg": 0.6643316489063693,
+    "actual_vs_observed_bag_axis_error_deg": 1.9321572902591697,
+    "actual_vs_fixed_target_rotation_deg": 1.8592709091056927
+  },
+  {
+    "elapsed_s": 3.3035707473754883,
+    "actual_axis_yaw_deg": -90.5398748424699,
+    "actual_vs_stored_axis_error_deg": 0.5398748424698994,
+    "actual_vs_observed_bag_axis_error_deg": 1.8077004838226998,
+    "actual_vs_fixed_target_rotation_deg": 1.7058682709962072
+  },
+  {
+    "elapsed_s": 3.353954315185547,
+    "actual_axis_yaw_deg": -90.40982639867318,
+    "actual_vs_stored_axis_error_deg": 0.40982639867317516,
+    "actual_vs_observed_bag_axis_error_deg": 1.6776520400259756,
+    "actual_vs_fixed_target_rotation_deg": 1.4884081846174064
+  },
+  {
+    "elapsed_s": 3.4103686809539795,
+    "actual_axis_yaw_deg": -90.38315393766922,
+    "actual_vs_stored_axis_error_deg": 0.38315393766922057,
+    "actual_vs_observed_bag_axis_error_deg": 1.650979579022021,
+    "actual_vs_fixed_target_rotation_deg": 1.286175862443152
+  },
+  {
+    "elapsed_s": 3.461602210998535,
+    "actual_axis_yaw_deg": -90.3728146594894,
+    "actual_vs_stored_axis_error_deg": 0.37281465948940706,
+    "actual_vs_observed_bag_axis_error_deg": 1.6406403008422075,
+    "actual_vs_fixed_target_rotation_deg": 0.9474683718314395
+  },
+  {
+    "elapsed_s": 3.5171165466308594,
+    "actual_axis_yaw_deg": -90.31662222319272,
+    "actual_vs_stored_axis_error_deg": 0.3166222231927236,
+    "actual_vs_observed_bag_axis_error_deg": 1.584447864545524,
+    "actual_vs_fixed_target_rotation_deg": 0.7998912840390997
+  },
+  {
+    "elapsed_s": 3.56721830368042,
+    "actual_axis_yaw_deg": -90.02860615792738,
+    "actual_vs_stored_axis_error_deg": 0.028606157927384857,
+    "actual_vs_observed_bag_axis_error_deg": 1.2964317992801853,
+    "actual_vs_fixed_target_rotation_deg": 0.5647270175025823
+  },
+  {
+    "elapsed_s": 3.6230592727661133,
+    "actual_axis_yaw_deg": -90.01478446856599,
+    "actual_vs_stored_axis_error_deg": 0.014784468565991915,
+    "actual_vs_observed_bag_axis_error_deg": 1.2826101099187923,
+    "actual_vs_fixed_target_rotation_deg": 0.5537325230252458
+  },
+  {
+    "elapsed_s": 3.6789326667785645,
+    "actual_axis_yaw_deg": -89.98539993335937,
+    "actual_vs_stored_axis_error_deg": 0.014600066640625187,
+    "actual_vs_observed_bag_axis_error_deg": 1.2532255747121752,
+    "actual_vs_fixed_target_rotation_deg": 0.3033749615753978
+  },
+  {
+    "elapsed_s": 3.734666347503662,
+    "actual_axis_yaw_deg": -89.82829882832903,
+    "actual_vs_stored_axis_error_deg": 0.17170117167097487,
+    "actual_vs_observed_bag_axis_error_deg": 1.0961244696818255,
+    "actual_vs_fixed_target_rotation_deg": 0.30475049129645587
+  },
+  {
+    "elapsed_s": 3.790584087371826,
+    "actual_axis_yaw_deg": -89.97375945427216,
+    "actual_vs_stored_axis_error_deg": 0.026240545727844733,
+    "actual_vs_observed_bag_axis_error_deg": 1.2415850956249557,
+    "actual_vs_fixed_target_rotation_deg": 0.2908184915761103
+  },
+  {
+    "elapsed_s": 3.840869188308716,
+    "actual_axis_yaw_deg": -89.88400958114408,
+    "actual_vs_stored_axis_error_deg": 0.11599041885591532,
+    "actual_vs_observed_bag_axis_error_deg": 1.151835222496885,
+    "actual_vs_fixed_target_rotation_deg": 0.2507277891794621
+  },
+  {
+    "elapsed_s": 3.896514892578125,
+    "actual_axis_yaw_deg": -89.83352118843898,
+    "actual_vs_stored_axis_error_deg": 0.16647881156102073,
+    "actual_vs_observed_bag_axis_error_deg": 1.1013468297917797,
+    "actual_vs_fixed_target_rotation_deg": 0.39510076035205505
+  },
+  {
+    "elapsed_s": 3.9523351192474365,
+    "actual_axis_yaw_deg": -89.97011122564376,
+    "actual_vs_stored_axis_error_deg": 0.02988877435623749,
+    "actual_vs_observed_bag_axis_error_deg": 1.237936866996563,
+    "actual_vs_fixed_target_rotation_deg": 0.2799000932738979
+  },
+  {
+    "elapsed_s": 4.007805585861206,
+    "actual_axis_yaw_deg": -90.14703282028621,
+    "actual_vs_stored_axis_error_deg": 0.14703282028621345,
+    "actual_vs_observed_bag_axis_error_deg": 1.4148584616390139,
+    "actual_vs_fixed_target_rotation_deg": 0.29575640160032673
+  },
+  {
+    "elapsed_s": 4.058383941650391,
+    "actual_axis_yaw_deg": -90.31987372251446,
+    "actual_vs_stored_axis_error_deg": 0.31987372251445834,
+    "actual_vs_observed_bag_axis_error_deg": 1.5876993638672587,
+    "actual_vs_fixed_target_rotation_deg": 0.4889689068427143
+  },
+  {
+    "elapsed_s": 4.108567714691162,
+    "actual_axis_yaw_deg": -90.59182881292621,
+    "actual_vs_stored_axis_error_deg": 0.5918288129262095,
+    "actual_vs_observed_bag_axis_error_deg": 1.8596544542790099,
+    "actual_vs_fixed_target_rotation_deg": 1.0468282113171712
+  },
+  {
+    "elapsed_s": 4.158997535705566,
+    "actual_axis_yaw_deg": -90.85063984117664,
+    "actual_vs_stored_axis_error_deg": 0.850639841176644,
+    "actual_vs_observed_bag_axis_error_deg": 2.1184654825294444,
+    "actual_vs_fixed_target_rotation_deg": 1.4592127370250652
+  },
+  {
+    "elapsed_s": 4.211095571517944,
+    "actual_axis_yaw_deg": -91.04644981528143,
+    "actual_vs_stored_axis_error_deg": 1.0464498152814343,
+    "actual_vs_observed_bag_axis_error_deg": 2.3142754566342347,
+    "actual_vs_fixed_target_rotation_deg": 1.4249898737232563
+  },
+  {
+    "elapsed_s": 4.264475345611572,
+    "actual_axis_yaw_deg": -91.47131783769446,
+    "actual_vs_stored_axis_error_deg": 1.471317837694457,
+    "actual_vs_observed_bag_axis_error_deg": 2.7391434790472573,
+    "actual_vs_fixed_target_rotation_deg": 1.7739807959572667
+  },
+  {
+    "elapsed_s": 4.314865827560425,
+    "actual_axis_yaw_deg": -91.55810198433453,
+    "actual_vs_stored_axis_error_deg": 1.5581019843345274,
+    "actual_vs_observed_bag_axis_error_deg": 2.825927625687328,
+    "actual_vs_fixed_target_rotation_deg": 1.8299514032296424
+  },
+  {
+    "elapsed_s": 4.365163087844849,
+    "actual_axis_yaw_deg": -91.56755686742622,
+    "actual_vs_stored_axis_error_deg": 1.5675568674262195,
+    "actual_vs_observed_bag_axis_error_deg": 2.83538250877902,
+    "actual_vs_fixed_target_rotation_deg": 1.818500587341013
+  },
+  {
+    "elapsed_s": 4.415898561477661,
+    "actual_axis_yaw_deg": -91.63603602410399,
+    "actual_vs_stored_axis_error_deg": 1.636036024103987,
+    "actual_vs_observed_bag_axis_error_deg": 2.9038616654567875,
+    "actual_vs_fixed_target_rotation_deg": 2.001987326930018
+  },
+  {
+    "elapsed_s": 4.468195915222168,
+    "actual_axis_yaw_deg": -91.71922133348374,
+    "actual_vs_stored_axis_error_deg": 1.7192213334837447,
+    "actual_vs_observed_bag_axis_error_deg": 2.987046974836545,
+    "actual_vs_fixed_target_rotation_deg": 2.31814379512622
+  },
+  {
+    "elapsed_s": 4.518701791763306,
+    "actual_axis_yaw_deg": -91.66776017557291,
+    "actual_vs_stored_axis_error_deg": 1.6677601755729086,
+    "actual_vs_observed_bag_axis_error_deg": 2.935585816925709,
+    "actual_vs_fixed_target_rotation_deg": 2.342179393923737
+  },
+  {
+    "elapsed_s": 4.572714805603027,
+    "actual_axis_yaw_deg": -91.69727537628073,
+    "actual_vs_stored_axis_error_deg": 1.6972753762807287,
+    "actual_vs_observed_bag_axis_error_deg": 2.965101017633529,
+    "actual_vs_fixed_target_rotation_deg": 2.475409428304078
+  },
+  {
+    "elapsed_s": 4.62397575378418,
+    "actual_axis_yaw_deg": -91.66581039382238,
+    "actual_vs_stored_axis_error_deg": 1.6658103938223832,
+    "actual_vs_observed_bag_axis_error_deg": 2.9336360351751836,
+    "actual_vs_fixed_target_rotation_deg": 2.488835241088492
+  },
+  {
+    "elapsed_s": 4.67979884147644,
+    "actual_axis_yaw_deg": -91.70213521631365,
+    "actual_vs_stored_axis_error_deg": 1.7021352163136498,
+    "actual_vs_observed_bag_axis_error_deg": 2.9699608576664502,
+    "actual_vs_fixed_target_rotation_deg": 2.429027710460717
+  },
+  {
+    "elapsed_s": 4.729927062988281,
+    "actual_axis_yaw_deg": -91.70965467870167,
+    "actual_vs_stored_axis_error_deg": 1.7096546787016678,
+    "actual_vs_observed_bag_axis_error_deg": 2.977480320054468,
+    "actual_vs_fixed_target_rotation_deg": 2.3586370157943124
+  },
+  {
+    "elapsed_s": 4.780167102813721,
+    "actual_axis_yaw_deg": -91.82449779953417,
+    "actual_vs_stored_axis_error_deg": 1.8244977995341713,
+    "actual_vs_observed_bag_axis_error_deg": 3.0923234408869718,
+    "actual_vs_fixed_target_rotation_deg": 2.4946348006244503
+  },
+  {
+    "elapsed_s": 4.832743167877197,
+    "actual_axis_yaw_deg": -91.87056988725399,
+    "actual_vs_stored_axis_error_deg": 1.8705698872539926,
+    "actual_vs_observed_bag_axis_error_deg": 3.138395528606793,
+    "actual_vs_fixed_target_rotation_deg": 2.6509094652330347
+  },
+  {
+    "elapsed_s": 4.886211395263672,
+    "actual_axis_yaw_deg": -91.87967077645466,
+    "actual_vs_stored_axis_error_deg": 1.8796707764546596,
+    "actual_vs_observed_bag_axis_error_deg": 3.14749641780746,
+    "actual_vs_fixed_target_rotation_deg": 2.645988677581986
+  },
+  {
+    "elapsed_s": 4.936969757080078,
+    "actual_axis_yaw_deg": -91.73274095226932,
+    "actual_vs_stored_axis_error_deg": 1.7327409522693245,
+    "actual_vs_observed_bag_axis_error_deg": 3.000566593622125,
+    "actual_vs_fixed_target_rotation_deg": 2.484790403190792
+  },
+  {
+    "elapsed_s": 4.993270635604858,
+    "actual_axis_yaw_deg": -91.2960301395842,
+    "actual_vs_stored_axis_error_deg": 1.2960301395842038,
+    "actual_vs_observed_bag_axis_error_deg": 2.563855780937004,
+    "actual_vs_fixed_target_rotation_deg": 2.077720791293971
+  }
+]

@@ -1,0 +1,62 @@
+{
+  "schema": "deux.camera_extrinsics.v1",
+  "camera_serial": 33283654,
+  "parent_frame": "base_link",
+  "child_frame": "zed2i_left_camera_frame",
+  "optical_frame": "zed2i_left_camera_optical_frame",
+  "translation_m": [
+    0.28112474781186547,
+    0.06,
+    1.3784697227239608
+  ],
+  "quaternion_xyzw": [
+    -0.0003106928405865938,
+    0.369036542040351,
+    0.0001233647326389388,
+    0.9294148260545458
+  ],
+  "camera_body_rpy_deg": [
+    -0.03830665775585432,
+    43.31242375430011,
+    1.799622443789025e-14
+  ],
+  "T_base_camera_optical": [
+    [
+      0.00045862804610731094,
+      -0.6859759903993295,
+      0.727624030840086,
+      0.28112474781186547
+    ],
+    [
+      -0.9999997765022032,
+      -0.0006685772534659765,
+      2.284874007158219e-16,
+      0.06
+    ],
+    [
+      0.00048647287609475084,
+      -0.7276238682177181,
+      -0.6859761437134864,
+      1.3784697227239608
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "camera_height_from_floor_m": 1.3791,
+  "user_shoulder_height_from_floor_m": 1.34,
+  "nominal_urdf_camera_above_shoulder_m": 0.039101389598241165,
+  "measured_plane_camera_height_m": 1.3514678734459613,
+  "observed_floor_height_residual_m": 0.027632126554038683,
+  "base_height_from_floor_m": 0.0006302772760391166,
+  "base_height_source": "CAD wheel mesh contact: all four wheel minima z=-0.000630277m in base_link; approximate geometric datum, not measured tire compression",
+  "xy_and_yaw_source": "/home/xyz_thor/DEUX_ikworld/src/deux_task_bringup/urdf/deux_fixed_zed2i.urdf",
+  "orientation_source": "accepted floor normal, URDF camera-body yaw preserved",
+  "z_source": "user explicitly selected 1.37910m (shoulder measurement plus URDF mount difference); NOT depth-derived 1.35147m",
+  "mode": "fixed measured lift snapshot, dynamic TF invalidated on lift movement command",
+  "xy_measured": false,
+  "full_extrinsic_calibration_confirmed": false
+}

@@ -26,20 +26,40 @@ class ImageDetector:
                      xyxy=[20.,15.,45.,35.],polygon_xy=[20.,15.,45.,15.,45.,35.,20.,35.])]
 
 
+@pytest.mark.parametrize("direct", [False, True])
+@pytest.mark.parametrize("missed_notification", [False, True])
 @pytest.mark.parametrize("integrated", [False, True])
-def test_image_track_selected_icp_then_visual_only(integrated):
+@pytest.mark.parametrize("bbox_only", [False, True])
+def test_image_track_selected_icp_then_visual_only(integrated, bbox_only, missed_notification, direct):
     rclpy.init(domain_id=176);ex=SingleThreadedExecutor();source=rclpy.create_node('image_source')
-    params=[Parameter('width',value=64),Parameter('height',value=48)]
+    params=[Parameter('width',value=64),Parameter('height',value=48), Parameter('camera_input',value='direct' if direct else 'observation')]
+    detector = ImageDetector()
+    if bbox_only:
+        original_track = detector.track
+        def track(rgb, stamp):
+            boxes = original_track(rgb, stamp)
+            for box, name in zip(boxes, ('s1_1', 'bar')):
+                box['class_name'] = name
+                box['polygon_xy'] = []
+            return boxes
+        detector.track = track
+        params += [Parameter('input_bag_classes',value='s1,s1_1'),
+                   Parameter('input_barcode_class',value='bar')]
     if integrated:
         from deux_task_perception.tracked_perception_node import TrackedPerceptionNode
         v,u=np.mgrid[7:44,9:58]
         model=np.column_stack(((u.ravel()-32)*.01,(v.ravel()-24)*.01,np.zeros(u.size)))
-        node=TrackedPerceptionNode(detector=ImageDetector(),
+        node=TrackedPerceptionNode(detector=detector,
             model_data=(model,np.tile([0.,0.,-1.],(len(model),1)),'plane'),
             parameter_overrides=params+[Parameter('reference_frame',value='base_link'),
                 Parameter('icp_initial_angles',value=1)])
     else:
-        node=TrackedDetectionNode(detector=ImageDetector(),parameter_overrides=params)
+        node=TrackedDetectionNode(detector=detector,parameter_overrides=params)
+    if missed_notification:
+        # Deliberately discard all completion wakeups, including ICP wakeups.
+        node.worker.notify = lambda: None
+        if integrated:
+            node.icp_worker.notify = lambda: None
     ex.add_node(source);ex.add_node(node)
     frames=[];detections=[];visual=[];labels=[];candidates=[];poses=[]
     from deux_task_msgs.msg import ObjectDetectionArray
@@ -47,7 +67,8 @@ def test_image_track_selected_icp_then_visual_only(integrated):
     subs=[source.create_subscription(t,topic,values.append,qos) for t,topic,values in
         [(ObjectDetectionArray,'/task/object_detections',poses),(DetectionFrame,'/task/detection_frames',frames),(DetectionArray,'/task/detections',detections),
          (VisualEvidenceArray,'/task/visual_candidates',candidates),(VisualEvidence,'/task/visual_evidence',visual),(BarcodeTarget,'/task/barcode_target',labels)]]
-    images=source.create_publisher(Observation,'/task/observation',qos)
+    images=source.create_publisher(Observation,'/task/observation',qos) if not direct else None
+    camera_pubs=[source.create_publisher(t,topic,qos) for t,topic in [(Image,'/zed/color/image_raw'),(Image,'/zed/depth/image_raw'),(CameraInfo,'/zed/color/camera_info'),(CameraInfo,'/zed/depth/camera_info')]] if direct else []
     requests=source.create_publisher(PerceptionRequest,'/task/perception_request',QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
     tf=StaticTransformBroadcaster(source)
     transform=TransformStamped(header=Header(frame_id='base_link'),child_frame_id='head_optical')
@@ -60,7 +81,11 @@ def test_image_track_selected_icp_then_visual_only(integrated):
         rgb=Image(header=h,height=48,width=64,encoding='rgb8',step=192,data=np.zeros((48,64,3),np.uint8).tobytes())
         depth=Image(header=h,height=48,width=64,encoding='32FC1',step=256,data=np.ones((48,64),np.float32).tobytes())
         info=CameraInfo(header=h,height=48,width=64,p=[100.,0.,32.,0.,0.,100.,24.,0.,0.,0.,1.,0.],k=[100.,0.,32.,0.,100.,24.,0.,0.,1.],r=np.eye(3).ravel().tolist())
-        images.publish(Observation(header=h,sequence=sequence,rgb=rgb,depth=depth,rgb_info=info,depth_info=info));sequence+=1
+        if direct:
+            for pub,msg in zip(camera_pubs,[rgb,depth,info,info]):pub.publish(msg)
+        else:
+            images.publish(Observation(header=h,sequence=sequence,rgb=rgb,depth=depth,rgb_info=info,depth_info=info))
+        sequence+=1
     timer=source.create_timer(.04,publish)
     def spin(predicate):
         end=time.monotonic()+5
@@ -107,6 +132,10 @@ def test_image_track_selected_icp_then_visual_only(integrated):
         assert observed.request_id=='after-grasp' and len(observed.candidates)==1
         assert observed.candidates[0].target_id=='image-bag'
         assert observed.candidates[0].surface_center_valid
+        assert observed.candidates[0].bbox3d_valid
+        if bbox_only:
+            assert not detections[-1].boxes[0].polygon_xy
+            assert detections[-1].boxes[0].class_name == 'bread_bag'
         assert observed.header.stamp==observed.candidates[0].header.stamp
     finally:
         release.set()

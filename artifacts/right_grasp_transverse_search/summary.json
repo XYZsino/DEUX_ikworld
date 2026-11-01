@@ -1,0 +1,378 @@
+{
+  "complete": true,
+  "independent_all_paths_verified": true,
+  "combinations": 2340,
+  "accepted_paths": 590,
+  "contact_cells": 74,
+  "by_x": [
+    {
+      "x_m": 0.3,
+      "paths": 0,
+      "xy_cells": 0,
+      "supported_canonical_headings_deg": [],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "exact_90_paths": 0
+    },
+    {
+      "x_m": 0.33,
+      "paths": 0,
+      "xy_cells": 0,
+      "supported_canonical_headings_deg": [],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "exact_90_paths": 0
+    },
+    {
+      "x_m": 0.36,
+      "paths": 0,
+      "xy_cells": 0,
+      "supported_canonical_headings_deg": [],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "exact_90_paths": 0
+    },
+    {
+      "x_m": 0.39,
+      "paths": 0,
+      "xy_cells": 0,
+      "supported_canonical_headings_deg": [],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "exact_90_paths": 0
+    },
+    {
+      "x_m": 0.42,
+      "paths": 0,
+      "xy_cells": 0,
+      "supported_canonical_headings_deg": [],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "exact_90_paths": 0
+    },
+    {
+      "x_m": 0.45,
+      "paths": 1,
+      "xy_cells": 1,
+      "supported_canonical_headings_deg": [
+        -60
+      ],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65
+      ],
+      "exact_90_paths": 0
+    },
+    {
+      "x_m": 0.48,
+      "paths": 15,
+      "xy_cells": 7,
+      "supported_canonical_headings_deg": [
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80
+      ],
+      "exact_90_paths": 0
+    },
+    {
+      "x_m": 0.51,
+      "paths": 46,
+      "xy_cells": 10,
+      "supported_canonical_headings_deg": [
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "missing_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100
+      ],
+      "exact_90_paths": 2,
+      "representative_file": "trajectories/x+017_y-004_yaw-090.json"
+    },
+    {
+      "x_m": 0.54,
+      "paths": 81,
+      "xy_cells": 10,
+      "supported_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "missing_canonical_headings_deg": [],
+      "exact_90_paths": 8,
+      "representative_file": "trajectories/x+018_y+001_yaw-090.json"
+    },
+    {
+      "x_m": 0.57,
+      "paths": 100,
+      "xy_cells": 10,
+      "supported_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "missing_canonical_headings_deg": [],
+      "exact_90_paths": 8,
+      "representative_file": "trajectories/x+019_y+001_yaw-090.json"
+    },
+    {
+      "x_m": 0.6,
+      "paths": 98,
+      "xy_cells": 9,
+      "supported_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "missing_canonical_headings_deg": [],
+      "exact_90_paths": 8,
+      "representative_file": "trajectories/x+020_y+000_yaw-090.json"
+    },
+    {
+      "x_m": 0.63,
+      "paths": 89,
+      "xy_cells": 9,
+      "supported_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "missing_canonical_headings_deg": [],
+      "exact_90_paths": 7,
+      "representative_file": "trajectories/x+021_y-001_yaw-090.json"
+    },
+    {
+      "x_m": 0.66,
+      "paths": 79,
+      "xy_cells": 8,
+      "supported_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "missing_canonical_headings_deg": [],
+      "exact_90_paths": 7,
+      "representative_file": "trajectories/x+022_y-002_yaw-090.json"
+    },
+    {
+      "x_m": 0.69,
+      "paths": 56,
+      "xy_cells": 6,
+      "supported_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80,
+        -75,
+        -70,
+        -65
+      ],
+      "missing_canonical_headings_deg": [
+        -60
+      ],
+      "exact_90_paths": 6,
+      "representative_file": "trajectories/x+023_y-003_yaw-090.json"
+    },
+    {
+      "x_m": 0.72,
+      "paths": 25,
+      "xy_cells": 4,
+      "supported_canonical_headings_deg": [
+        -120,
+        -115,
+        -110,
+        -105,
+        -100,
+        -95,
+        -90,
+        -85,
+        -80
+      ],
+      "missing_canonical_headings_deg": [
+        -75,
+        -70,
+        -65,
+        -60
+      ],
+      "exact_90_paths": 3,
+      "representative_file": "trajectories/x+024_y-004_yaw-090.json"
+    }
+  ],
+  "peaks": {
+    "position_m": 2.8405976747173956e-05,
+    "fixed_rotation_deg": 0.013527523040591306,
+    "axis_deg": 0.012060805765614191,
+    "velocity_ratio": 0.16965036025179003,
+    "acceleration_ratio": 0.899813795956074
+  },
+  "rejection_counts": {
+    "endpoint: fixed orientation IK failed (1mm / 1deg)": 1265,
+    "fixed orientation IK failed (1mm / 1deg)": 394,
+    "approach continuous acceleration >90% limit": 89,
+    "approach continuous joint position limit": 2
+  },
+  "evidence": "offline actual URDF and existing measured-surface model; no hardware execution",
+  "fixed_axis_from": "upper approach completion through contact/lift/stopped",
+  "observed_yaw_intervals_deg": [
+    [
+      -120.0,
+      -60.0
+    ],
+    [
+      60.0,
+      120.0
+    ]
+  ],
+  "front_back_reversal_allowed": true
+}

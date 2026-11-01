@@ -15,7 +15,7 @@ from .core import History, ARM_NAMES, JOINT_NAMES, joint_values, validate_object
 class StateObservationNode(Node):
     def __init__(self, **kwargs):
         super().__init__('state_observation_node', **kwargs)
-        defaults = {'base_frame': 'base_link', 'camera_frame': '',
+        defaults = {'scene_config': '', 'base_frame': 'base_link', 'camera_frame': '',
                     'left_ee_frame': '', 'right_ee_frame': '',
                     'arm_state_topic': '/arm/joint_states', 'hand_state_topic': '/task/hand_state',
                     'objects_topic': '/task/object_detections',
@@ -26,6 +26,14 @@ class StateObservationNode(Node):
         for key in ('publish_rate_hz', 'max_joint_age_s', 'max_object_age_s'):
             if not math.isfinite(self.cfg[key]) or self.cfg[key] <= 0:
                 raise ValueError(f'{key} must be positive and finite')
+        self.robot=None
+        if self.cfg['scene_config']:
+            from pathlib import Path
+            import yaml
+            from deux_task_core.model import RobotModel
+            path=Path(self.cfg['scene_config']);config=yaml.safe_load(path.read_text())['robot']
+            config['urdf_path']=str((path.parent/config['urdf_path']).resolve())
+            self.robot=RobotModel(config)
         self.arm, self.hand, self.objects = History(), History(), History()
         self.tf = Buffer(); self.listener = TransformListener(self.tf, self)
         self.last_clock = self.get_clock().now().nanoseconds
@@ -87,6 +95,19 @@ class StateObservationNode(Node):
         for cfg_key, field, valid in [('camera_frame', 'base_from_camera', 'camera_transform_valid'),
                                       ('left_ee_frame', 'base_from_left_ee', 'left_ee_valid'),
                                       ('right_ee_frame', 'base_from_right_ee', 'right_ee_valid')]:
+            if self.robot is not None and cfg_key in ('left_ee_frame','right_ee_frame'):
+                if out.joints_valid:
+                    from geometry_msgs.msg import TransformStamped
+                    from scipy.spatial.transform import Rotation
+                    from deux_task_core.model import JOINT_NAMES as MODEL_JOINT_NAMES
+                    side='left' if cfg_key=='left_ee_frame' else 'right'
+                    fk=self.robot.fk([values[name] for name in MODEL_JOINT_NAMES])[self.robot.ee[side]]
+                    tf=TransformStamped();tf.header.frame_id=self.cfg['base_frame']
+                    tf.header.stamp=out.joints_acquired_at;tf.child_frame_id=self.robot.ee[side]
+                    tf.transform.translation.x,tf.transform.translation.y,tf.transform.translation.z=map(float,fk[:3,3])
+                    tf.transform.rotation.x,tf.transform.rotation.y,tf.transform.rotation.z,tf.transform.rotation.w=map(float,Rotation.from_matrix(fk[:3,:3]).as_quat())
+                    setattr(out,field,tf);setattr(out,valid,True)
+                continue
             if self.cfg[cfg_key]:
                 try:
                     setattr(out, field, self.tf.lookup_transform(self.cfg['base_frame'], self.cfg[cfg_key], when))

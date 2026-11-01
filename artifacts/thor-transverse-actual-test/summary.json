@@ -1,0 +1,33 @@
+{
+  "actual_robot_execution": true,
+  "success": true,
+  "grasp_mode": "transverse_axis_locked",
+  "contact_xyz_m": [
+    0.6,
+    0.03,
+    0.97
+  ],
+  "observed_yaw_deg": -88.7321743586472,
+  "selected_axis_yaw_deg": -90.00003848535647,
+  "selection_axis_error_deg": 1.26786412670927,
+  "hand_timing": {
+    "first_command_s": 2.5028064250946045,
+    "last_command_s": 3.0024900436401367,
+    "commands": 23,
+    "attempts": 23,
+    "scheduled_contact_s": 3.0,
+    "physical_closure_verified": false,
+    "timing_warnings": []
+  },
+  "execution_warnings": [],
+  "joint_feedback_fk_metrics": {
+    "samples": 57,
+    "close_lift_samples": 48,
+    "max_close_lift_vs_stored_axis_error_deg": 1.8796707764546596,
+    "max_close_lift_vs_observed_bag_axis_error_deg": 3.14749641780746,
+    "maximum_fixed_target_rotation_error_deg": 2.6509094652330347
+  },
+  "physical_grasp_verified": false,
+  "no_automatic_return_or_repeat": true,
+  "completed_at": 1793505295.5235372
+}

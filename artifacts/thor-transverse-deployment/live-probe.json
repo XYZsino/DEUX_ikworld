@@ -1,0 +1,82 @@
+{
+  "actual_hardware_streams": true,
+  "counts": {
+    "predictions": 124,
+    "preview": 120,
+    "calibration": 12,
+    "tracking": 120,
+    "joints": 1128
+  },
+  "latest": {
+    "detected_objects": 1,
+    "preview": {
+      "preview_only": true,
+      "execution_enabled": false,
+      "motion_requested": false,
+      "cells": 2177,
+      "selectable": false,
+      "arm_ready": false,
+      "timestamp_s": 1793504957.3621027,
+      "selection_policy": "abs(yaw) 60..120deg: transverse axis <=3deg, no normal fallback; otherwise normal XY-first soft yaw",
+      "contact_cells": 146,
+      "rotation_preference": "transverse: axis alignment required; normal: soft yaw preference",
+      "ready_error_rad": 1.2001220573183513,
+      "target_id": "single-4dfe6f18-34",
+      "observed_object_xyz_m": [
+        0.563293122166648,
+        -0.1352297190169087,
+        0.998362601305201
+      ],
+      "observed_grasp_xyz_m": [
+        0.563293122166648,
+        -0.15192056927478223,
+        0.97
+      ],
+      "observed_velocity_m_s": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "grasp_z_source": "user-fixed physical grasp plane base_link Z=0.97m; estimator Z is model center",
+      "reason": "transverse bag: no verified axis-preserving path within 3deg / 30mm / lead time; no normal fallback",
+      "dispatch_ready": false,
+      "replay_policy": "freeze cell/timing at dispatch; perception changes do not cancel playback",
+      "diagnostic_policy": "after dispatch: monitoring errors log only; operator cancel and e-stop enforced",
+      "workflow": "orientation-classified stored grasp",
+      "normal_contact_cells": 118,
+      "transverse_contact_cells": 74,
+      "front_back_reversal_allowed": true
+    },
+    "calibration": {
+      "valid": true,
+      "height_from_floor_m": 1.3791,
+      "mode": "fixed measured lift snapshot, dynamic TF invalidated on lift movement command"
+    },
+    "tracking": {
+      "perception_only": true,
+      "target_id": "single-4dfe6f18-34",
+      "exit_reason": "tracking_expired",
+      "tracking": true,
+      "window_s": 10.0,
+      "detection_hz": 11.5,
+      "tracking_hz": 11.5,
+      "icp_attempt_hz": 10.5,
+      "icp_pose_hz": 10.5,
+      "accepted_total": 11074,
+      "attempt_total": 11314,
+      "latency_p50_ms": 186.4032745361328,
+      "latency_p95_ms": 233.28814506530762,
+      "worker_p50_ms": 80.43552000071941,
+      "last_error": null
+    }
+  },
+  "grid_command_publishers": {
+    "/arm/deux_arm_controller/joint_trajectory": [],
+    "/hand/right/grip": [],
+    "/hand/right/cmd": []
+  },
+  "grid_action_clients": [],
+  "action_requested": false,
+  "arm_or_hand_commands_issued": false,
+  "verified_at": 1793504957.4119244
+}

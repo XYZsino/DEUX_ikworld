@@ -1,0 +1,14 @@
+[INFO] [1793505749.434668689] [grid_grasp_trial]: Loaded installation config version 0725b9f1594262f4b1849f0ca9fbc9288588ca25e242d26a7a002340c90a5394
+[WARN] [1793505751.276981533] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[INFO] [1793505751.413613072] [grid_grasp_trial]: left scalar profile verified and cached (no age expiry)
+[WARN] [1793505756.277283698] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505761.377283235] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[INFO] [1793505762.010018699] [grid_grasp_trial]: right scalar profile verified and cached (no age expiry)
+[WARN] [1793505766.387388478] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505771.402478495] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505776.416735476] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505781.420596448] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505786.424928683] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505791.440899518] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505796.441092554] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505801.442563321] [grid_grasp_trial]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy

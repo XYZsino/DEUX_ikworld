@@ -1,0 +1,25 @@
+{
+  "pid": 25075,
+  "command": [
+    "/home/xyz_thor/DEUX_ikworld/.venv/bin/python",
+    "/tmp/transverse_only_actual.py",
+    "--ros-args",
+    "-p",
+    "grid_library_directory:=/home/xyz_thor/DEUX_ikworld/artifacts/right_grasp_grid_classified",
+    "-p",
+    "use_observed_yaw:=true",
+    "-p",
+    "enable_execution:=true",
+    "-p",
+    "target_wait_timeout_s:=300.",
+    "-p",
+    "grid_output_directory:=/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test/actual-transverse-20261101-125247",
+    "-p",
+    "stationary_left_file:=/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test/stationary-left.json"
+  ],
+  "output_directory": "/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test/actual-transverse-20261101-125247",
+  "identity": "/tmp/transverse_only_actual.py",
+  "execution_enabled": true,
+  "transverse_only": true,
+  "started_at": 1793505170.568477
+}

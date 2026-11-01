@@ -1,0 +1,28 @@
+{
+  "backup": "/home/xyz_thor/DEUX_ikworld_backups/20261101-124522-before-transverse-grasp",
+  "installed_files": 2787,
+  "all_hashes_verified": true,
+  "old_server_pid": 23030,
+  "old_action_was_idle": true,
+  "arm_or_hand_motion_commands_issued": false,
+  "installed_at": 1793504727.1480598,
+  "hardware_drivers_stopped": false,
+  "execution_enabled": false,
+  "verified_at": 1793505008.19059,
+  "normal_paths": 1587,
+  "transverse_paths": 590,
+  "transverse_cells": 74,
+  "actual_left_audited_paths": 2177,
+  "actual_left_rejected_paths": 0,
+  "unit_tests_passed": 22,
+  "isolated_ros_cases_passed": 6,
+  "preview_only": true,
+  "hardware_execution_performed": false,
+  "readonly_live_preview_verified": true,
+  "launcher": "run_rotation_grasp_trial.bash",
+  "post_deployment_hashes": {
+    "tools/classified_grasp_trial.py": "17fbd0c99018e84c60d7e7eecb9fa356839a88ddecf2d8e58b5cfc197e953c12",
+    "ROTATION_GRID_SETUP.rst": "b35b390b7a191c8216192a06f7861cf6382f5a52f167c10416a876110bcea0fd"
+  },
+  "physical_grasp_verified": false
+}

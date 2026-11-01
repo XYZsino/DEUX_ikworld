@@ -1,0 +1,11 @@
+{
+  "backup": "/home/xyz_thor/DEUX_ikworld_backups/20261101-124522-before-transverse-grasp",
+  "installed_files": 2787,
+  "all_hashes_verified": true,
+  "old_server_pid": 23030,
+  "old_action_was_idle": true,
+  "arm_or_hand_motion_commands_issued": false,
+  "installed_at": 1793504727.1480598,
+  "hardware_drivers_stopped": false,
+  "execution_enabled": false
+}

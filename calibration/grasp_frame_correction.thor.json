@@ -1,0 +1,33 @@
+{
+  "method": "R_object_grasp_new = R_object_grasp_j6_comparison @ R_hand_grasp_old.T @ R_hand_grasp_new; original grasp translation retained",
+  "new_object_from_grasp": [
+    [
+      0.07911518249695759,
+      -0.9891575605224886,
+      -0.1237259405285295,
+      0.009381354708356097
+    ],
+    [
+      -0.9874320494756449,
+      -0.09479492909839744,
+      0.126458962061032,
+      -0.0183502032861851
+    ],
+    [
+      -0.13681643017853137,
+      0.11216613516755346,
+      -0.9842255953564577,
+      0.052750021666901015
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "max_hand_pose_equivalence_error": 5.551115123125783e-16,
+  "tested_object_poses": 20,
+  "backup": "/home/xyz_thor/DEUX_ikworld/.setup/installation-before-grasp-frame-correction.yaml",
+  "hardware_motion_sent": false
+}

@@ -1,0 +1,2 @@
+[INFO] [1793503245.497784867] [grid_grasp_trial]: Loaded installation config version 0725b9f1594262f4b1849f0ca9fbc9288588ca25e242d26a7a002340c90a5394
+PASS: explicit e-stop still cancels the committed trajectory

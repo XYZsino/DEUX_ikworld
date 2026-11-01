@@ -27,8 +27,10 @@ class TaskGui(Node):
                                action_name='/task/run', status_topic='/task/status',
                                ready_action_name='/task/move_to_ready',
                                observation_topic='/task/observation', detections_topic='/task/detections',
-                               camera_base_frame='base_link').items():
+                               camera_base_frame='base_link', camera_input='auto').items():
             self.declare_parameter(key, value)
+        from deux_task_perception.tracking_roi import default_path
+        self.declare_parameter('tracking_roi_file',default_path())
         self.deployment = self.get_parameter('deployment').value
         if self.deployment not in ('sim', 'real'):
             raise ValueError('deployment must be sim or real (display label only)')
@@ -39,7 +41,22 @@ class TaskGui(Node):
         self.frame = None; self.frame_received = 0.; self.frame_time = 0.
         self.status = {}; self.received = 0.; self.sequence = 0
         self.history = deque(maxlen=100)
+        self.ik_diagnostic=None
+        self.ik_sub=self.create_subscription(String,'/task/ik_diagnostic',self.on_ik_diagnostic,
+            QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        self.icp_preview={};self.icp_preview_received=0.
+        self.intercept_window={};self.intercept_window_received=0.
+        self.intercept_window_sub=self.create_subscription(String,'/task/intercept_window',self.on_intercept_window,10)
+        self.grid_preview={};self.grid_preview_received=0.
+        self.grid_preview_sub=self.create_subscription(String,'/task/grid_grasp/preview',self.on_grid_preview,10)
+        self.grasp_preview={};self.grasp_preview_received=0.
+        self.grasp_preview_sub=self.create_subscription(String,'/task/grasp_timing_preview',self.on_grasp_preview,10)
+        self.icp_preview_sub=self.create_subscription(String,'/task/icp_preview_status',self.on_icp_preview,10)
         self.time_candidates = None
+        self.motion_preview=None;self.preview_received=0.
+        self.preview_sub=self.create_subscription(String,'/task/motion_preview',self.on_preview,
+            QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        self.decision_pub=self.create_publisher(String,'/task/motion_decision',10)
         self.candidate_sub = self.create_subscription(String,'/task/grasp_candidates',self.on_candidates,10)
         self.goal_handle = None; self.sending = False; self.canceling = False
         self.restart_target = None; self.await_idle_after = None
@@ -61,6 +78,21 @@ class TaskGui(Node):
         port = self.http.server_address[1]
         self.get_logger().info(f'GUI: http://127.0.0.1:{port}/#token={self.token}')
 
+    def on_ik_diagnostic(self,msg):
+        try:
+            data=json.loads(msg.data)
+            if isinstance(data,dict) and all(k in data for k in ('id','current','target_pose','object_pose','grasp_pose')):
+                self.ik_diagnostic=data
+        except (ValueError,TypeError):pass
+
+    def on_preview(self,msg):
+        try:
+            data=json.loads(msg.data)
+            if not isinstance(data,dict) or not all(k in data for k in ('request_id','plan_id','digest','status','current','target','frames')):return
+            if len(data['frames'])>60:return
+            self.motion_preview=data;self.preview_received=time.monotonic()
+        except (ValueError,TypeError):return
+
     def on_candidates(self, msg):
         try:
             data=json.loads(msg.data)
@@ -81,6 +113,32 @@ class TaskGui(Node):
             self.time_candidates=None
         self.status = data
 
+    def on_intercept_window(self,msg):
+        try:data=json.loads(msg.data)
+        except ValueError:return
+        if isinstance(data,dict):self.intercept_window=data;self.intercept_window_received=time.monotonic()
+
+    def on_grid_preview(self, msg):
+        try: data = json.loads(msg.data)
+        except ValueError: return
+        if isinstance(data, dict):
+            self.grid_preview = data; self.grid_preview_received = time.monotonic()
+
+    def on_grasp_preview(self,msg):
+        try:data=json.loads(msg.data)
+        except ValueError:return
+        if isinstance(data,dict):self.grasp_preview=data;self.grasp_preview_received=time.monotonic()
+
+    def on_icp_preview(self,msg):
+        try:data=json.loads(msg.data)
+        except ValueError:return
+        if isinstance(data,dict):self.icp_preview=data;self.icp_preview_received=time.monotonic()
+
+    def perception_only(self):
+        # Dedicated scheduled-motion server owns this explicitly requested real trial.
+        if self.status.get('workflow')=='MovingUpperTrial' and time.monotonic()-self.received<1. and self.ready_client.server_is_ready():return False
+        return bool(self.icp_preview.get('perception_only') and time.monotonic()-self.icp_preview_received<2.)
+
     def snapshot(self):
         with self.lock:
             return dict(self.view)
@@ -96,9 +154,11 @@ class TaskGui(Node):
             return self.frame if time.monotonic()-self.frame_received < 3. else None
 
     def connected(self):
-        return time.monotonic()-self.received < 2. and self.client.server_is_ready()
+        return self.perception_only() or (time.monotonic()-self.received < 2. and (self.client.server_is_ready() or self.ready_client.server_is_ready()))
 
     def start(self, target):
+        if self.perception_only():self.message='인식 전용 테스트: 로봇 실행 비활성';return
+        if not self.client.server_is_ready():self.message='작업 서버 비활성: 준비자세 시험만 가능합니다';return
         self.sending = True; self.result = None; self.message = '시작 요청 중'
         try:
             self.client.send_goal_async(RunTask.Goal(target_id=target)).add_done_callback(self.accepted)
@@ -106,6 +166,7 @@ class TaskGui(Node):
             self.sending = False; self.restart_target = None; self.message = str(exc)
 
     def start_ready(self):
+        if self.perception_only():self.message='인식 전용 테스트: 로봇 실행 비활성';return
         self.sending=True;self.result=None;self.message='준비자세 이동 요청 중'
         try:
             self.ready_client.send_goal_async(MoveToReady.Goal()).add_done_callback(self.accepted)
@@ -163,6 +224,18 @@ class TaskGui(Node):
             self.ready_pending = False
 
     def command(self, command, target):
+        if command in ('motion_approve','motion_reject'):
+            p=self.motion_preview
+            if (not p or p['request_id']!=target or p['status']!='pending'
+                    or time.monotonic()-self.preview_received>1.):
+                self.message='승인 대상을 다시 확인하세요. 계획이 만료되거나 변경됐습니다';return
+            if command=='motion_approve' and not p.get('approvable',False):
+                self.message='이동 컨베이어 예약 계획은 수동 승인 대기 후 실행할 수 없습니다';return
+            self.decision_pub.publish(String(data=json.dumps(dict(request_id=p['request_id'],
+                plan_id=p['plan_id'],digest=p['digest'],decision=command.removeprefix('motion_')))))
+            self.motion_preview=dict(p,status='decision_sent')
+            self.message='실행 승인 요청 전송' if command=='motion_approve' else '동작 거절 요청 전송'
+            return
         owned = self.goal_handle is not None or self.sending
         if command == 'stop':
             self.restart_target = None
@@ -229,7 +302,17 @@ class TaskGui(Node):
             self.view.update(frame_available=self.frame is not None,
                              frame_fresh=time.monotonic()-self.frame_received < 3.,
                              simulation_time=self.frame_time)
+            self.view['motion_preview'] = dict(self.motion_preview,fresh=time.monotonic()-self.preview_received<1.) if self.motion_preview else None
+            self.view['ik_diagnostic']=self.ik_diagnostic
             self.view['time_candidates'] = self.time_candidates
+            self.view['perception_only']=self.perception_only()
+            self.view['intercept_window']=dict(self.intercept_window) if time.monotonic()-self.intercept_window_received<2. else {}
+            self.view['grid_preview']=dict(self.grid_preview, fresh=time.monotonic()-self.grid_preview_received<2.)
+            self.view['icp_preview']=dict(self.icp_preview)
+            self.view['grasp_preview']=dict(self.grasp_preview) if time.monotonic()-self.grasp_preview_received<2. else {}
+            if self.perception_only():
+                self.view['status']=dict(state='PerceptionTest',active=False,target_id=self.icp_preview.get('target_id',''),reason='인식 전용 · 로봇 동작 없음')
+
             self.view['rgb'] = dict(self.rgb.metadata, available=self.rgb.jpeg is not None,
                                     fresh=self.rgb.snapshot() is not None)
 
@@ -267,12 +350,18 @@ def handler(node):
                 if not self.authorized(): self.reply(401, {'error':'인증 토큰을 확인하세요'}); return
                 frame = node.rgb.snapshot()
                 self.reply(200,frame,'image/jpeg') if frame else self.reply(503,{'error':'ZED RGB 영상 대기 중'})
+            elif self.path == '/api/tracking-roi':
+                if not self.authorized(): self.reply(401, {'error':'인증 토큰을 확인하세요'}); return
+                try:
+                    from deux_task_perception.tracking_roi import read_roi
+                    self.reply(200,{'roi':read_roi(node.get_parameter('tracking_roi_file').value)})
+                except (ValueError,OSError) as exc:self.reply(400,{'error':str(exc)})
             elif self.path == '/api/state':
                 self.reply(200, node.snapshot()) if self.authorized() else self.reply(401, {'error':'인증 토큰을 확인하세요'})
             else: self.reply(404, {'error':'not found'})
 
         def do_POST(self):
-            if self.path != '/api/command': self.reply(404, {'error':'not found'}); return
+            if self.path not in ('/api/command','/api/tracking-roi'): self.reply(404, {'error':'not found'}); return
             if not self.authorized(): self.reply(401, {'error':'인증 토큰을 확인하세요'}); return
             origin = self.headers.get('Origin')
             if origin and urlsplit(origin).netloc != self.headers.get('Host'):
@@ -281,10 +370,18 @@ def handler(node):
                 size = int(self.headers.get('Content-Length','0'))
                 if not 0 < size <= 2048: raise ValueError('invalid body size')
                 data = json.loads(self.rfile.read(size))
+                if self.path=='/api/tracking-roi':
+                    view=node.snapshot()
+                    if not view.get('connected') or view.get('status',{}).get('active') or view.get('pending') or view.get('ready_pending'):
+                        self.reply(409,{'error':'작업 중에는 ROI를 변경할 수 없습니다. 중지 후 저장하세요.'});return
+                    from deux_task_perception.tracking_roi import write_roi
+                    saved=write_roi(node.get_parameter('tracking_roi_file').value,data)
+                    self.reply(200,{'roi':saved});return
                 if not isinstance(data,dict) or set(data)-{'command','target_id'}:
                     raise ValueError('unsupported command fields')
+                if node.perception_only():self.reply(409,{'error':'인식 전용 테스트에서는 로봇 명령을 실행하지 않습니다'});return
                 cmd, target = data['command'], data.get('target_id','')
-                if cmd not in ('start','stop','restart','ready') or not isinstance(target,str) or len(target)>128:
+                if cmd not in ('start','stop','restart','ready','motion_approve','motion_reject') or not isinstance(target,str) or len(target)>128:
                     raise ValueError('invalid command or target')
                 node.commands.put_nowait((cmd,target.strip()))
                 self.reply(202, {'accepted':True})

@@ -42,3 +42,29 @@ def associated_bag(label, bags, camera_target, projection):
     b = containers[0]
     if not (b[0] <= uv[0] <= b[2] and b[1] <= uv[1] <= b[3]):
         raise ValueError('label belongs to a different target')
+
+
+def center_position(depth, projection, box, max_distance=3.):
+    """BBox center ray with mean valid depth in its centered 3x3 pixel patch.
+
+    Returns camera-frame position and valid/available pixel fraction; no orientation.
+    """
+    box = np.asarray(box, dtype=float)
+    p = np.asarray(projection, dtype=float).reshape(3, 4)
+    if box.shape != (4,) or not np.isfinite(box).all() or np.any(box[2:] <= box[:2]):
+        raise ValueError('invalid barcode bbox')
+    if not np.isfinite(p).all() or p[0,0] <= 0 or p[1,1] <= 0:
+        raise ValueError('invalid barcode projection')
+    u, v = (box[:2] + box[2:]) / 2.
+    h, w = depth.shape
+    if not (0 <= u < w and 0 <= v < h):
+        raise ValueError('barcode center outside depth image')
+    x, y = int(np.floor(u + .5)), int(np.floor(v + .5))
+    patch = depth[max(0,y-1):min(h,y+2), max(0,x-1):min(w,x+2)]
+    valid = np.isfinite(patch) & (patch > 0) & (patch <= max_distance)
+    if not valid.any():
+        raise ValueError('barcode center 3x3 has no valid depth')
+    z = float(np.mean(patch[valid]))
+    position = np.array([(u-p[0,2])*z/p[0,0]-p[0,3]/p[0,0],
+                         (v-p[1,2])*z/p[1,1]-p[1,3]/p[1,1], z])
+    return position, float(valid.sum()/patch.size)

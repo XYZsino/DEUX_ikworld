@@ -1,0 +1,23 @@
+{
+  "pid": 25648,
+  "command": [
+    "bash",
+    "/home/xyz_thor/DEUX_ikworld/run_rotation_grasp_trial.bash",
+    "--ros-args",
+    "-p",
+    "enable_execution:=true",
+    "-p",
+    "target_wait_timeout_s:=300.",
+    "-p",
+    "grid_output_directory:=/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test/repeat-all-angles-20261101-125651/trial-01",
+    "-p",
+    "stationary_left_file:=/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test/stationary-left.json"
+  ],
+  "output_directory": "/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test/repeat-all-angles-20261101-125651/trial-01",
+  "identity": "tools/classified_grasp_trial.py",
+  "batch": "/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test/repeat-all-angles-20261101-125651",
+  "trial": 1,
+  "execution_enabled": true,
+  "transverse_only": false,
+  "started_at": 1793505433.6975172
+}

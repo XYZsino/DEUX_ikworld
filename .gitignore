@@ -5,3 +5,10 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 *.egg-info/
+
+.venv/
+.setup/
+.venv-zed/
+
+# Full local workspace/Thor snapshots are kept outside version control.
+/backups/

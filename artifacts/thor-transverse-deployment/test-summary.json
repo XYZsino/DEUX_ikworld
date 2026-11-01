@@ -1,0 +1,48 @@
+{
+  "unit_tests_passed": 22,
+  "synthetic_preview_passed": true,
+  "synthetic_execution_cases": [
+    {
+      "name": "positive90",
+      "domain": 227,
+      "grasp_mode": "transverse_axis_locked",
+      "success": true,
+      "intentional_estop": false,
+      "selected_cell": "x+020_y+001_yaw-090"
+    },
+    {
+      "name": "negative90-vision",
+      "domain": 228,
+      "grasp_mode": "transverse_axis_locked",
+      "success": true,
+      "intentional_estop": false,
+      "selected_cell": "x+020_y+001_yaw-090"
+    },
+    {
+      "name": "normal",
+      "domain": 229,
+      "grasp_mode": "normal",
+      "success": true,
+      "intentional_estop": false,
+      "selected_cell": "x+020_y+001_axis09_29"
+    },
+    {
+      "name": "transverse-tracking",
+      "domain": 230,
+      "grasp_mode": "transverse_axis_locked",
+      "success": true,
+      "intentional_estop": false,
+      "selected_cell": "x+020_y+001_yaw-095"
+    },
+    {
+      "name": "estop",
+      "domain": 231,
+      "grasp_mode": "transverse_axis_locked",
+      "success": false,
+      "intentional_estop": true,
+      "selected_cell": "x+020_y+001_yaw-090"
+    }
+  ],
+  "all_passed": true,
+  "physical_hardware_execution": false
+}

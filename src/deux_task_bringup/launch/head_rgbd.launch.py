@@ -1,17 +1,20 @@
 """Image-first PickScan overlay. Camera, TF, robot and reader drivers run separately."""
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    required=['scene_config','hand_mapping','observation_config','weights','model_path','reference_frame']
+    required=['scene_config','observation_config','weights','model_path','reference_frame']
     arguments=[DeclareLaunchArgument(name) for name in required]
+    arguments.append(DeclareLaunchArgument('hand_mapping',default_value=PathJoinSubstitution([FindPackageShare('deux_task_bringup'),'config','hand_mapping.yaml'])))
     arguments += [DeclareLaunchArgument(name,default_value=value) for name,value in
                   [('use_sim_time','false'),('hardware_enabled','false'),('dry_run','true'),
-                   ('device','cpu'),('barcode_enabled','false'),('barcode_port',''),('barcode_serial_number',''),('resting_on_reference_plane','false')]]
+                   ('device','cpu'),('input_bag_classes','bread_bag'),('input_barcode_class','barcode'),
+                   ('require_instance_mask','false'),('width','640'),('height','480'),('barcode_enabled','false'),('barcode_port',''),('barcode_serial_number',''),('resting_on_reference_plane','false')]]
     arguments.append(DeclareLaunchArgument('planner_python',default_value='',
         description='Optional Python interpreter for the planner only (ROS Jazzy-compatible Python 3.12)'))
     def boolean(name):return ParameterValue(LaunchConfiguration(name),value_type=bool)
@@ -30,7 +33,11 @@ def generate_launch_description():
              extra={'config_file':LaunchConfiguration('scene_config'),'weights':LaunchConfiguration('weights'),'device':LaunchConfiguration('device'),
               'model_path':LaunchConfiguration('model_path'),'model_origin':'bounds_center',
               'reference_frame':LaunchConfiguration('reference_frame'),'target_classes':['bread_bag'],
-              'require_instance_mask':True,'roi_only_depth':True,'filter_motion':True,
+              'require_instance_mask':boolean('require_instance_mask'),
+              'input_bag_classes':LaunchConfiguration('input_bag_classes'),
+              'input_barcode_class':LaunchConfiguration('input_barcode_class'),
+              'width':ParameterValue(LaunchConfiguration('width'),value_type=int),
+              'height':ParameterValue(LaunchConfiguration('height'),value_type=int),'roi_only_depth':True,'filter_motion':True,
               'resting_on_reference_plane':boolean('resting_on_reference_plane'),
               'icp_initial_angles':12,'icp_coarse_point_limit':400}),
         node('deux_task_perception','state_observation_node',

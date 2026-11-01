@@ -1,0 +1,64 @@
+[INFO] [1793505413.436211414] [grid_right_ready_preparation]: Loaded installation config version 0725b9f1594262f4b1849f0ca9fbc9288588ca25e242d26a7a002340c90a5394
+[WARN] [1793505413.932639820] [grid_right_ready_preparation]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+{
+  "execution_requested": true,
+  "hand_commands": false,
+  "left_arm_commanded": false,
+  "warnings": [],
+  "start_arm_rad": [
+    0.05779354543373749,
+    -0.028038452735179575,
+    -0.13866636148622824,
+    0.13027389944304524,
+    0.14209964141298492,
+    -0.36984054322118,
+    0.1451514457923242,
+    0.5354009308003373,
+    0.5731670099946609,
+    -0.7097352559700933,
+    -1.7927443350881216,
+    -0.4663538567177845,
+    -0.44651712825207923,
+    -0.7520790417334258
+  ],
+  "goal_right_rad": [
+    -0.011635004542768002,
+    0.27141985297203064,
+    -0.3133821487426758,
+    -1.7462043762207031,
+    -1.3662546873092651,
+    0.08945601433515549,
+    -0.309567391872406
+  ],
+  "duration_s": 9.199008305914806,
+  "right_waypoints": [
+    [
+      0.5354009308003373,
+      0.5731670099946609,
+      -0.7097352559700933,
+      -1.7927443350881216,
+      -0.4663538567177845,
+      -0.44651712825207923,
+      -0.7520790417334258
+    ],
+    [
+      -0.011635004542768002,
+      0.27141985297203064,
+      -0.3133821487426758,
+      -1.7462043762207031,
+      -1.3662546873092651,
+      0.08945601433515549,
+      -0.309567391872406
+    ]
+  ],
+  "times_s": [
+    0.0,
+    9.199008305914806
+  ],
+  "min_margin_m": 0.1635749755700027,
+  "continuous_conveyor_margin_m": 0.054443383934709,
+  "revalidated_pick_cells": 25
+}
+[WARN] [1793505420.947402626] [grid_right_ready_preparation]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+[WARN] [1793505425.950194415] [grid_right_ready_preparation]: command ownership unconfirmed; competing direct arm command publisher registered; continuing under explicit warning-only ownership policy
+{"success": true, "final_max_error_rad": 0.026321811237574266}

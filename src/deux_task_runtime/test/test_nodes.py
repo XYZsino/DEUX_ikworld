@@ -289,7 +289,7 @@ def test_hand_feedback_mapping_preserves_stamp_and_dispatch_disabled(tmp_path):
             msg.name = [str(i) for i in range(7)]
             msg.position = [0.1] * 7
             pub.publish(msg)
-        h.spin(lambda: bool(received))
+        h.spin(lambda: bool(received) and np.allclose(received[-1].position, [0.1] * 14))
         np.testing.assert_allclose(received[-1].position, [0.1] * 14)
         assert received[-1].header.stamp == stamp
         with pytest.raises(ValueError, match="disabled"):

@@ -1,0 +1,59 @@
+{
+  "actual_hardware_streams": true,
+  "counts": {
+    "tracking": 121,
+    "preview": 120,
+    "joints": 1188,
+    "calibration": 12
+  },
+  "latest": {
+    "tracking": {
+      "perception_only": true,
+      "target_id": "",
+      "exit_reason": "roi_exit_or_tracking_lost",
+      "tracking": false,
+      "window_s": 10.0,
+      "detection_hz": 13.0,
+      "tracking_hz": 0.0,
+      "icp_attempt_hz": 0.0,
+      "icp_pose_hz": 0.0,
+      "accepted_total": 1224,
+      "attempt_total": 1340,
+      "latency_p50_ms": null,
+      "latency_p95_ms": null,
+      "worker_p50_ms": null,
+      "last_error": null
+    },
+    "preview": {
+      "preview_only": true,
+      "execution_enabled": false,
+      "motion_requested": false,
+      "cells": 1587,
+      "selectable": false,
+      "arm_ready": false,
+      "timestamp_s": 1793503339.8163035,
+      "selection_policy": "XY and arrival first; observed yaw ranks rotations only at the chosen cell",
+      "contact_cells": 118,
+      "rotation_preference": "yaw only; no orientation rejection gate",
+      "ready_error_rad": 0.8262760208492903,
+      "reason": "ROI target unavailable",
+      "dispatch_ready": false,
+      "replay_policy": "freeze cell/timing at dispatch; perception changes do not cancel playback",
+      "diagnostic_policy": "after dispatch: monitoring errors log only; operator cancel and e-stop enforced"
+    },
+    "calibration": {
+      "valid": true,
+      "height_from_floor_m": 1.3791,
+      "mode": "fixed measured lift snapshot, dynamic TF invalidated on lift movement command"
+    }
+  },
+  "grid_command_publishers": {
+    "/arm/deux_arm_controller/joint_trajectory": [],
+    "/hand/right/grip": [],
+    "/hand/right/cmd": []
+  },
+  "grid_action_clients": [],
+  "action_requested": false,
+  "arm_or_hand_commands_issued": false,
+  "verified_at": 1793503339.9019713
+}

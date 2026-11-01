@@ -1,0 +1,32 @@
+{
+  "valid_cells": 202,
+  "rejected_cells": 3885,
+  "valid_xy_bounds_m": [
+    [
+      -0.27,
+      -0.33
+    ],
+    [
+      0.51,
+      0.21
+    ]
+  ],
+  "recommended_full_rectangle": {
+    "x_min_m": 0.36,
+    "x_max_m": 0.44999999999999996,
+    "y_min_m": -0.27,
+    "y_max_m": 0.15,
+    "cells": 60
+  },
+  "duration_range_s": [
+    13.764083254071355,
+    26.969235726785314
+  ],
+  "rejection_counts": {
+    "fixed orientation IK failed (1mm / 1deg)": 3865,
+    "Lift: discontinuous IK branch": 2,
+    "Descend: discontinuous IK branch": 18
+  },
+  "all_file_hashes_verified": true,
+  "verification": "offline URDF and measured visible-surface screening; no hardware verification"
+}

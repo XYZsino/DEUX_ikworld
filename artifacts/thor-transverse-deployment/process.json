@@ -1,0 +1,12 @@
+{
+  "pid": 24439,
+  "command": [
+    "bash",
+    "/home/xyz_thor/DEUX_ikworld/run_rotation_grasp_trial.bash"
+  ],
+  "identity": "tools/classified_grasp_trial.py",
+  "output_directory": "/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-classified-test",
+  "started_at": 1793504901.2131062,
+  "execution_enabled": false,
+  "action_requested": false
+}

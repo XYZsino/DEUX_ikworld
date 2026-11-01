@@ -1,12 +1,16 @@
+from deux_task_core.barcode_position import label_quality
+from deux_task_core.planning import grasp_cache_max_age
 from deux_task_core.planning import requires_object_pose
 from copy import deepcopy
 import time
+import sys
+from .tracking_trace import TrackingTrace
 import numpy as np
 from deux_task_core.placement import LOADED_STAGES
 from std_msgs.msg import String
 from deux_task_msgs.action import ExecuteMotion
 from .arm_adapter import ArmAdapter
-from .hand_adapter import HandAdapter
+from .hand_adapter import make_hand_adapter
 from deux_task_core.model import JOINT_NAMES, ARM_NAMES, HAND_NAMES, RobotModel
 from .common import (
     RuntimeNode,
@@ -28,16 +32,19 @@ class ExecutionNode(RuntimeNode):
         self.declare_parameter("dry_run", True)
         if self.get_parameter("dry_run").value:
             self.subscribe_joints()
+        self.declare_parameter("tracking_trace_dir", ".setup/execution-traces")
         self.declare_parameter("hardware_enabled", False)
         self.declare_parameter("mapping_file", "")
         self.declare_parameter("driver_action", "/arm/deux_arm_controller/follow_joint_trajectory")
         self.arm = ArmAdapter(self)
-        self.hand = HandAdapter(self)
+        self.hand = make_hand_adapter(self)
         self.record = self.create_publisher(String, "/task/execution_record", 10)
         self.action = ExclusiveAction(
             self, ExecuteMotion, "/task/execute_motion", self.execute, self.validate
         )
         self.completed = set()
+        from .motion_review import MotionReview
+        self.review = MotionReview(self)
 
     def measured(self, obs=None):
         if self.get_parameter("dry_run").value:
@@ -48,26 +55,49 @@ class ExecutionNode(RuntimeNode):
         values.update(zip(HAND_NAMES, self.hand.measured_hand()))
         return np.array([values[name] for name in JOINT_NAMES])
 
-    def barcode_guard(self, plan):
+    def position_error(self, measured, expected, plan, phase):
+        error=np.abs(np.asarray(measured)-np.asarray(expected))
+        if (self.config.get("hand_command_only",False)
+                and self.hand.mapping is not None
+                and self.hand.mapping.get("protocol")=="leader_grip"):
+            error[7:14]=0.;error[21:28]=0.
+            return float(np.max(error))
+        if (self.config.get("right_hand_preload",False)
+                and self.hand.mapping is not None
+                and self.hand.mapping.get("protocol")=="leader_grip"):
+            closed=np.asarray(self.config["hand_closed"])[7:]
+            at_closed=np.allclose(np.asarray(expected)[21:28],closed,atol=1e-6)
+            closing=plan.stage in ("Close","TrackGrasp") and phase!="start"
+            holding=plan.stage in LOADED_STAGES and at_closed
+            # Opening must still reach the measured open posture. Its starting
+            # command is the previous preload, not the stalled physical angles.
+            releasing=plan.stage=="Release" and phase in ("start","tracking")
+            if closing or holding or releasing:error[21:28]=0.
+        return float(np.max(error))
+
+    def barcode_guard(self, plan, *, during_execution=False):
         if self.config.get('barcode_fixed_wrist'):
             from deux_task_core.reader_alignment import check_posture
             if not hasattr(self,'reader_robot'):self.reader_robot=RobotModel(self.config['robot'])
             check_posture(self.reader_robot,self.measured(),self.config)
+        # A reviewed target is frozen only after the normal dispatch validation.
+        # Hardware, joint feedback, tracking and cancellation checks still run.
+        if during_execution and not self.config.get('barcode_observation_required_during_alignment', True):
+            return
         observed, expected = self.latest_barcode_target, plan.barcode_target
         if (observed is None or not expected.request_id
                 or observed.request_id != expected.request_id
                 or observed.target_id != plan.target_id or expected.target_id != plan.target_id
                 or observed.header.frame_id != self.config['base_frame']
                 or expected.header.frame_id != self.config['base_frame']
-                or not expected.orientation_valid or not observed.orientation_valid
+                or not label_quality(expected, self.config) or not label_quality(observed, self.config)
                 or not current(observed.header.stamp, self.now(), self.config['max_object_age'])
-                or seconds(observed.header.stamp) < seconds(expected.header.stamp)
-                or not np.isfinite([observed.plane_rmse_m, observed.valid_fraction]).all()
-                or not 0 <= observed.plane_rmse_m <= .003 or not .7 <= observed.valid_fraction <= 1.):
+                or seconds(observed.header.stamp) < seconds(expected.header.stamp)):
             raise ValueError('barcode alignment observation missing/stale/superseded')
         if expected.barcode_track_id and observed.barcode_track_id != expected.barcode_track_id:
             raise ValueError("barcode track identity changed")
-        self.check_target_rotation(observed.pose, expected.pose)
+        if not self.config.get("barcode_position_only", False):
+            self.check_target_rotation(observed.pose, expected.pose)
         if np.linalg.norm(pose_matrix(observed.pose)[:3,3]-pose_matrix(expected.pose)[:3,3]) > self.config['max_target_drift']:
             raise ValueError('barcode moved; replan')
 
@@ -139,7 +169,7 @@ class ExecutionNode(RuntimeNode):
             raise ValueError('conveyor orientation requires replan')
 
     def grasp_age_guard(self, plan):
-        if self.frozen_grasp(plan) and not current(plan.target_acquired_at,self.now(),self.config['grasp_pose_max_age']):
+        if self.frozen_grasp(plan) and not current(plan.target_acquired_at,self.now(),grasp_cache_max_age(self.config)):
             raise ValueError('original grasp pose expired')
 
     def validate(self, request):
@@ -155,7 +185,7 @@ class ExecutionNode(RuntimeNode):
         if p.stage == "AlignBarcode": self.barcode_guard(p)
         q = self.measured()
         from deux_task_core.placement import check_start, enabled, PLACEMENT_STAGES
-        if enabled(self.config) and p.stage in PLACEMENT_STAGES:
+        if enabled(self.config) and (p.stage in PLACEMENT_STAGES or (p.stage == 'Retreat' and self.config['placement'].get('fixed_joint_motion', False))):
             check_start(RobotModel(self.config['robot']), self.config, p.stage, q)
         if (
             self.config_version != p.scene_version
@@ -171,7 +201,7 @@ class ExecutionNode(RuntimeNode):
             phases=np.asarray(p.phase_end_times)
             if phases.shape!=(3,) or not np.isfinite(phases).all() or phases[0]<0 or np.any(np.diff(phases)<=0) or abs(phases[-1]-t[-1])>1e-6:
                 raise ValueError("invalid interception phase timing")
-        if np.max(abs(path[0] - q)) > self.config["start_tolerance"]:
+        if self.position_error(q,path[0],p,"start") > self.config["start_tolerance"]:
             raise ValueError("start mismatch")
         if requires_object_pose(self.config, p.stage) and not self.frozen_grasp(p) and not p.follows_conveyor:
             obj = self.target(p.target_id, full=p.stage in ("Scan", "Place"))
@@ -195,14 +225,8 @@ class ExecutionNode(RuntimeNode):
         plan = goal.request.plan
         c = deepcopy(self.config)
         t, q = arrays(plan.trajectory, JOINT_NAMES)
-        if not self.get_parameter("dry_run").value and not (
-            c.get("synthetic", False)
-            or (
-                c.get("calibration_confirmed") is True
-                and c.get("command_ownership_confirmed") is True
-            )
-        ):
-            raise ValueError("installation calibration/command ownership unconfirmed")
+        if not self.get_parameter("dry_run").value:
+            self.hardware_gate()
         robot = RobotModel(c["robot"])
         from .trajectory import validate_limits
         validate_limits(plan.trajectory, JOINT_NAMES, robot)
@@ -221,11 +245,14 @@ class ExecutionNode(RuntimeNode):
             if plan.stage in LOADED_STAGES
             else 0.0
         )
+        from deux_task_core.placement import trajectory_clearance
         for row in q:
             if plan.stage=='AlignBarcode' and c.get('barcode_fixed_wrist'):
                 from deux_task_core.reader_alignment import check_posture
                 check_posture(robot,row,c,command=True)
-            robot.clearance(row, c["obstacles"], c["collision_margin"], attached)
+            trajectory_clearance(robot, c, plan.stage, row, attached)
+        if c.get('motion_review_required',False):
+            await self.review.wait(goal,robot,t,q)
         self.validate(goal.request)
         self.completed.add(plan.plan_id)
         if self.get_parameter("dry_run").value:
@@ -239,12 +266,33 @@ class ExecutionNode(RuntimeNode):
         self.arm.validate()
         hand_indices = [JOINT_NAMES.index(n) for n in HAND_NAMES]
         hand_q = q[:, hand_indices]
-        self.hand.validate(t, hand_q)
+        self.hand.validate(t, hand_q, stage=plan.stage)
+        close_duration = c.get("barcode_align_left_close_duration_s") if plan.stage == "AlignBarcode" else None
+        if close_duration is not None:
+            close_duration = float(close_duration)
+            ready_fraction = float(c["left_hand_ready_fraction"])
+            if not np.isfinite([close_duration, ready_fraction]).all() or close_duration <= 0 or not 0 <= ready_fraction <= 1:
+                raise ValueError("invalid barcode alignment left close configuration")
+            if not hasattr(self.hand, "command_align_left_fraction"):
+                raise ValueError("barcode alignment left close requires LeaderGrip")
+        continuous_place=(plan.stage=='PlaceApproach' and c.get('placement',{}).get('continuous_motion',False))
+        release_checked=False
+        if continuous_place:
+            phases=np.asarray(plan.phase_end_times)
+            if phases.shape!=(3,) or not np.isfinite(phases).all() or phases[0]<=0 or np.any(np.diff(phases)<=0) or abs(phases[-1]-t[-1])>1e-6 or abs(phases[1]-phases[0]-c['hand_open_duration_s'])>1e-6:
+                raise ValueError('invalid continuous placement schedule')
+            hold=q[(t>=phases[0]-1e-6)&(t<=phases[1]+1e-6)]
+            arm_idx=[JOINT_NAMES.index(n) for n in ARM_NAMES]
+            if len(hold)<2 or not np.allclose(hold[:,arm_idx],hold[0,arm_idx],atol=1e-8):
+                raise ValueError('placement opening requires stationary arms')
+            if not hasattr(self.hand,'command_align_left_fraction'):
+                raise ValueError('continuous placement requires LeaderGrip')
+        close_logged = False
         pending = handle = None
         hand_started = hand_completed = False
         start = seconds(plan.trajectory.header.stamp) if plan.follows_conveyor else self.now() + (c.get("lift_start_lead",.5) if plan.stage=="Lift" else .5)
         if start-self.now()<.1:raise ValueError('scheduled tracking start missed')
-        deadline = start + t[-1] + c["settle_timeout"]
+        trace=TrackingTrace(plan,t,q,start,c['tracking_tolerance']) if plan.stage=='Approach' else None
         try:
             tr = deepcopy(plan.trajectory)
             indices = [JOINT_NAMES.index(n) for n in ARM_NAMES]
@@ -259,30 +307,40 @@ class ExecutionNode(RuntimeNode):
             if self.now() >= start:
                 raise TimeoutError("arm acceptance missed synchronized start")
             result = self.arm.result_for(handle)
-            wall = time.monotonic()
             previous = self.now()
             while True:
                 now = self.now()
                 if goal.is_cancel_requested:
                     raise InterruptedError("canceled")
-                if (
-                    now < previous
-                    or now > deadline
-                    or time.monotonic() - wall > self.wall_timeout(t[-1] + c["settle_timeout"] + 3)
-                ):
-                    raise TimeoutError("execution clock/deadline")
+                # Wait for the driver result / completion until canceled. An
+                # elapsed-time limit must not abort a slow physical motion.
+                if now < previous:
+                    raise ValueError("execution clock moved backwards")
                 previous = now
                 self.hardware_gate()
                 if self.config_version != plan.scene_version:
                     raise ValueError("scene changed")
                 measured = self.measured()
-                if plan.stage == "AlignBarcode": self.barcode_guard(plan)
+                if plan.stage == "AlignBarcode": self.barcode_guard(plan, during_execution=True)
                 if plan.follows_conveyor:self.conveyor_guard(plan)
-                if (
-                    np.max(abs(measured - sample(t, q, max(0, now - start))))
-                    > c["tracking_tolerance"]
-                ):
-                    raise ValueError("tracking error")
+                expected=sample(t,q,max(0,now-start))
+                if trace is not None:trace.append(now,measured,expected,self.arm.state)
+                tracking_error=self.position_error(measured,expected,plan,"tracking")
+                if tracking_error > c["tracking_tolerance"]:
+                    # Reuse position_error so ignored/preload hand joints remain excluded.
+                    per_joint=[]
+                    for i in range(len(JOINT_NAMES)):
+                        single=np.asarray(expected).copy();single[i]=measured[i]
+                        per_joint.append(self.position_error(single,expected,plan,"tracking"))
+                    i=int(np.argmax(per_joint))
+                    reason=(f"tracking error: {JOINT_NAMES[i]} "
+                            f"error={np.degrees(tracking_error):.3f}deg "
+                            f"limit={np.degrees(c['tracking_tolerance']):.3f}deg "
+                            f"expected={np.degrees(expected[i]):.3f}deg "
+                            f"measured={np.degrees(measured[i]):.3f}deg "
+                            f"elapsed={now-start:.3f}s stage={plan.stage}")
+                    self.get_logger().error(reason)
+                    raise ValueError(reason)
                 self.grasp_age_guard(plan)
                 if plan.stage in ("Approach", "Descend") and not self.frozen_grasp(plan) and not plan.follows_conveyor:
                     obj = self.target(plan.target_id)
@@ -299,9 +357,27 @@ class ExecutionNode(RuntimeNode):
                 elapsed = now - start
                 if elapsed >= 0 and not hand_completed:
                     hand_started = True
-                    self.hand.command(sample(t, hand_q, elapsed))
-                    hand_completed = (elapsed >= t[-1] and
-                        np.max(abs(measured[hand_indices] - hand_q[-1])) <= c["start_tolerance"])
+                    if continuous_place:
+                        opening=elapsed>=phases[0]
+                        if opening and not release_checked:
+                            from deux_task_core.placement import check_start
+                            check_start(robot,c,'Release',measured)
+                            release_checked=True
+                            self.get_logger().info('Continuous placement: right open; same arm action continues after 0.5s hold')
+                        self.hand.command(sample(t,hand_q,elapsed),placement_right_fraction=0. if opening else 1.)
+                        close_done=True
+                    elif close_duration is not None:
+                        from .align_hand_pulse import close_fraction
+                        fraction, close_done = close_fraction(elapsed, ready_fraction, close_duration)
+                        if not close_logged:
+                            self.get_logger().info(f"AlignBarcode: left hand {ready_fraction:.3f} -> 1 during arm motion; {close_duration:.3f}s")
+                            close_logged = True
+                        self.hand.command(sample(t, hand_q, elapsed), align_left_fraction=fraction)
+                    else:
+                        close_done = True
+                        self.hand.command(sample(t, hand_q, elapsed))
+                    hand_completed = (close_done and elapsed >= t[-1] and
+                        self.position_error(measured,q[-1],plan,"final") <= c.get("final_tolerance", c["start_tolerance"]))
                 if arm_completed and hand_completed:
                     break
                 goal.publish_feedback(
@@ -311,20 +387,33 @@ class ExecutionNode(RuntimeNode):
                     )
                 )
                 await pause(self)
-            if np.max(abs(self.measured() - q[-1])) > c["start_tolerance"]:
+            if self.position_error(self.measured(),q[-1],plan,"final") > c.get("final_tolerance", c["start_tolerance"]):
                 raise ValueError("final measured position mismatch")
             return ExecuteMotion.Result(
                 success=True,
-                reason="measured motion complete; task outcome requires sensor evidence",
+                reason=("arm motion and binary hand command complete; hand position not verified"
+                        if c.get("hand_command_only",False) else
+                        "motion/hand command complete under right preload policy; grasp requires sensor evidence"
+                        if c.get("right_hand_preload",False) else
+                        "measured motion complete; task outcome requires sensor evidence"),
             )
         finally:
+            trace_outcome=str(sys.exc_info()[1]) if sys.exc_info()[1] else "completed"
             # Do not replace a successful close's preload with stalled feedback.
             # A cancellation before hand dispatch must not issue a new hand command.
             try:
                 if hand_started and not hand_completed:
                     self.hand.hold_measured()
             finally:
-                await self.arm.cancel(pending, handle)
+                try:
+                    await self.arm.cancel(pending, handle)
+                finally:
+                    if trace is not None:
+                        try:
+                            path=trace.save(self.get_parameter("tracking_trace_dir").value,trace_outcome)
+                            self.get_logger().info(f"Approach tracking trace saved: {path}")
+                        except Exception as exc:
+                            self.get_logger().error(f"tracking trace save failed: {exc}")
 
 
 def main(args=None):

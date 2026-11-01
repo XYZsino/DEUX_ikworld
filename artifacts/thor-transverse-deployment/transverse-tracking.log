@@ -1,0 +1,13 @@
+[INFO] [1793504865.711783963] [grid_grasp_trial]: Loaded installation config version 0725b9f1594262f4b1849f0ca9fbc9288588ca25e242d26a7a002340c90a5394
+[WARN] [1793504869.658366896] [grid_grasp_trial]: stored arm trajectory tracking error
+[WARN] [1793504874.465974022] [grid_grasp_trial]: final joint error
+{
+  "synthetic_only": true,
+  "fake_hand": true,
+  "fake_controller": true,
+  "action_success": true,
+  "first_close_s": 2.5021955966949463,
+  "last_close_s": 3.0025696754455566,
+  "hand_commands": 25,
+  "reason": "Stored arm path and parallel hand commands completed; physical grasp success unverified"
+}

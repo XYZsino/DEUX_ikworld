@@ -1,0 +1,103 @@
+{
+  "requested_additional_trials": 3,
+  "completed_additional_trials": 3,
+  "all_controller_sequences_succeeded": true,
+  "no_automatic_fourth_trial": true,
+  "physical_grasp_verified": false,
+  "rows": [
+    {
+      "trial": 1,
+      "success": true,
+      "contact_xyz_m": [
+        0.57,
+        0.06,
+        0.97
+      ],
+      "selected_rotation": {
+        "id": "axis09_29",
+        "rotvec_deg": [
+          0.0,
+          -20.506096654409877,
+          -20.506096654409877
+        ]
+      },
+      "observed_yaw_deg": -97.0357417620414,
+      "rotation_candidates": 2,
+      "hand_timing": {
+        "first_command_s": 2.500962257385254,
+        "last_command_s": 3.00319242477417,
+        "commands": 23,
+        "attempts": 23,
+        "scheduled_contact_s": 3.0,
+        "physical_closure_verified": false,
+        "timing_warnings": []
+      },
+      "max_close_path_error_m": 0.013119922460246562,
+      "warnings": [],
+      "physical_grasp_verified": false
+    },
+    {
+      "trial": 2,
+      "success": true,
+      "contact_xyz_m": [
+        0.6,
+        0.03,
+        0.97
+      ],
+      "selected_rotation": {
+        "id": "axis09_29",
+        "rotvec_deg": [
+          0.0,
+          -20.506096654409877,
+          -20.506096654409877
+        ]
+      },
+      "observed_yaw_deg": -72.83925623493792,
+      "rotation_candidates": 1,
+      "hand_timing": {
+        "first_command_s": 2.5011091232299805,
+        "last_command_s": 3.001797914505005,
+        "commands": 23,
+        "attempts": 23,
+        "scheduled_contact_s": 3.0,
+        "physical_closure_verified": false,
+        "timing_warnings": []
+      },
+      "max_close_path_error_m": 0.01519492108492412,
+      "warnings": [],
+      "physical_grasp_verified": false
+    },
+    {
+      "trial": 3,
+      "success": true,
+      "contact_xyz_m": [
+        0.6,
+        0.03,
+        0.97
+      ],
+      "selected_rotation": {
+        "id": "axis09_29",
+        "rotvec_deg": [
+          0.0,
+          -20.506096654409877,
+          -20.506096654409877
+        ]
+      },
+      "observed_yaw_deg": -5.672508916494756,
+      "rotation_candidates": 1,
+      "hand_timing": {
+        "first_command_s": 2.5023980140686035,
+        "last_command_s": 3.0042173862457275,
+        "commands": 24,
+        "attempts": 24,
+        "scheduled_contact_s": 3.0,
+        "physical_closure_verified": false,
+        "timing_warnings": []
+      },
+      "max_close_path_error_m": 0.014286391142189641,
+      "warnings": [],
+      "physical_grasp_verified": false
+    }
+  ],
+  "completed_at": 1793504130.1588228
+}

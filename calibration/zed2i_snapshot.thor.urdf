@@ -1,0 +1,2 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="thor_calibrated_camera_snapshot"><link name="base_link" /><link name="zed2i_left_camera_frame" /><joint name="thor_calibrated_camera_snapshot_joint" type="fixed"><parent link="base_link" /><child link="zed2i_left_camera_frame" /><origin xyz="0.28112474781186547 0.06 1.3784697227239608" rpy="-0.00066857730327428 0.7559444015315404 3.1409336936905063e-16" /></joint></robot>

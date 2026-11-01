@@ -1,0 +1,62 @@
+{
+  "cell_id": "x+023_y-001_yaw-100",
+  "contact_xyz_m": [
+    0.69,
+    -0.03,
+    0.97
+  ],
+  "start_at_s": 1793505799.5595016,
+  "contact_at_s": 1793505802.5595016,
+  "start_in_s": 3.2003926558695355,
+  "contact_in_s": 6.2003926558695355,
+  "lateral_error_m": 0.01075164565410025,
+  "height_error_m": 0.0,
+  "grasp_mode": "transverse_axis_locked",
+  "orientation_exception_applied": true,
+  "observed_yaw_deg": 81.16794003039207,
+  "canonical_axis_yaw_deg": -98.83205996960794,
+  "yaw_available": true,
+  "selected_axis_yaw_deg": -99.99999223007501,
+  "axis_error_deg": 1.1679322604670688,
+  "axis_match_tolerance_deg": 3.0,
+  "front_back_reversed": true,
+  "rotation_error_deg": 100.00773628240839,
+  "yaw_target_rotation_error_deg": 1.167932270839129,
+  "selected_rotation": {
+    "id": "transverse_yaw-100",
+    "yaw_deg": -100.0
+  },
+  "rotation_candidates_at_cell": 1,
+  "acceleration_limit_ratio": 0.8391612948256864,
+  "rotation_is_soft_preference": false,
+  "selection_priority": "transverse axis match <=3deg required; then X error, ETA, target rotation, acceleration",
+  "acquired_at_s": 1793505796.0924578,
+  "grasp_now_m": [
+    0.7007516456541002,
+    0.5280353390282582,
+    0.97
+  ],
+  "velocity_m_s": [
+    0.0,
+    -0.09,
+    0.0
+  ],
+  "target_id": "single-4dfe6f18-47",
+  "replay_policy": "frozen after dispatch; no perception-triggered cancellation",
+  "hand_timing": {
+    "first_command_s": 2.5011394023895264,
+    "last_command_s": 3.0026824474334717,
+    "commands": 24,
+    "attempts": 24,
+    "scheduled_contact_s": 3.0,
+    "physical_closure_verified": false,
+    "timing_warnings": []
+  },
+  "success": true,
+  "reason": "Stored arm path and parallel hand commands completed; physical grasp success unverified",
+  "physical_grasp_verified": false,
+  "max_close_path_error_m": 0.01339869696537047,
+  "execution_warnings": [],
+  "motion_trace": "motion-trace-1793505796363840768.jsonl",
+  "motion_samples": 156
+}

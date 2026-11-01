@@ -8,7 +8,7 @@ from sensor_msgs.msg import Image,CameraInfo
 from std_msgs.msg import Header
 from builtin_interfaces.msg import Time
 from deux_task_msgs.msg import Observation,DetectionArray,BoundingBox
-from deux_task_gui.rgb_view import render_rgb,corners_for
+from deux_task_gui.rgb_view import render_rgb
 
 
 def fixture():
@@ -28,46 +28,59 @@ def fixture():
     return obs,det
 
 
-def test_selected_surface_box_projects_into_its_image_and_handles_mm_depth():
-    o,d=fixture();pixels,extent=corners_for(o,d,'selected')
-    assert pixels.shape==(8,2) and np.all(extent>0)
-    assert pixels[:,0].min()>15 and pixels[:,0].max()<65
-    assert pixels[:,1].min()>15 and pixels[:,1].max()<55
-    jpg,meta=render_rgb(o,d,'selected');im=np.array(PILImage.open(BytesIO(jpg)))
-    assert meta['box_valid'] and ((im[:,:,1]>140)&(im[:,:,0]<150)).sum()>40
-    depth=np.frombuffer(bytes(o.depth.data),dtype='<f4').reshape(72,96)
-    o.depth.encoding='16UC1';o.depth.step=192;o.depth.data=(depth*1000).astype('<u2').tobytes()
-    pixels_mm,_=corners_for(o,d,'selected')
-    np.testing.assert_allclose(pixels,pixels_mm,atol=.15)
+def test_icp_axes_follow_pose_rotation_and_require_same_acquisition():
+    from deux_task_msgs.msg import ObjectDetectionArray,ObjectDetection
+    from deux_task_gui.rgb_view import icp_axes_for
+    o,d=fixture();obj=ObjectDetection(track_id='selected')
+    obj.pose.pose.position.z=1.
+    obj.pose.pose.orientation.z=2**-.5;obj.pose.pose.orientation.w=2**-.5
+    poses=ObjectDetectionArray(header=Header(stamp=Time(sec=12),frame_id='base_link'),sequence=7,detections=[obj])
+    pixels=icp_axes_for(o,poses,'selected')
+    assert pixels[1,1]>pixels[0,1] and abs(pixels[1,0]-pixels[0,0])<1e-6
+    assert pixels[2,0]<pixels[0,0]
+    _,meta=render_rgb(o,d,'selected',objects=poses)
+    assert meta['icp_axes_valid']
+    poses.sequence+=1
+    _,meta=render_rgb(o,d,'selected',objects=poses)
+    assert not meta['icp_axes_valid'] and not meta['box_valid']
 
 
-@pytest.mark.parametrize('case',['different_target','different_sequence','different_stamp','different_frame','missing_tf','wrong_tf_time','missing_mask','no_depth'])
-def test_invalid_observation_shows_rgb_without_a_stale_or_guessed_box(case):
-    o,d=fixture();target='selected'
-    if case=='different_target':target='another'
-    if case=='different_sequence':d.sequence+=1
-    if case=='different_stamp':d.header=deepcopy(d.header);d.header.stamp.sec+=1
-    if case=='different_frame':d.header=deepcopy(d.header);d.header.frame_id='other_camera'
-    if case=='missing_tf':o.camera_transform_valid=False
-    if case=='wrong_tf_time':o.base_from_camera.header.stamp.sec=11
-    if case=='missing_mask':d.boxes[0].polygon_xy=[]
-    if case=='no_depth':o.depth.data=np.full((72,96),np.nan,dtype='<f4').tobytes()
-    jpg,m=render_rgb(o,d,target)
-    assert not m['box_valid'] and m['reason'] and PILImage.open(BytesIO(jpg)).size==(96,72)
+def test_direct_bundle_retains_original_buffers_and_stable_acquisition_id():
+    from deux_task_perception.camera_input import CameraInput
+    o,_=fixture()
+    args=(o.rgb,o.depth,o.rgb_info,o.depth_info,96,72,.02)
+    a=CameraInput.bundle(*args);b=CameraInput.bundle(*args)
+    assert a.rgb is o.rgb and a.depth is o.depth and a.rgb_info is o.rgb_info
+    assert a.sequence==b.sequence==12_000_000_000
+    bad=deepcopy(o.depth_info);bad.header.stamp.nanosec=30_000_000
+    with pytest.raises(ValueError):CameraInput.bundle(o.rgb,o.depth,o.rgb_info,bad,96,72,.02)
 
 
-def test_depth_spike_does_not_expand_selected_box():
-    o,d=fixture();_,before=corners_for(o,d,'selected')
-    z=np.frombuffer(bytes(o.depth.data),dtype='<f4').copy().reshape(72,96);z[30,30]=2.7;o.depth.data=z.tobytes()
-    _,after=corners_for(o,d,'selected');np.testing.assert_allclose(after,before,atol=.002)
-
-
-def test_selection_roi_is_visible_before_target_selection():
+def test_detection_boxes_and_roi_are_not_drawn():
     o,d=fixture();d.selection_roi_valid=True;d.selection_roi_xyxy=[5.,5.,90.,65.]
-    jpg,m=render_rgb(o,d,'')
-    assert m['selection_roi_xyxy']==[5.,5.,90.,65.] and not m['box_valid']
-    image=np.array(PILImage.open(BytesIO(jpg)))
-    assert ((image[:,:,0]>180)&(image[:,:,1]>130)&(image[:,:,2]<150)).sum()>40
-    d.sequence+=1
-    _,m=render_rgb(o,d,'')
-    assert m['selection_roi_xyxy'] is None
+    with_boxes,meta=render_rgb(o,d,'selected')
+    without_boxes,_=render_rgb(o,None,'selected')
+    assert with_boxes==without_boxes
+    assert not meta['box_valid'] and meta['selection_roi_xyxy'] is None
+
+def test_historical_axes_use_current_camera_tf_and_preserve_pose_stamp():
+    from deux_task_msgs.msg import ObjectDetectionArray,ObjectDetection
+    from deux_task_gui.rgb_view import icp_axes_for
+    o,d=fixture()
+    obj=ObjectDetection(track_id='selected')
+    obj.pose.pose.position.z=1.;obj.pose.pose.orientation.w=1.
+    poses=ObjectDetectionArray(header=Header(stamp=Time(sec=12),frame_id='base_link'),sequence=7,detections=[obj])
+    original=icp_axes_for(o,poses,'selected')
+    o.header.stamp.sec=30;o.sequence=8
+    o.base_from_camera.header.stamp.sec=30
+    o.base_from_camera.transform.translation.x=.1
+    _,meta=render_rgb(o,d,'selected',objects=poses,allow_historical=True)
+    assert meta['icp_axes_valid'] and meta['icp_axes_held']
+    assert meta['icp_pose_age_s']==18. and poses.header.stamp.sec==12
+    moved=icp_axes_for(o,poses,'selected',allow_historical=True)
+    assert moved[0,0]<original[0,0]
+    _,strict=render_rgb(o,d,'selected',objects=poses)
+    assert not strict['icp_axes_valid']
+    o.camera_transform_valid=False
+    _,invalid=render_rgb(o,d,'selected',objects=poses,allow_historical=True)
+    assert not invalid['icp_axes_valid']

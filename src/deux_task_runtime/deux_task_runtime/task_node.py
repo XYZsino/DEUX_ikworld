@@ -1,3 +1,4 @@
+from deux_task_core.barcode_position import label_quality
 """Bounded async memory behavior tree; motion is never grasp/read/place proof."""
 
 from copy import deepcopy
@@ -64,13 +65,12 @@ class TaskNode(RuntimeNode):
     def on_label(self, msg):
         r = self.perception_request
         if (r and r.mode == 'barcode' and msg.request_id == r.request_id
-                and msg.target_id == self.target_id and msg.orientation_valid
+                and msg.target_id == self.target_id
                 and msg.header.frame_id == self.config['base_frame']
                 and seconds(r.header.stamp) <= seconds(msg.header.stamp) <= self.now()
                 and self.now() < seconds(r.expires_at)
                 and self.now()-seconds(msg.header.stamp) <= self.config['max_object_age']
-                and np.isfinite([msg.plane_rmse_m, msg.valid_fraction]).all()
-                and 0 <= msg.plane_rmse_m <= .003 and .7 <= msg.valid_fraction <= 1.):
+                and label_quality(msg, self.config)):
             try: pose_matrix(msg.pose)
             except ValueError: return
             self.label = msg
@@ -150,11 +150,8 @@ class TaskNode(RuntimeNode):
                 raise ValueError("action goal rejected")
             self.child = handle
             future = handle.get_result_async()
-            wall = time.monotonic()
             while not future.done():
                 self.guard(goal, version)
-                if time.monotonic() - wall > self.wall_timeout(timeout):
-                    raise TimeoutError("task child timeout")
                 await pause(self)
             result = future.result()
             terminal = result.status in (GoalStatus.STATUS_SUCCEEDED,GoalStatus.STATUS_ABORTED,GoalStatus.STATUS_CANCELED)

@@ -1,0 +1,21 @@
+{
+  "completed_at": "2026-11-01T03:11:46.131798+00:00",
+  "accepted_paths": 1587,
+  "contact_cells": 118,
+  "unique_combinations": 11925,
+  "solver_attempts": 20935,
+  "independent_all_path_verification_passed": true,
+  "tests_passed": 8,
+  "hardware_connected": false,
+  "thor_modified": false,
+  "execution_library_installed": false,
+  "hashes": {
+    "manifest.json": "567af6554218956f8849c14b4bbcfc09a3be715390672faf90382ac996192eba",
+    "summary.json": "badb0d467ffe9d420b5b87f549594f809ed2dcfbc7d2f07f98ca00623cba5f96",
+    "cells.json": "0c8f00517642776f5e46c02c0f633cfad92a20a741646af29f8d72a1eefc3a42",
+    "rotation_tests.txt": "a06597830c00427cffc04e41efcf91022fd2efb856120305c46ecb47675227bf",
+    "baseline_tests.txt": "791aa993b8574162b466270a16971af7a56ff8241c347f1575ea5d10e75fa87e",
+    "rotation_workspace.png": "314c367a5bfab9f322436872d93197034a903d88fdc4c525a84c36efa40b5205",
+    "RESULTS.ko.rst": "517c27c112d8fa9fa387001e7423fd45a64afebd060e8a5fb9c0e29248175ba3"
+  }
+}

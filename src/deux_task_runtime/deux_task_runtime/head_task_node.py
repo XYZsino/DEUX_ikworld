@@ -1,3 +1,4 @@
+from deux_task_core.planning import grasp_cache_max_age
 """Image-first PickScan BT. ICP is required only while acquiring the grasp.
 
 Visual evidence after grasp is explicitly a visible target near the hand, not
@@ -133,9 +134,9 @@ class HeadTaskNode(TaskNode):
                 if obj.pose_filtered and obj.velocity_valid:self.grasp_objects=deepcopy(self.observation.objects)
             except ValueError:pass
         if not self.config.get('moving_source',False) and self.state in ('Approach','Descend','Close') and self.grasp_objects is not None:
-            if not current(self.grasp_objects.header.stamp,self.now(),self.config['grasp_pose_max_age']):
+            if not current(self.grasp_objects.header.stamp,self.now(),grasp_cache_max_age(self.config)):
                 raise ValueError('original grasp pose expired')
-            if not self.visible():
+            if self.config.get('stationary_grasp_visibility_check_enabled',True) and not self.visible():
                 obj=next(d for d in self.grasp_objects.detections if d.track_id==self.target_id)
                 ee=self.observation.base_from_right_ee
                 if not self.observation.right_ee_valid or not current(ee.header.stamp,self.now(),self.config['max_observation_age']):
@@ -150,20 +151,19 @@ class HeadTaskNode(TaskNode):
     def visible(self, require_barcode=False):
         m=self.visual;r=self.perception_request
         if (m is None or r is None or m.request_id!=r.request_id or m.target_id!=self.target_id
-                or m.header.frame_id!=self.config['base_frame'] or not m.bag_visible
+                or m.header.frame_id!=self.config['base_frame'] or (not require_barcode and not m.bag_visible)
                 or not current(m.header.stamp,self.now(),self.config['max_object_age'])):
             return False
         if require_barcode and (not m.barcode_visible or not m.barcode_track_id):return False
         return True
 
     async def await_condition(self, predicate, goal, version, timeout=8.):
-        wall=time.monotonic();start=self.now()
-        while self.now()-start < timeout and time.monotonic()-wall < self.wall_timeout(timeout):
+        # No elapsed-time failure for visual acquisition. Keep cancellation,
+        # feedback freshness and scene/clock guards active while waiting.
+        while True:
             self.guard(goal,version)
             if predicate():return
             await pause(self)
-        detail=f' — {self.reason}' if self.reason else ''
-        raise Failure(f'{self.state}: fresh visual evidence timeout{detail}')
 
     def select_ready(self, observations, requested_id=''):
         """Admit a same-frame ROI/depth box, or retain the explicit legacy policy."""
@@ -345,38 +345,15 @@ class HeadTaskNode(TaskNode):
                 await self.stage('TrackGrasp',goal,version)
             else:
                 for stage in ('Approach','Descend','Close'):await self.stage(stage,goal,version)
-            # Closing motion completion immediately triggers Lift. No grasp
-            # success/contact/visual confirmation is required before lifting.
+            # Closing completes before moving directly to the right-arm scan posture.
             # Stop submitting ICP jobs before moving a held, deformable bag.
             self.request_perception('barcode')
-            await self.stage('Lift',goal,version)
             await self.stage('ScanPose',goal,version)
 
-        async def reacquire():
-            self.set_state('ReacquireHeldTarget');samples={}
-            def unique_near_hand():
-                m=self.candidates;obs=self.observation
-                if (m is None or m.request_id!=self.perception_request.request_id or
-                    m.header.frame_id!=self.config['base_frame'] or
-                    not current(m.header.stamp,self.now(),self.config['max_object_age']) or
-                    obs is None or not obs.right_ee_valid or
-                    not current(obs.base_from_right_ee.header.stamp,self.now(),self.config['max_observation_age'])):
-                    samples.clear();return False
-                from .visual_selection import held_candidate
-                t=obs.base_from_right_ee.transform.translation
-                selected=held_candidate(m.candidates,[t.x,t.y,t.z],self.pre_grasp_surface_z)
-                if selected is None:samples.clear();return False
-                for key in list(samples):
-                    if key!=selected.target_id:del samples[key]
-                observed=samples.setdefault(selected.target_id,set())
-                observed.add(seconds(m.header.stamp))
-                if len(observed)<3:return False
-                previous=self.target_id;self.target_id=selected.target_id
-                self.get_logger().info(f'Visual hand association: {previous} -> {self.target_id}; not persistent identity proof')
-                self.request_perception('barcode');return True
-            await self.await_condition(unique_near_hand,goal,version)
-
         async def verify_visual():
+            if self.config.get('skip_visual_pick_verification',False):
+                self.get_logger().info('Visual pick verification skipped by operator; grasp success not asserted')
+                return
             self.set_state('VerifyVisualPick');samples=set()
             def valid():
                 if not self.visible(require_barcode=True) or not self.visual.surface_center_valid:return False
@@ -393,10 +370,17 @@ class HeadTaskNode(TaskNode):
             self.scan_attempt+=1;self.set_state('TrackBarcode')
             await self.await_condition(lambda:self.visible(True) and self.label is not None and
                 current(self.label.header.stamp,self.now(),self.config['max_object_age']) and
+                self.label.request_id==self.perception_request.request_id and
+                self.label.target_id==self.target_id and
+                self.label.header.frame_id==self.config['base_frame'] and
+                self.label.sequence==self.visual.sequence and
                 self.label.barcode_track_id==self.visual.barcode_track_id,goal,version)
             await self.stage('AlignBarcode',goal,version)
 
         async def read():
+            if self.config.get('skip_barcode_completion',False):
+                self.reason='barcode reader completion skipped by operator; no read success claimed'
+                self.publish_status();return
             self.set_state('WaitBarcode');self.session_id=uuid4().hex
             self.scan_start=self.now();self.barcode=None
             from std_msgs.msg import Header
@@ -415,17 +399,15 @@ class HeadTaskNode(TaskNode):
             # Reader clearance is completed BEFORE the right arm travels to the bin.
             self.close_session()
             self.request_perception('detect')
-            for name in ('ClearReader','PlaceApproach','Place'):
+            from deux_task_core.placement import stages
+            for name in stages(self.config):
                 await self.stage(name,goal,version)
-            await self.stage('Release',goal,version)
-            await self.stage('PlaceRetreat',goal,version)
-            await self.stage('Retreat',goal,version)
 
         children=[
             Leaf('Prepare',lambda:self.prepare_once(goal,version)),
             Leaf('TrackAndSelect',select),
             Leaf('EstimatePose',estimate),Leaf('GraspAndPresent',grasp),
-            Leaf('ReacquireHeldTarget',reacquire),Leaf('VerifyVisualPick',verify_visual),
+            Leaf('VerifyVisualPick',verify_visual),
             Retry('ScanRetry',Sequence('TrackedScan',[Leaf('TrackBarcode',align),Leaf('WaitBarcode',read)]),3)]
         from deux_task_core.placement import enabled
         if enabled(self.config):children.append(Leaf('PlaceAndRetreat',place))
@@ -434,7 +416,11 @@ class HeadTaskNode(TaskNode):
             await self.tree.run()
             self.state='Succeeded';self.reason='bag visible near hand; tracked barcode and reader response observed'
             if enabled(self.config):self.reason='barcode read; release and retreat motions completed; placement confirmation disabled by operator'
-            return RunTask.Result(success=True,reason=self.reason,barcode=self.barcode.value)
+            if self.config.get('skip_barcode_completion',False):
+                self.reason=('release at placement approach completed; barcode reader completion skipped by operator'
+                             if enabled(self.config) and self.config['placement'].get('release_at_approach',False)
+                             else 'motion flow complete; barcode reader completion skipped by operator')
+            return RunTask.Result(success=True,reason=self.reason,barcode=self.barcode.value if self.barcode else '')
         except Exception as exc:
             self.state='Canceled' if goal.is_cancel_requested else 'Failed';self.reason=str(exc);raise
         finally:

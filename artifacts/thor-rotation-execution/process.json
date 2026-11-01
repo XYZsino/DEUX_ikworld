@@ -1,0 +1,19 @@
+{
+  "pid": 21512,
+  "command": [
+    "bash",
+    "/home/xyz_thor/DEUX_ikworld/run_rotation_grasp_trial.bash",
+    "--ros-args",
+    "-p",
+    "enable_execution:=true",
+    "-p",
+    "target_wait_timeout_s:=300.",
+    "-p",
+    "stationary_left_file:=/home/xyz_thor/DEUX_ikworld/.setup/grid-grasp-rotation-test/stationary-left.json"
+  ],
+  "identity": "tools/grid_grasp_trial.py",
+  "started_at": 1793503501.4819384,
+  "execution_enabled": true,
+  "action_requested": false,
+  "previous_preview_pid": 20728
+}

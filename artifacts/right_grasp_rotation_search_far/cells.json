@@ -1,0 +1,132 @@
+[
+  {
+    "xy_m": [
+      0.54,
+      -0.06
+    ],
+    "feasible_fixed_rotations": 1,
+    "lowest_acceleration_path": {
+      "xy_m": [
+        0.54,
+        -0.06
+      ],
+      "rotation_id": "axis00_29",
+      "accepted": true,
+      "file": "trajectories/x+018_y-002_axis00_29.json",
+      "sha256": "318c44312650b8fa603bf66db52d928a56a54ec7095fb0b74a39c666d9be8296",
+      "checks": {
+        "position_error_m": 7.744851748780508e-05,
+        "orientation_error_deg": 29.07241563397085,
+        "velocity_limit_ratio": 0.1815980812333495,
+        "acceleration_limit_ratio": 0.8901257799210146,
+        "min_measured_surface_margin_m": 0.08552185607668675,
+        "fixed_target_orientation_error_deg": 0.07540680837359437,
+        "max_close_relative_xy_speed_m_s": 0.0013704572272294061
+      },
+      "events": {
+        "approach_complete_s": 1.8,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    "options": [
+      {
+        "xy_m": [
+          0.54,
+          -0.06
+        ],
+        "rotation_id": "axis00_29",
+        "accepted": true,
+        "file": "trajectories/x+018_y-002_axis00_29.json",
+        "sha256": "318c44312650b8fa603bf66db52d928a56a54ec7095fb0b74a39c666d9be8296",
+        "checks": {
+          "position_error_m": 7.744851748780508e-05,
+          "orientation_error_deg": 29.07241563397085,
+          "velocity_limit_ratio": 0.1815980812333495,
+          "acceleration_limit_ratio": 0.8901257799210146,
+          "min_measured_surface_margin_m": 0.08552185607668675,
+          "fixed_target_orientation_error_deg": 0.07540680837359437,
+          "max_close_relative_xy_speed_m_s": 0.0013704572272294061
+        },
+        "events": {
+          "approach_complete_s": 1.8,
+          "close_start_s": 2.5,
+          "contact_s": 3.0,
+          "close_complete_s": 3.0,
+          "lift_start_s": 3.0,
+          "lift_complete_s": 4.5,
+          "stopped_s": 5.0
+        }
+      }
+    ]
+  },
+  {
+    "xy_m": [
+      0.54,
+      0.03
+    ],
+    "feasible_fixed_rotations": 1,
+    "lowest_acceleration_path": {
+      "xy_m": [
+        0.54,
+        0.03
+      ],
+      "rotation_id": "axis10_29",
+      "accepted": true,
+      "file": "trajectories/x+018_y+001_axis10_29.json",
+      "sha256": "fa169421d40ef955af3c9c03b4a6bf97b5994b2d7debe9d1f23c36f269b47cc3",
+      "checks": {
+        "position_error_m": 0.00017612544440865862,
+        "orientation_error_deg": 29.017696927312105,
+        "velocity_limit_ratio": 0.12985993383544114,
+        "acceleration_limit_ratio": 0.8630556719273278,
+        "min_measured_surface_margin_m": 0.08628737621617918,
+        "fixed_target_orientation_error_deg": 0.14347238553839797,
+        "max_close_relative_xy_speed_m_s": 0.0010270015620362726
+      },
+      "events": {
+        "approach_complete_s": 1.8,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    "options": [
+      {
+        "xy_m": [
+          0.54,
+          0.03
+        ],
+        "rotation_id": "axis10_29",
+        "accepted": true,
+        "file": "trajectories/x+018_y+001_axis10_29.json",
+        "sha256": "fa169421d40ef955af3c9c03b4a6bf97b5994b2d7debe9d1f23c36f269b47cc3",
+        "checks": {
+          "position_error_m": 0.00017612544440865862,
+          "orientation_error_deg": 29.017696927312105,
+          "velocity_limit_ratio": 0.12985993383544114,
+          "acceleration_limit_ratio": 0.8630556719273278,
+          "min_measured_surface_margin_m": 0.08628737621617918,
+          "fixed_target_orientation_error_deg": 0.14347238553839797,
+          "max_close_relative_xy_speed_m_s": 0.0010270015620362726
+        },
+        "events": {
+          "approach_complete_s": 1.8,
+          "close_start_s": 2.5,
+          "contact_s": 3.0,
+          "close_complete_s": 3.0,
+          "lift_start_s": 3.0,
+          "lift_complete_s": 4.5,
+          "stopped_s": 5.0
+        }
+      }
+    ]
+  }
+]

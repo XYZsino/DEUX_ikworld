@@ -1,0 +1,733 @@
+{
+  "combinations": 5565,
+  "rotations": 53,
+  "cells_tested": 105,
+  "accepted_paths": 2,
+  "feasible_cells": 2,
+  "previous_feasible_cells": 39,
+  "new_cells": [],
+  "combined_feasible_cells": 39,
+  "fixed_rotation_full_rectangle": {
+    "cells": 1,
+    "x_min_m": 0.54,
+    "x_max_m": 0.54,
+    "y_min_m": -0.06,
+    "y_max_m": -0.06
+  },
+  "combined_full_rectangle": {
+    "cells": 25,
+    "x_min_m": 0.45,
+    "x_max_m": 0.57,
+    "y_min_m": -0.06,
+    "y_max_m": 0.06
+  },
+  "rotation_count_histogram": {
+    "1": 2
+  },
+  "previous_cells_without_fixed_rotation_solution": [
+    [
+      0.39,
+      -0.03
+    ],
+    [
+      0.39,
+      0.12
+    ],
+    [
+      0.42,
+      -0.03
+    ],
+    [
+      0.42,
+      0.06
+    ],
+    [
+      0.42,
+      0.09
+    ],
+    [
+      0.42,
+      0.12
+    ],
+    [
+      0.45,
+      -0.06
+    ],
+    [
+      0.45,
+      -0.03
+    ],
+    [
+      0.45,
+      0.0
+    ],
+    [
+      0.45,
+      0.03
+    ],
+    [
+      0.45,
+      0.06
+    ],
+    [
+      0.45,
+      0.09
+    ],
+    [
+      0.45,
+      0.12
+    ],
+    [
+      0.48,
+      -0.06
+    ],
+    [
+      0.48,
+      -0.03
+    ],
+    [
+      0.48,
+      0.0
+    ],
+    [
+      0.48,
+      0.03
+    ],
+    [
+      0.48,
+      0.06
+    ],
+    [
+      0.48,
+      0.09
+    ],
+    [
+      0.51,
+      -0.06
+    ],
+    [
+      0.51,
+      -0.03
+    ],
+    [
+      0.51,
+      0.0
+    ],
+    [
+      0.51,
+      0.03
+    ],
+    [
+      0.51,
+      0.06
+    ],
+    [
+      0.51,
+      0.09
+    ],
+    [
+      0.54,
+      -0.03
+    ],
+    [
+      0.54,
+      0.0
+    ],
+    [
+      0.54,
+      0.06
+    ],
+    [
+      0.57,
+      -0.06
+    ],
+    [
+      0.57,
+      -0.03
+    ],
+    [
+      0.57,
+      0.0
+    ],
+    [
+      0.57,
+      0.03
+    ],
+    [
+      0.57,
+      0.06
+    ],
+    [
+      0.6,
+      -0.06
+    ],
+    [
+      0.6,
+      -0.03
+    ],
+    [
+      0.6,
+      0.0
+    ],
+    [
+      0.6,
+      0.03
+    ]
+  ],
+  "accepted_xy_bounds_m": [
+    [
+      0.54,
+      -0.06
+    ],
+    [
+      0.54,
+      0.03
+    ]
+  ],
+  "rejection_counts": {
+    "endpoint: fixed orientation IK failed (1mm / 1deg)": 5191,
+    "fixed orientation IK failed (1mm / 1deg)": 190,
+    "approach continuous acceleration >90% limit": 182
+  },
+  "per_rotation": [
+    {
+      "id": "reference",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis00_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        -8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis00_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        -16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 1,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis01_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        -10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis01_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        -20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis02_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        -8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis02_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        -16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis03_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        0.0,
+        -10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis03_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        0.0,
+        -20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis04_15",
+      "rotvec_deg": [
+        -15.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis04_29",
+      "rotvec_deg": [
+        -29.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis05_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        0.0,
+        10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis05_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        0.0,
+        20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis06_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis06_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis07_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis07_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis08_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis08_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis09_15",
+      "rotvec_deg": [
+        0.0,
+        -10.606601717798211,
+        -10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis09_29",
+      "rotvec_deg": [
+        0.0,
+        -20.506096654409877,
+        -20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis10_15",
+      "rotvec_deg": [
+        0.0,
+        -15.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis10_29",
+      "rotvec_deg": [
+        0.0,
+        -29.0,
+        0.0
+      ],
+      "accepted_paths": 1,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis11_15",
+      "rotvec_deg": [
+        0.0,
+        -10.606601717798211,
+        10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis11_29",
+      "rotvec_deg": [
+        0.0,
+        -20.506096654409877,
+        20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis12_15",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        -15.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis12_29",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        -29.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis14_15",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        15.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis14_29",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        29.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis15_15",
+      "rotvec_deg": [
+        0.0,
+        10.606601717798211,
+        -10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis15_29",
+      "rotvec_deg": [
+        0.0,
+        20.506096654409877,
+        -20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis16_15",
+      "rotvec_deg": [
+        0.0,
+        15.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis16_29",
+      "rotvec_deg": [
+        0.0,
+        29.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis17_15",
+      "rotvec_deg": [
+        0.0,
+        10.606601717798211,
+        10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis17_29",
+      "rotvec_deg": [
+        0.0,
+        20.506096654409877,
+        20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis18_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        -8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis18_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        -16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis19_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        -10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis19_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        -20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis20_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        -8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis20_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        -16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis21_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        0.0,
+        -10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis21_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        0.0,
+        -20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis22_15",
+      "rotvec_deg": [
+        15.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis22_29",
+      "rotvec_deg": [
+        29.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis23_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        0.0,
+        10.606601717798211
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis23_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        0.0,
+        20.506096654409877
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis24_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis24_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis25_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis25_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis26_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    },
+    {
+      "id": "axis26_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 0,
+      "newly_feasible_cells": 0
+    }
+  ],
+  "independent_offset_sample_peaks": {
+    "position_m": 0.00016026065190857794,
+    "reference_angle_deg": 29.071946643422823,
+    "target_angle_deg": 0.13152741770443196,
+    "velocity_ratio": 0.18159271332343965,
+    "acceleration_ratio": 0.745837194877971
+  },
+  "complete_grid_and_source_and_trajectory_hashes_verified": true,
+  "evidence": "offline kinematic and existing collision-model screening; no hardware commands"
+}

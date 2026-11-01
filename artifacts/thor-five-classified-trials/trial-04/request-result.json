@@ -1,0 +1,7 @@
+{
+  "actual_hardware_request": true,
+  "action_status": 4,
+  "success": true,
+  "reason": "Stored arm path and parallel hand commands completed; physical grasp success unverified",
+  "physical_grasp_verified": false
+}

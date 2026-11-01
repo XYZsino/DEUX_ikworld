@@ -86,13 +86,26 @@ class CheckedIK:
     def checked(self, side, target, q, values):
         q = vector(q,28).copy();values = vector(values,7)
         indices = np.array([JOINT_NAMES.index(n) for n in arm_names(side)])
-        if np.any(values < self.robot.limits[indices,0]-1e-6) or np.any(values > self.robot.limits[indices,1]+1e-6):
-            raise ValueError('IK backend joint limit violation')
+        # Solver-only numerical slack; emitted commands are clipped to exact URDF bounds.
+        numerical_slack = 1e-5  # rad (~0.000573 degrees), not a physical limit extension.
+        # Retain one lightweight failed/successful attempt for diagnostics only.
+        attempted=q.copy();attempted[indices]=values
+        self.robot.last_ik_attempt=dict(side=side,target=np.asarray(target).tolist(),
+            joints=attempted.tolist(),actual=self.robot.ee_fk(side,attempted).tolist(),
+            limit_joints=[name for name,v,lo,hi in zip(arm_names(side),values,
+                self.robot.limits[indices,0],self.robot.limits[indices,1]) if v<lo-numerical_slack or v>hi+numerical_slack])
+        if np.any(values < self.robot.limits[indices,0]-numerical_slack) or np.any(values > self.robot.limits[indices,1]+numerical_slack):
+            violations=[]
+            for name,value,lo,hi in zip(arm_names(side),values,self.robot.limits[indices,0],self.robot.limits[indices,1]):
+                if value < lo-numerical_slack or value > hi+numerical_slack:
+                    excess=max(lo-value,value-hi,0.)
+                    violations.append(f'{name}={np.degrees(value):.6f}deg range=[{np.degrees(lo):.6f},{np.degrees(hi):.6f}]deg excess={np.degrees(excess):.6f}deg')
+            raise ValueError('IK backend joint limit violation: ' + '; '.join(violations))
         q[indices] = np.clip(values,self.robot.limits[indices,0],self.robot.limits[indices,1])
         actual = self.robot.ee_fk(side,q)
         position_error = np.linalg.norm(actual[:3,3]-target[:3,3])
         angle_error = Rotation.from_matrix(target[:3,:3]@actual[:3,:3].T).magnitude()
-        if position_error > .002 or angle_error > .02:
+        if position_error > self.robot.ik_position_tolerance_m or angle_error > self.robot.ik_rotation_tolerance_rad:
             raise ValueError(f'IK backend residual exceeds tolerance: {position_error:.6f}m, {angle_error:.6f}rad')
         return q
 
@@ -134,6 +147,12 @@ def warmup(planner):
     for side in ('left','right'):
         target = planner.robot.ee_fk(side,q)
         planner.robot.ik(side,target,q,continuity_weight=.02)
+    if planner.config.get('barcode_position_only',False):
+        if not hasattr(planner.robot.ik_solver,'solve_reader_axis'):
+            raise ValueError('position-only barcode alignment requires PyRoKi reader-axis IK')
+        offset=pose(planner.config['left_ee_from_reader'])
+        reader=planner.robot.ee_fk('left',q)@offset
+        planner.robot.ik_solver.solve_reader_axis('left',reader,offset,q)
     temporal=planner.config.get('conveyor_tracking',{}).get('candidate_search',{}).get('time_search',{})
     if temporal.get('enabled',False):
         from .time_candidates import time_grid
