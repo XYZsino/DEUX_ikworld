@@ -1,0 +1,59 @@
+{
+  "schema": "deux.dataset_reading_pose.v1",
+  "source": {
+    "repo": "woozziam/deux_breadbag_barcodescan_gr00t_261029_unaligned",
+    "revision": "063cda3e517a4bb73fc064bcf748318142217a0b"
+  },
+  "episode": 0,
+  "frame": 243,
+  "timestamp_s": 8.100000381469727,
+  "left_joints_rad": [
+    0.34440679594023604,
+    -0.2117207139948181,
+    0.41396011998085064,
+    2.076941809286866,
+    -0.2359531217351462,
+    -0.040245670825242996,
+    -0.09901495648491672
+  ],
+  "right_joints_rad": [
+    0.5842298269271851,
+    0.24319066107273102,
+    -0.248531311750412,
+    -1.6538872718811035,
+    -1.3097963333129883,
+    -0.6564520001411438,
+    -0.1985580176115036
+  ],
+  "ee_xyz_m": [
+    [
+      0.40797273276393886,
+      -0.004625898207103629,
+      1.17351670114388
+    ],
+    [
+      0.6837521366732058,
+      -0.16839018117796198,
+      1.1446301132228618
+    ]
+  ],
+  "add_extra_yaw": false,
+  "add_j6_bend": false,
+  "barcode_read_success_verified": false,
+  "applied_arms": "left_only",
+  "right_pose_policy": "hold_measured_existing_scan",
+  "adjustment": {
+    "joint": "arm_l_joint6",
+    "joint_only": true,
+    "joint_delta_deg": 20.0,
+    "before_j6_deg": -22.305907081959212,
+    "after_j6_deg": -2.3059070819592127,
+    "other_arm_joints_unchanged": true,
+    "after_left_xyz_m": [
+      0.40797273276393886,
+      -0.004625898207103629,
+      1.17351670114388
+    ],
+    "actual_hardware_executed": false
+  }
+}

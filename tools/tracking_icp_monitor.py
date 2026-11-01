@@ -69,6 +69,9 @@ class Monitor(Node):
   window=min(10.,max(.1,now-self.started));values=[x[1] for x in self.latencies];workers=[x[1]['worker_ms'] for x in self.timings]
   data=dict(perception_only=True,target_id=self.target,exit_reason=self.exit_reason,tracking=bool(self.target),window_s=window,detection_hz=len(self.frames)/window,tracking_hz=len(self.track_frames)/window,icp_attempt_hz=len(self.attempts)/window,icp_pose_hz=len(self.results)/window,accepted_total=self.accepted_total,attempt_total=self.attempt_total,latency_p50_ms=float(np.median(values)) if values else None,latency_p95_ms=float(np.percentile(values,95)) if values else None,worker_p50_ms=float(np.median(workers)) if workers else None,last_error=next((x[1].get('error') for x in reversed(self.timings) if x[1].get('error')),None))
   self.preview.publish(String(data=json.dumps(data)));Path('.setup/icp-live-test/status.json').write_text(json.dumps(data,indent=2))
-rclpy.init();n=Monitor()
-try:rclpy.spin(n)
-finally:n.destroy_node();rclpy.shutdown()
+def main():
+ rclpy.init();n=Monitor()
+ try:rclpy.spin(n)
+ finally:n.destroy_node();rclpy.shutdown()
+
+if __name__=='__main__':main()

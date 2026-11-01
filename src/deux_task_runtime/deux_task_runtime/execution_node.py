@@ -8,6 +8,7 @@ from .tracking_trace import TrackingTrace
 import numpy as np
 from deux_task_core.placement import LOADED_STAGES
 from std_msgs.msg import String
+from std_srvs.srv import Trigger
 from deux_task_msgs.action import ExecuteMotion
 from .arm_adapter import ArmAdapter
 from .hand_adapter import make_hand_adapter
@@ -42,9 +43,22 @@ class ExecutionNode(RuntimeNode):
         self.action = ExclusiveAction(
             self, ExecuteMotion, "/task/execute_motion", self.execute, self.validate
         )
+        self.declare_parameter('parallel_reader_retreat',False)
+        self.declare_parameter('dataset_reading_pose_file','')
+        from .dataset_reading_pose import load_pose
+        self.dataset_reading_pose=load_pose(self.get_parameter('dataset_reading_pose_file').value)
         self.completed = set()
+        self.health_service=self.create_service(Trigger,'/task/execution_health',self.execution_health,callback_group=self.group)
         from .motion_review import MotionReview
         self.review = MotionReview(self)
+
+    def execution_health(self,request,response):
+        try:
+            self.hardware_gate();self.arm.validate();self.arm.measured_arm();self.hand.guard()
+            response.success=True;response.message='fresh arm/hand feedback, confirmed hand modes, no pending arm action'
+        except Exception as error:
+            response.success=False;response.message=f'{type(error).__name__}: {error}'
+        return response
 
     def measured(self, obs=None):
         if self.get_parameter("dry_run").value:
@@ -76,6 +90,9 @@ class ExecutionNode(RuntimeNode):
         return float(np.max(error))
 
     def barcode_guard(self, plan, *, during_execution=False):
+        # Fixed recorded posture is admitted by endpoint, start and trajectory
+        # checks; it does not consume a visually estimated barcode pose.
+        if getattr(self,'dataset_reading_pose',None) is not None:return
         if self.config.get('barcode_fixed_wrist'):
             from deux_task_core.reader_alignment import check_posture
             if not hasattr(self,'reader_robot'):self.reader_robot=RobotModel(self.config['robot'])
@@ -182,11 +199,22 @@ class ExecutionNode(RuntimeNode):
         elif self.config.get('moving_source',False) and p.stage in ('Approach','Descend','Close','TrackGrasp'):
             raise ValueError('static grasp plan rejected for moving source')
         self.grasp_age_guard(p)
-        if p.stage == "AlignBarcode": self.barcode_guard(p)
+        if p.stage == "AlignBarcode":
+            self.barcode_guard(p)
+            if getattr(self,'dataset_reading_pose',None) is not None:
+                from .dataset_reading_pose import validate_endpoint
+                _,reading_path=arrays(p.trajectory,JOINT_NAMES)
+                validate_endpoint(self.dataset_reading_pose,reading_path)
         q = self.measured()
         from deux_task_core.placement import check_start, enabled, PLACEMENT_STAGES
         if enabled(self.config) and (p.stage in PLACEMENT_STAGES or (p.stage == 'Retreat' and self.config['placement'].get('fixed_joint_motion', False))):
-            check_start(RobotModel(self.config['robot']), self.config, p.stage, q)
+            if p.stage=='PlaceApproach' and self.get_parameter('parallel_reader_retreat').value:
+                from .parallel_placement import validate_parallel
+                times,positions=arrays(p.trajectory,JOINT_NAMES)
+                validate_parallel(self.config,times,positions,p.phase_end_times)
+                if p.follows_conveyor or p.grasp_candidate_id:raise ValueError('parallel placement cannot use grasp timing')
+            else:
+                check_start(RobotModel(self.config['robot']), self.config, p.stage, q)
         if (
             self.config_version != p.scene_version
             or self.config["model_id"] != p.model_id
@@ -246,13 +274,20 @@ class ExecutionNode(RuntimeNode):
             else 0.0
         )
         from deux_task_core.placement import trajectory_clearance
+        slice_started=time.monotonic()
         for row in q:
             if plan.stage=='AlignBarcode' and c.get('barcode_fixed_wrist'):
                 from deux_task_core.reader_alignment import check_posture
                 check_posture(robot,row,c,command=True)
             trajectory_clearance(robot, c, plan.stage, row, attached)
+            if time.monotonic()-slice_started>=.02:
+                if goal.is_cancel_requested:raise InterruptedError('canceled during preflight')
+                await pause(self,.001)
+                slice_started=time.monotonic()
         if c.get('motion_review_required',False):
             await self.review.wait(goal,robot,t,q)
+        # Let samples queued during the final validation slice refresh raw state.
+        await pause(self,.001)
         self.validate(goal.request)
         self.completed.add(plan.plan_id)
         if self.get_parameter("dry_run").value:

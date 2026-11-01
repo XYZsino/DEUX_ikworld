@@ -29,6 +29,8 @@ from parallel_grid_hand import close_during_descent
 
 class GridTrial(RuntimeNode):
     library_class = GridLibrary
+    action_type = MoveToReady
+    action_name = '/task/grid_grasp'
     def __init__(self):
         super().__init__('grid_grasp_trial', observe_status=True,
                          parameter_overrides=[Parameter('config_file', value=str(ROOT/'src/deux_task_bringup/config/installation.yaml'))])
@@ -69,7 +71,7 @@ class GridTrial(RuntimeNode):
             from right_trial_hand import RightTrialHand
             self.client = ActionClient(self, FollowJointTrajectory, '/arm/deux_arm_controller/follow_joint_trajectory', callback_group=self.group)
             self.hand = RightTrialHand(self)
-        self.action = ExclusiveAction(self, MoveToReady, '/task/grid_grasp', self.execute, self.admit)
+        self.action = ExclusiveAction(self, self.action_type, self.action_name, self.execute, self.admit)
 
     def on_arm(self, m): self.arm = m; self.arm_received = time.monotonic()
     def on_estop(self, m): self.estop = m.data; self.estop_seen = True
@@ -191,12 +193,12 @@ class GridTrial(RuntimeNode):
         """Hardware/path monitoring only. Never reads object or camera estimates."""
         actual = self.committed_gate(goal) if self.locked_selection is not None else self.gate(goal)
         elapsed = self.now()-start_at
-        if elapsed >= 0 and np.max(abs(actual[7:]-curve(min(elapsed, 5.)))) > self.config['tracking_tolerance']:
+        if elapsed >= 0 and np.max(abs(actual[7:]-curve(min(elapsed, float(curve.x[-1]))))) > self.config['tracking_tolerance']:
             self.warn_execution('stored arm trajectory tracking error')
         if close:
             q = self.library.ready.copy(); q[14:21] = actual[7:]
             feedback_at = seconds(self.arm.header.stamp)
-            expected_q = self.library.ready.copy(); expected_q[14:21] = curve(np.clip(feedback_at-start_at, 0, 5.))
+            expected_q = self.library.ready.copy(); expected_q[14:21] = curve(np.clip(feedback_at-start_at, 0, float(curve.x[-1])))
             actual_pose = self.robot.ee_fk('right', q)
             error = float(np.linalg.norm(actual_pose[:3, 3]-self.robot.ee_fk('right', expected_q)[:3, 3]))
             # Grasp alignment is diagnostic during committed playback. The
@@ -222,6 +224,11 @@ class GridTrial(RuntimeNode):
             expected = np.asarray(curve(np.clip(now-start_at, 0., float(curve.x[-1]))))
             q = self.library.ready.copy(); q[14:21] = actual[7:]
             wanted = self.library.ready.copy(); wanted[14:21] = expected
+            left_curve=getattr(curve,'left_curve',None)
+            if left_curve is not None:
+                left_expected=np.asarray(left_curve(np.clip(now-start_at,0.,float(curve.x[-1]))))
+                q[:7]=actual[:7];wanted[:7]=left_expected
+                row.update(actual_left_rad=actual[:7].tolist(),planned_left_rad=left_expected.tolist(),max_left_joint_error_rad=float(np.max(abs(actual[:7]-left_expected))))
             actual_pose = self.robot.ee_fk('right', q); planned_pose = self.robot.ee_fk('right', wanted)
             row.update(actual_right_rad=actual[7:].tolist(), planned_right_rad=expected.tolist(),
                        max_joint_error_rad=float(np.max(abs(actual[7:]-expected))),
@@ -240,6 +247,12 @@ class GridTrial(RuntimeNode):
         except Exception as error: row['diagnostic_error'] = str(error)
         self.motion_samples.append(row)
 
+    def on_target_wait_timeout(self):
+        raise TimeoutError('no eligible grid encounter before target wait timeout')
+
+    def replay_path(self,key):
+        return self.library.entries[key],self.library.curves[key],{}
+
     async def execute(self, goal):
         result = MoveToReady.Result(); handle = None; pending = None; hand_task = None; report = {}; stop_requested = False
         try:
@@ -253,12 +266,15 @@ class GridTrial(RuntimeNode):
                 if self.ready_error() > .03: raise ValueError('ready pose changed before dispatch')
                 try:
                     identity, obj, velocity, stamp = self.tracked_observation()
-                    selected = self.library.select(obj, velocity, stamp, self.now()); break
+                    selected = self.library.select(obj, velocity, stamp, self.now())
+                    break
                 except ValueError:
-                    if time.monotonic() > deadline: raise TimeoutError('no eligible grid encounter before target wait timeout')
+                    if time.monotonic() > deadline:
+                        self.on_target_wait_timeout()
+                        deadline=time.monotonic()+float(self.get_parameter('target_wait_timeout_s').value)
                     await pause(self, .02)
-            self.used = True; key = selected['cell_id']; p = self.library.entries[key]; curve = self.library.curves[key]
-            start_at = selected['start_at_s']; report.update(selected, target_id=identity)
+            self.used = True; key = selected['cell_id']; p,curve,replay_info = self.replay_path(key)
+            start_at = selected['start_at_s']; report.update(selected, target_id=identity);report.update(replay_info)
             report['replay_policy'] = 'frozen after dispatch; no perception-triggered cancellation'
             tr = JointTrajectory(joint_names=p['joint_names']); tr.header.stamp = ros_time(start_at)
             for t, q, v in zip(p['times_s'], p['positions_rad'], p['velocities_rad_s']):
@@ -280,7 +296,7 @@ class GridTrial(RuntimeNode):
                 self.validate_replay(goal, curve, start_at, close=True); return True
             hand_task = self.executor.create_task(close_during_descent, p, start_at, self.hand,
                 now=self.now, pause=lambda dt: pause(self, dt), guard=guard, qualified=qualified, strict_timing=False)
-            watchdog = time.monotonic()+max(0., start_at-self.now())+8.
+            watchdog = time.monotonic()+max(0., start_at-self.now())+float(curve.x[-1])+3.
             while not arm_result.done() or not hand_task.done():
                 elapsed = self.now()-start_at
                 actual = self.validate_replay(goal, curve, start_at)
@@ -297,7 +313,7 @@ class GridTrial(RuntimeNode):
             if response.status != 4 or response.result.error_code: raise ValueError('arm controller failed: '+response.result.error_string)
             if not hand_task.done() or hand_task.exception(): raise ValueError('parallel hand scheduling failed')
             report['hand_timing'] = hand_task.result()
-            if np.max(abs(self.committed_gate(goal)[7:]-curve(5.))) > self.config['final_tolerance']: self.warn_execution('final joint error')
+            if np.max(abs(self.committed_gate(goal)[7:]-curve(float(curve.x[-1])))) > self.config['final_tolerance']: self.warn_execution('final joint error')
             handle = None; result.success = True
             result.reason = 'Stored arm path and parallel hand commands completed; physical grasp success unverified'
         except Exception as error:
@@ -315,6 +331,7 @@ class GridTrial(RuntimeNode):
             if stop_requested: await cancel_children(self, [handle])
             report.update(success=result.success, reason=result.reason, physical_grasp_verified=False,
                           max_close_path_error_m=self.max_close_path_error_m, execution_warnings=self.execution_warnings)
+            self.last_replay_report = report
             if self.motion_samples:
                 filename = 'motion-trace-'+str(round(self.motion_samples[0]['time_s']*1e9))+'.jsonl'
                 try:

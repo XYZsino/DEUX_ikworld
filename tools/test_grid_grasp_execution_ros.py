@@ -37,6 +37,8 @@ class FakeHand:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--empty-wait', action='store_true')
+    parser.add_argument('--lookup-bt', action='store_true')
     parser.add_argument('--roi', action='store_true')
     parser.add_argument('--rotation-grid', action='store_true')
     parser.add_argument('--classified-grid', action='store_true')
@@ -52,7 +54,10 @@ def main():
     parser.add_argument('--alignment-bias', action='store_true')
     options = parser.parse_args()
     sys.modules['right_trial_hand'] = types.SimpleNamespace(RightTrialHand=FakeHand)
-    if options.classified_grid:
+    if options.lookup_bt:
+        from lookup_bt_server import LookupBtServer as GridTrial
+        options.classified_grid=True
+    elif options.classified_grid:
         from classified_grasp_trial import ClassifiedTrial as GridTrial
     elif options.roi:
         from roi_grasp_trial import RoiTrial as GridTrial
@@ -133,7 +138,7 @@ def main():
                 tracking.publish(String(data=json.dumps(dict(tracking=False, target_id='changed-after-selection'))))
                 msg.detections = []
             else:
-                msg.detections = [] if options.vision_fault and elapsed >= 1. else [d]
+                msg.detections = [] if (options.vision_fault and elapsed >= 1.) or (options.empty_wait and runtime.action.busy) else [d]
             predictions.publish(msg)
         arm = JointState(); arm.header.stamp = ros_time(now); arm.name = list(ARM_NAMES)
         q = runtime.library.ready[14:21]; v = np.zeros(7)
@@ -150,11 +155,30 @@ def main():
         deadline = time.monotonic()+4
         while not runtime.preview.get('selectable') and time.monotonic() < deadline: executor.spin_once(timeout_sec=.005)
         assert runtime.preview.get('selectable'), runtime.preview
-        client = ActionClient(producer, MoveToReady, '/task/grid_grasp')
-        pending = client.send_goal_async(MoveToReady.Goal()); deadline = time.monotonic()+3
+        if options.lookup_bt:
+            from deux_task_msgs.action import LookupGrasp
+            action_type=LookupGrasp;action_name='/task/lookup_grasp'
+            request=LookupGrasp.Goal(request_id='synthetic-bt-child',target_id='execution-synthetic',scene_version=runtime.config_version)
+        else:action_type=MoveToReady;action_name='/task/grid_grasp';request=MoveToReady.Goal()
+        client = ActionClient(producer, action_type, action_name)
+        pending = client.send_goal_async(request); deadline = time.monotonic()+3
         while not pending.done() and time.monotonic() < deadline: executor.spin_once(timeout_sec=.005)
         assert pending.done() and pending.result().accepted, 'synthetic execution request rejected'
-        result_future = pending.result().get_result_async(); deadline = time.monotonic()+25
+        result_future = pending.result().get_result_async()
+        if options.empty_wait:
+            assert options.lookup_bt and options.short_wait
+            end=time.monotonic()+.5
+            while time.monotonic()<end:executor.spin_once(timeout_sec=.005)
+            assert not result_future.done(),'empty ROI must not abort at target wait deadline'
+            assert not active and not runtime.hand.commands,'empty ROI dispatched motion'
+            assert any('continue waiting' in warning for warning in runtime.execution_warnings)
+            cancel=pending.result().cancel_goal_async()
+            end=time.monotonic()+3
+            while not result_future.done() and time.monotonic()<end:executor.spin_once(timeout_sec=.005)
+            assert result_future.done() and result_future.result().status==5
+            print('PASS: empty ROI waits past deadline without arm/hand dispatch; explicit cancel works')
+            return
+        deadline = time.monotonic()+25
         while not result_future.done() and time.monotonic() < deadline: executor.spin_once(timeout_sec=.005)
         assert result_future.done(), 'synthetic replay timed out'
         response = result_future.result()
@@ -168,6 +192,11 @@ def main():
             assert any('tracking error' in w for w in runtime.execution_warnings), runtime.execution_warnings
             assert any(row.get('max_joint_error_rad', 0.) > .3 for row in runtime.motion_samples)
         assert response.result.success, response.result.reason
+        if options.lookup_bt:
+            from lookup_bt_support import validate_handoff
+            assert validate_handoff(response.result,'synthetic-bt-child')=='execution-synthetic'
+            assert response.result.target_id in runtime.completed_targets
+            assert response.result.grasp_mode==('transverse_axis_locked' if 60<=abs(options.object_yaw)<=120 else 'normal')
         if options.velocity_noise: assert any('velocity' in w for w in runtime.execution_warnings)
         if options.transient_input: assert injected[0] and any('injected observation gap' in w for w in runtime.execution_warnings)
         if options.short_wait: assert any('deadline exceeded' in w for w in runtime.execution_warnings)
@@ -195,7 +224,7 @@ def main():
             print('PASS: Cartesian alignment is diagnostic; joint tracking errors are diagnostic. max_error_m='+str(runtime.max_close_path_error_m))
     finally:
         producer.destroy_timer(timer); server.destroy(); executor.remove_node(runtime); executor.remove_node(producer)
-        if options.roi: runtime.pool.shutdown(wait=False, cancel_futures=True)
+        if options.roi or options.lookup_bt: runtime.pool.shutdown(wait=False, cancel_futures=True)
         runtime.destroy_node(); producer.destroy_node(); executor.shutdown(); rclpy.shutdown()
 
 

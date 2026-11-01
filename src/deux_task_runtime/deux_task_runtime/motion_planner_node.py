@@ -40,11 +40,18 @@ def prepare_backend(config, version):
     return backend_name(config)
 
 
-def compute(config, version, stage, start, target, barcode=None, motion=None, candidate_id='', timing=None, covariance=None):
+def compute(config, version, stage, start, target, barcode=None, motion=None, candidate_id='', timing=None, covariance=None, reader_extra_yaw_deg=0., dataset_reading_pose=None):
     planner=cached_planner(config,version)
     planner.robot.last_ik_attempt=None
     try:
-        data=compute_plan(config,version,stage,start,target,barcode,motion,candidate_id,timing,covariance)
+        if stage=='AlignBarcode' and dataset_reading_pose is not None:
+            from .dataset_reading_pose import build_reading_plan
+            data=build_reading_plan(config,dataset_reading_pose,start)
+            data['ik_backend']=backend_name(config)
+            return data
+        from .reader_yaw import adjusted_reader
+        with adjusted_reader(planner,stage,reader_extra_yaw_deg):
+            data=compute_plan(config,version,stage,start,target,barcode,motion,candidate_id,timing,covariance)
     except ValueError as exc:
         if motion is not None or stage not in ('Approach','Descend'):
             raise
@@ -77,6 +84,12 @@ class MotionPlannerNode(RuntimeNode):
     def __init__(self, **kwargs):
         super().__init__("motion_planner_node", observe_state=True, **kwargs)
         self.subscribe_joints()
+        self.declare_parameter('dataset_reading_pose_file','')
+        from .dataset_reading_pose import load_pose
+        self.dataset_reading_pose=load_pose(self.get_parameter('dataset_reading_pose_file').value)
+        self.declare_parameter('barcode_reader_extra_yaw_deg',0.)
+        from .reader_yaw import rotate_target
+        rotate_target(np.eye(4),self.get_parameter('barcode_reader_extra_yaw_deg').value)
         from .common import LATCHED
         self.ik_diagnostic_pub=self.create_publisher(String,'/task/ik_diagnostic',LATCHED)
         self.candidate_pub=self.create_publisher(String,'/task/grasp_candidates',10)
@@ -103,6 +116,7 @@ class MotionPlannerNode(RuntimeNode):
         self.planning_latency.sample(self.now(), time.monotonic())
 
     def validate_label(self, req):
+        if getattr(self,'dataset_reading_pose',None) is not None:return None
         b = req.barcode_target
         if (not b.request_id or b.target_id != req.target_id
                 or b.header.frame_id != self.config['base_frame']
@@ -188,7 +202,8 @@ class MotionPlannerNode(RuntimeNode):
         else:
             self.work = self.pool.submit(
                 compute, c, version, req.stage, start, target_pose,
-                self.validate_label(req) if req.stage == "AlignBarcode" else None,motion,req.grasp_candidate_id,timing,covariance
+                self.validate_label(req) if req.stage == "AlignBarcode" else None,motion,req.grasp_candidate_id,timing,covariance,
+                float(self.get_parameter('barcode_reader_extra_yaw_deg').value),self.dataset_reading_pose
             )
         wall = time.monotonic()
         clock = self.now()
@@ -365,7 +380,7 @@ class MotionPlannerNode(RuntimeNode):
             raise ValueError("robot moved during planning")
         if self.config_version != version:
             raise ValueError("scene version changed")
-        result = PlanMotion.Result(success=True, reason=f"planned (IK: {data['ik_backend']})")
+        result = PlanMotion.Result(success=True, reason=("planned recorded dataset posture (no IK)" if 'dataset_reading_reference' in data else f"planned (IK: {data['ik_backend']})"))
         plan = result.plan
         plan.header.stamp = self.get_clock().now().to_msg()
         plan.header.frame_id = c["base_frame"]

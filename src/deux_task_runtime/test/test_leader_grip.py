@@ -42,8 +42,15 @@ def test_scalar_projection_rejects_arbitrary_finger_postures():
     with pytest.raises(ValueError,match='outside'):grip_fraction(q,a,b,.05)
     with pytest.raises(ValueError):grip_fraction(a,a,a,.05)
 
-@pytest.mark.parametrize('case',['complete','cancel','feedback_loss','mode_loss','profile_mismatch','preload','preload_open_stall','binary_stall','review_accept','review_reject','review_cancel','review_moved','review_timeout','late_arm','late_cancel'])
-def test_execution_dispatches_scalar_grip_and_keeps_reader_closed(tmp_path,case):
+@pytest.mark.parametrize('case',['complete','slow_preflight','cancel','feedback_loss','mode_loss','profile_mismatch','preload','preload_open_stall','binary_stall','review_accept','review_reject','review_cancel','review_moved','review_timeout','late_arm','late_cancel'])
+def test_execution_dispatches_scalar_grip_and_keeps_reader_closed(tmp_path,case,monkeypatch):
+    if case=='slow_preflight':
+        from deux_task_core import placement
+        original_clearance=placement.trajectory_clearance
+        def slow_clearance(*args,**kwargs):
+            time.sleep(.01)
+            return original_clearance(*args,**kwargs)
+        monkeypatch.setattr(placement,'trajectory_clearance',slow_clearance)
     c=fixture(tmp_path);c['hand_open'][:7]=c['hand_closed'][:7]
     c["max_joint_age"]=.1
     c['hand_close_duration_s']=c['hand_open_duration_s']=.5
@@ -166,11 +173,11 @@ def test_execution_dispatches_scalar_grip_and_keeps_reader_closed(tmp_path,case)
         if case.startswith('late_'):
             assert result.success==(case=='late_arm'),result.reason
             return
-        assert result.success==(case in ('complete','binary_stall') or case.startswith('preload')),result.reason
+        assert result.success==(case in ('complete','slow_preflight','binary_stall') or case.startswith('preload')),result.reason
         if case=='binary_stall':assert all(f in (0.,1.) for _,f in emitted)
         assert emitted and all(abs(f-1.)<1e-6 for s,f in emitted if s=='left')
         assert not h.source.get_publishers_info_by_topic('/hand/right/cmd')
-        if case in ('complete','binary_stall') or case.startswith('preload'):
+        if case in ('complete','slow_preflight','binary_stall') or case.startswith('preload'):
             opening[0]=True
             before=len(emitted)
             handle=dispatch('Release','release')

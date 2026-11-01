@@ -34,7 +34,8 @@ def test_ready_hold_then_single_close():
     from deux_task_runtime.align_hand_pulse import close_fraction, stage_left_fraction
     for stage in ('ReadyPose','Prepare','Approach','Descend','TrackGrasp','Close','Lift','ScanPose','AlignBarcode'):
         assert stage_left_fraction(stage,.3)==.3
-    assert stage_left_fraction('Place',.3)==1.
+    for stage in ('ClearReader','PlaceApproach','Place','Release','PlaceRetreat','Retreat','Recover'):
+        assert stage_left_fraction(stage,.3)==0.0
     for t,expected,done in [(0,.3,False),(.25,.65,False),(.5,1,True),(1,1,True)]:
         f,finished=close_fraction(t,.3,.5)
         assert f==pytest.approx(expected)

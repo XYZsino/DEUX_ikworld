@@ -106,6 +106,10 @@ class TrackedDetectionNode(PipelineNode):
                 req=self.request
                 self.detector.hold_target=bool(req and req.target_id and req.mode in ('locate','barcode') and stamp_ns(obs.header)<self.expiry(req))
             boxes = self.detector.track(rgb,stamp_ns(obs.header)*1e-9)
+            # Barcode-mode presence is independent of the conveyor entry ROI.
+            # Keep acquisition/locate tracking and its identities unchanged.
+            if self.cfg['single_target_tracking'] and self.request is not None and self.request.mode=='barcode':
+                boxes=boxes+list(getattr(self.detector,'scan_bags',[]))
             event=getattr(self.detector,'exit_event',None)
             if event:self.tracking_events.put(event)
         for b in boxes:

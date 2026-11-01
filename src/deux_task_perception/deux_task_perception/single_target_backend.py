@@ -17,6 +17,11 @@ class SingleTargetDetector(YoloDetector):
  def track(self,rgb,acquisition_s):
   # Use predict, never model.track: other bags have no persistent tracks.
   detections=self(rgb)
+  # Same-frame raw detections are available to scan presence only; never use
+  # these ephemeral identities for conveyor acquisition or depth/ICP tracking.
+  self.scan_bags=[dict(class_id=int(cls),class_name=name,confidence=float(score),
+      xyxy=list(map(float,xy)),track_id=f'frame-scan-bag-{i}')
+      for i,(cls,name,score,xy) in enumerate(detections) if int(cls) in self.bag_ids and score>=.15]
   rows=np.asarray([list(xy)+[score,cls] for cls,name,score,xy in detections],float).reshape(-1,6)
   return self.update_rows(rows,rgb.shape[:2],acquisition_s)
  def update_rows(self,rows,shape,stamp):

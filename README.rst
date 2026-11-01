@@ -28,6 +28,28 @@ artifacts/right_grasp_rotation_search/와 artifacts/right_grasp_transverse_searc
 별도의 90도 전용 실기1회 기록은 artifacts/thor-transverse-actual-test/summary.json이다.
 제어기 성공과 물체를 실제로 잡았다는 성공은 구분하며, 물리적 파지 성공은 미확인이다.
 
+전체 BT 연결
+------------
+
+lookup 파지 → 스캔 → 바코드 정렬 → 기존 적재/후퇴를 실행하는 진입점은
+``run_lookup_bt.bash``다. ``build_lookup_bt.bash``로 새 LookupGrasp Action을
+빌드한 뒤 사용한다. 기본 실행은 미리보기이며 실제 이동은 활성화와 별도
+RunTask 요청이 필요하다. 준비 절차, 현재 생략 옵션, 시험 범위는
+LOOKUP_BT_SETUP.rst를 참조한다. 전체 BT 첫 실기에서 파지 궤적·스캔·리더 정렬·
+연속 적재/손 열기/후퇴의 제어기 완료를 확인했다. 기록은
+artifacts/thor-lookup-bt-first-run/summary.json에 있다. 바코드 판독 완료는
+설정에 따라 생략됐고 실제 파지/적재 성공은 센서로 확인하지 않았다.
+반복 실행은 ``repeat_execution:=true``와 ``tools/request_lookup_repeat.py``를
+사용한다. 성공 후 준비 복귀/새 물체 대기를 반복한다. 바코드 정렬 계획 실패·
+판독 시간 초과는 기존 적재/손 열기/후퇴 후 다음 물체로 넘어가며 실패 회차로 기록한다.
+복귀 실패·제어기 고장·명시적 취소는 정지한다.
+``/task/repeat_status``에서 회차와 완료 횟수를 확인한다.
+
+스캔 정렬 후 왼팔 후퇴·오른팔 적재를 하나의 양팔 궤적으로 겹치는 구현도 추가했다.
+``parallel_reader_retreat``로 제어하며, 손 열기 전에 왼팔 후퇴와 양팔 정지를 검사한다.
+현재는 노트북 오프라인 검증만 완료했고 Thor 적용·실기·Jazzy 통신 시험은 대기 중이다.
+예제 시간표는 artifacts/parallel-placement-offline/timing.png를 참조한다.
+
 보존한 ROI 추종 경로
 -------------------
 
@@ -116,3 +138,32 @@ roi_policy_file 및 output_directory 파라미터로 경로를 지정할 수 있
 0.35rad 관절 오차에도 일정 완료를 검증했다. 기존 격자 경로의 관절 오차 시험도
 통과했다. 실제 손 프로파일/상태 검사는 합성 시험에서 대체했으므로 실기 증거가 아니다.
 로컬에는 Jazzy 및 AGENTS.md에 언급된 tools/validate_jazzy.sh가 없다.
+
+우측 경유점 연결은 ``tools/lookup_lift_scan.py``에 적용했다. 기존 3초 접촉과
+4초까지의 파지/상승을 보존한 뒤, 스캔보다3.3cm 낮은 우측 경유점을 통해
+스캔자세로 연속 이동한다. 실행 후보는 준비 전에 셀별 연결 검사를 통과해야
+한다. 기준 셀 접촉→스캔은5초이며 새 코드의 Thor 실기는 아직 확인 전이다.
+병렬 후퇴/적재 애니메이션은 ``artifacts/parallel-placement-offline/preview.html``이다.
+
+데이터셋 왼팔 스캔 이동은 파지 후 오른팔 경유점 이동과 병렬화했다.
+하나의14관절 궤적에서 왼팔은4초부터 이동하여 오른팔 경유점 통과 때 도착한다.
+접촉3초와 오른팔 경로는 유지한다. 전체2,177개 중 기존 통과2,090개가
+병렬 전환 재검사를 모두 통과했으며87개는 제외한다. 단위 검사57개 통과,
+Jazzy 실통신/Thor 배포/새 실기는 대기 중이다.
+
+현재 Thor 반복 실행 설정 (2026-11-01)
+-----------------------------------
+``run_lookup_bt.bash enable_execution:=true repeat_execution:=true``로 서버를
+시작하고 ``tools/request_lookup_repeat.py``로 반복 요청을 보낸다.
+오른팔 파지/상승 후 우측 경유점→스캔 이동과 왼팔 스캔 이동을 병렬 실행하고,
+스캔 정렬 후 왼팔 후퇴와 오른팔 적재를 병렬 실행한다. 현재 왼팔 스캔 목표는
+``artifacts/dataset-barcode-pose/reading-pose.json``이며 오른팔은 기존 스캔 목표다.
+설치 리프트/컨베이어 높이가 보관 기준과 같으면 기존 저장 경로를 재사용한다.
+스캔 도착 후1초 안에 빵 bbox≥1,000px² 또는 바코드 bbox≥300px²가 없으면
+준비자세로 복귀한다. 스캔용 빵 검출은 ROI 밖의 같은 영상 raw 검출도 허용한다.
+준비 복귀 제한은0.45rad/s·0.9rad/s²이며 관절별 제한도 유지한다.
+Thor에 배포하고 반복 요청/물체 대기를 확인했다. 최근 관련 Jazzy 검사12개와
+기존 ROI 추적 검사8개가 통과했다. 완화 조건의 실제 파지 성공률은 미확인이다.
+기존 시각 파지 확인/바코드 판독 완료 생략 설정은 유지한다.
+위 이전 기록의 배포 대기 표기는 해당 기록 작성 시점의 상태다.
+상세 설정/복귀 실패 정책은 LOOKUP_BT_SETUP.rst를 따른다.

@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/ExecuteMotion.action"
   "action/RunTask.action"
   "action/MoveToReady.action"
+  "action/LookupGrasp.action"
   DEPENDENCIES std_msgs sensor_msgs geometry_msgs trajectory_msgs builtin_interfaces action_msgs)
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()

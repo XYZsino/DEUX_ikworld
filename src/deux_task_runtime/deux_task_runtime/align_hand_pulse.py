@@ -21,4 +21,6 @@ def close_fraction(elapsed, start, duration):
 def stage_left_fraction(stage, ready):
     if not math.isfinite(ready) or not 0 <= ready <= 1:
         raise ValueError("invalid left hand ready fraction")
+    if stage in ('ClearReader','PlaceApproach','Place','Release','PlaceRetreat','Retreat','Recover'):
+        return 0.0
     return ready if stage in ('Prepare', 'ReadyPose', 'Approach', 'Descend', 'TrackGrasp', 'Close', 'Lift', 'Scan', 'ScanPose', 'AlignBarcode') else 1.
