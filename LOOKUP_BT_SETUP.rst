@@ -1,6 +1,77 @@
 lookup 파지 기반 전체 BT
 =======================
 
+Thor 실행 명령: ZED / effort / 반복 BT
+------------------------------------
+
+Thor 접속 후 아래 명령을 각각 별도 터미널에서 실행한다. ROS 2 Jazzy,
+ROS_DOMAIN_ID=12와 기존 실제 하드웨어 bringup을 사용한다.
+이미 실행 중인 ZED/인식/gravity/BT는 중복 실행하지 않는다.
+이 절은 실제 사용한 실행 명령을 정리한 것이며 문서 수정 시 로봇을 재시작하지 않는다.
+
+1. Effort 컨트롤러 활성화 (하드웨어 bringup과 기존 gravity 실행 후)::
+
+     cd /home/xyz_thor/DEUX_ikworld
+     bash enable_arm_effort.bash status
+     bash enable_arm_effort.bash
+
+   이 스크립트는 ``/arm/controller_manager``의
+   ``deux_arm_effort_controller``만 활성화하며, 이미 active면 유지한다.
+   중력보상 노드 자체는 실행하지 않는다. 현재 Thor에서 사용하는 별도
+   gravity 실행 명령은 아래와 같다. 이미 실행 중이면 다시 실행하지 않는다::
+
+     source /opt/ros/jazzy/setup.bash
+     source /home/xyz_thor/deux_leader/install/setup.bash
+     export ROS_DOMAIN_ID=12
+     ros2 launch deux_gravity deux_gravity.launch.py
+
+2. 외부 ZED와 설치 보정 TF::
+
+     cd /home/xyz_thor/DEUX_ikworld
+     bash run_calibrated_zed.bash
+
+   ``calibrated_zed.thor.launch.py``를 실행한다. 기존 헤드 카메라와 별도다.
+
+3. 추적/포즈 인식 (기존 인식 노드가 없을 때만 별도 터미널에서 실행)::
+
+     cd /home/xyz_thor/DEUX_ikworld
+     source setup_env.bash
+     source install_lookup_bt/local_setup.bash
+     export ROS_DOMAIN_ID=12
+     ros2 run deux_task_perception tracked_perception_node --ros-args \
+       -r __node:=perception_node \
+       --params-file /home/xyz_thor/DEUX_ikworld/tracked_perception.thor.yaml \
+       -p config_file:=/home/xyz_thor/DEUX_ikworld/src/deux_task_bringup/config/installation.yaml
+
+4. 실제 BT 서버를 반복 모드로 시작::
+
+     cd /home/xyz_thor/DEUX_ikworld
+     bash run_lookup_bt.bash enable_execution:=true repeat_execution:=true
+
+5. 별도 터미널에서 반복 작업 요청 (한 번만 실행)::
+
+     cd /home/xyz_thor/DEUX_ikworld
+     source setup_env.bash
+     source install_lookup_bt/local_setup.bash
+     export ROS_DOMAIN_ID=12
+     python tools/request_lookup_repeat.py
+
+   4번은 서버 실행이며, 실제 반복 동작은5번 요청이 승인된 뒤 시작한다.
+   준비 복귀 후 ``LookupAcquire``에서 봉투를 기다린다.
+   서버 빌드/설치 및 준비 프로파일 생성은 아래 ``빌드와 실행`` 절을 따른다.
+
+반복 상태 확인 및 현재 회차를 마친 뒤 반복 해제::
+
+  cat /home/xyz_thor/DEUX_ikworld/.setup/lookup-bt/repeat-status.json
+  ros2 service call /task/repeat_execution std_srvs/srv/SetBool '{data: false}'
+
+현재 백그라운드 실행의 PID/로그 위치는
+``.setup/lookup-bt/live-start/processes.json``에 있고,
+반복 요청 프로세스 정보는 같은 폴더의 ``repeat-process.json``에 있다.
+세션에 사용한 ``/tmp/deux_start_requested.bash``와
+``/tmp/deux_restart_bt_fast.bash``는 임시 실행 도우미다.
+재현할 때는 위 저장소 스크립트/명령을 사용한다.
+
 구현된 경로
 -----------
 
