@@ -21,17 +21,19 @@ def commands(root):
             '-r','__node:=perception_node','--params-file',str(root/'tracked_perception.thor.yaml'),
             '-p','config_file:='+str(root/'src/deux_task_bringup/config/installation.yaml')],
         bt=['bash','run_lookup_bt.bash','enable_execution:=true','repeat_execution:=true'],
-        repeat=[sys.executable,'tools/request_lookup_repeat.py'])
+        repeat=[sys.executable,'tools/request_lookup_repeat.py'],
+        gui=['ros2','launch','deux_task_gui','control.launch.py','deployment:=real'])
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--servers-only',action='store_true',help='start servers without submitting motion')
+    parser.add_argument('--gui',action='store_true',help='include the loopback web GUI on port 8080')
     parser.add_argument('--dry-run',action='store_true',help='print commands without ROS access or execution')
     args=parser.parse_args();cmd=commands(ROOT)
     if args.dry_run:
         print(json.dumps(dict(domain=os.environ.get('ROS_DOMAIN_ID','12'),commands=cmd,
-            submit_repeat=not args.servers_only,hardware_bringup_required=True),indent=2));return
+            submit_repeat=not args.servers_only,start_gui=args.gui,hardware_bringup_required=True),indent=2));return
     for relative in ['.setup/lookup-bt/home-left-conveyor.json','tracked_perception.thor.yaml',
                      'artifacts/dataset-barcode-pose/reading-pose.json',
                      'artifacts/dataset-barcode-pose/replay-height-baseline.json',
@@ -81,13 +83,30 @@ def main():
         try:received('repeat',json.loads(msg.data))
         except ValueError:pass
 
+    def ensure_gui():
+        if not args.gui:return
+        from urllib.request import urlopen
+        from urllib.error import HTTPError
+        def http_ready():
+            try:
+                with urlopen('http://127.0.0.1:8080/',timeout=.5) as response:return response.status==200
+            except HTTPError as error:return error.code in (401,403)
+            except OSError:return False
+        if 'task_gui' not in names():start('gui')
+        wait(lambda:'task_gui' in names() and http_ready(),'GUI HTTP server',30.)
+        print('GUI ready: http://127.0.0.1:8080/ (Thor loopback)',flush=True)
+        print('Laptop tunnel: ssh -N -L 18080:127.0.0.1:8080 '+
+              os.environ.get('DEUX_THOR_SSH','xyz_thor@192.168.1.10'),flush=True)
+        print('Laptop URL: http://127.0.0.1:18080/ ; authentication token: existing GUI log or '+str(out/'gui.log'),flush=True)
+
     try:
         subscriptions.append(node.create_subscription(String,'/task/repeat_status',repeat_status,LATCHED))
         subscriptions.append(node.create_subscription(TaskStatus,'/task/status',lambda m:received('task',m),LATCHED))
         spin(3.)
         status=seen.get('repeat',(0,{}))[1]
         if fresh('repeat') and status.get('active'):
-            print(f'Existing lookup BT active: {status.get("state")}; no changes or duplicate request.',flush=True);return
+            ensure_gui()
+            print(f'Existing lookup BT active: {status.get("state")}; task preserved, no duplicate request.',flush=True);return
         if fresh('task') and seen['task'][1].active:raise RuntimeError('another task is active; no startup changes made')
         if 'task_node' in names() and 'grid_grasp_trial' not in names():
             raise RuntimeError('existing non-lookup BT detected; stop it while idle first')
@@ -113,6 +132,7 @@ def main():
             (PlanMotion,'/task/plan_motion'),(ExecuteMotion,'/task/execute_motion')]]
         if 'grid_grasp_trial' not in names():start('bt')
         wait(lambda:all(c.server_is_ready() for c in clients),'lookup BT action servers',90.)
+        ensure_gui()
         health=node.create_client(Trigger,'/task/execution_health')
         wait(health.service_is_ready,'execution health service',10.)
         future=health.call_async(Trigger.Request());wait(future.done,'execution feedback health',10.)

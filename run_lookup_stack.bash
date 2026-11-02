@@ -2,9 +2,11 @@
 # Start the existing hardware lookup stack and submit one repeating RunTask.
 set -eo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
-case "${1:-}" in
-  -h|--help|--dry-run) exec python3 tools/start_lookup_stack.py "$@" ;;
-esac
+for startup_arg in "$@"; do
+  case "$startup_arg" in
+    -h|--help|--dry-run) exec python3 tools/start_lookup_stack.py "$@" ;;
+  esac
+done
 if [[ -f /home/xyz_thor/deux_leader/install/local_setup.bash ]]; then
   source /opt/ros/jazzy/setup.bash
   source /home/xyz_thor/deux_leader/install/local_setup.bash

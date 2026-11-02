@@ -29,6 +29,34 @@ lookup BT 서버 → 반복 RunTask 한 번 요청까지 진행한다.
 ``.setup/lookup-bt/live-start/`` 아래에 기록한다.
 아래 개별 실행 명령은 문제 진단이나 단계별 실행이 필요할 때 사용한다.
 
+GUI까지 한 번에 실행
+--------------------
+
+위 통합 실행에 웹 GUI까지 포함하려면 Thor에서::
+
+  cd /home/xyz_thor/DEUX_ikworld
+  bash run_lookup_stack_gui.bash
+
+이는 ``bash run_lookup_stack.bash --gui``와 같다. 기본 동작은 실제 반복 실행이며,
+기존 반복 BT가 active일 때는 작업을 재요청하지 않고 누락된 GUI만 시작한다.
+GUI가 이미 실행 중이면 재사용한다. GUI는 Thor의127.0.0.1:8080에 바인딩한다.
+GUI를 포함하되 새 작업 요청 없이 서버만 준비하거나, 실행 계획만 확인할 때::
+
+  bash run_lookup_stack_gui.bash --servers-only
+  bash run_lookup_stack_gui.bash --dry-run
+
+노트북의 별도 터미널에서 SSH 터널을 연다::
+
+  ssh -N -L 18080:127.0.0.1:8080 xyz_thor@192.168.1.10
+
+브라우저 접속 주소는 ``http://127.0.0.1:18080/``다.
+새 GUI의 인증 토큰 포함 URL은 Thor의
+``.setup/lookup-bt/live-start/gui.log``에 ``GUI:``로 출력된다.
+그 URL의 포트를8080에서18080으로 바꾸고 ``#token=...`` 부분을 유지해 접속한다.
+기존 GUI를 재사용하면 기존 실행 로그의 토큰을 사용한다.
+GUI는 기존 상태/카메라를 표시하며 추가 파지 Action을 자동 제출하지 않는다.
+이 스크립트의 문법/모의 실행을 확인했으며 전체 실제 기동 시험은 아직 하지 않았다.
+
 Thor 실행 명령: ZED / effort / 반복 BT
 ------------------------------------
 
