@@ -1,6 +1,34 @@
 lookup 파지 기반 전체 BT
 =======================
 
+한 번에 실행
+------------
+
+실제 하드웨어 bringup 및 아래의 최초 빌드/설치 설정을 마친 Thor에서::
+
+  cd /home/xyz_thor/DEUX_ikworld
+  bash run_lookup_stack.bash
+
+이 명령은 gravity/effort → 상태·손 모드 → 외부 ZED → 추적 인식 →
+lookup BT 서버 → 반복 RunTask 한 번 요청까지 진행한다.
+실제 준비 복귀·파지·스캔·적재 반복을 시작하므로 물체 투입 전 준비를 마친다.
+현재 저장된 기존 실행 경로를 사용하며, 별도 시각화한6.8초 단축 후보는 적용하지 않는다.
+이미 실행 중인 노드는 유지하고, 기존 lookup 작업이 active면 아무 변경 없이 종료한다.
+하드웨어 bringup/빌드/전체 궤적 재검사는 수행하지 않는다.
+누락된 설치 파일이나 실패가 있으면 해당 단계에서 종료하고, 기존/시작된 서비스는
+남겨둔다. 실패한 RunTask를 자동 재전송하거나 동작 중 프로세스를 종료하지 않는다.
+
+로봇 작업 요청 없이 서버까지만 실행하거나, 실행 계획만 확인할 때::
+
+  bash run_lookup_stack.bash --servers-only
+  bash run_lookup_stack.bash --dry-run
+
+``--servers-only``도 effort 활성화와 손 모드 설정은 수행한다.
+``--dry-run``은 ROS 접속·프로세스 실행·로봇 명령 없이 실행 목록만 출력한다.
+구현은 ``tools/start_lookup_stack.py``다. 시작 단계별 로그/PID는
+``.setup/lookup-bt/live-start/`` 아래에 기록한다.
+아래 개별 실행 명령은 문제 진단이나 단계별 실행이 필요할 때 사용한다.
+
 Thor 실행 명령: ZED / effort / 반복 BT
 ------------------------------------
 
