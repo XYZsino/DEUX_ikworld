@@ -99,6 +99,7 @@ def plan_conveyor(planner,stage,start,object_pose,velocity,lead):
     first=robot.fk(q)[robot.ee['right']]
     hands=[JOINT_NAMES.index(n) for n in HAND_NAMES]
     duration=cfg.get('fixed_approach_duration_s',cfg['durations'][stage]) if stage=='Approach' else cfg['durations'][stage]
+    if stage=='Close':duration=c.get('hand_close_duration_s',duration)
     if not np.isfinite(duration) or duration<=0:raise ValueError('arrival deadline elapsed')
     for attempt in range(5):
         horizon=lead+duration+(cfg.get('intercept_wait_s',0.) if stage=='Approach' else 0.)
@@ -143,6 +144,7 @@ def plan_conveyor(planner,stage,start,object_pose,velocity,lead):
         aa=np.diff(np.vstack([np.zeros(28),vv,np.zeros(28)]),axis=0)/np.r_[np.diff(ts),np.diff(ts)[-1]][:,None]
         if np.any(abs(vv)>robot.velocity*.98) or np.any(abs(aa)>robot.acceleration*.98):
             if 'fixed_approach_duration_s' in cfg:raise ValueError('arrival time infeasible under joint dynamics')
+            if stage=='Close' and 'hand_close_duration_s' in c:raise ValueError('requested hand duration exceeds joint dynamics')
             duration*=1.3;continue
         clearance=min(robot.clearance(row,c['obstacles'],c['collision_margin'],0.) for row in path)
         return dict(times=ts,path=path,minimum_clearance=clearance,ik_calls=robot.ik_calls)
@@ -178,6 +180,9 @@ def plan_track_grasp(planner,start,object_pose,velocity,lead):
     pregrasp=np.asarray(c.get('hand_pregrasp',c['hand_open']))
     transform=pose(c['grasp_object_from_right_ee'])
     for attempt in range(6):
+        if 'hand_close_duration_s' in c:
+            durations[2]=c['hand_close_duration_s']-durations[1]*cfg.get('close_descent_overlap',0.)
+            if durations[2]<=0:raise ValueError('hand duration shorter than descent overlap')
         ends=np.cumsum(durations);total=ends[-1]
         if lead+total>cfg['max_plan_horizon']:
             raise ValueError(f'conveyor planning horizon exceeded: lead={lead:.3f}s, phases={durations.tolist()}, total={lead+total:.3f}s > {cfg["max_plan_horizon"]:.3f}s')
@@ -247,7 +252,10 @@ def plan_track_grasp(planner,start,object_pose,velocity,lead):
                 accel_mask=(ts>=begin-1e-9)&(ts<=end+1e-9)
                 velocity_mask=(ts[:-1]>=begin-1e-9)&(ts[:-1]<=end+1e-9)
                 local=max(np.max(abs(vv[velocity_mask])/r.velocity),np.sqrt(np.max(abs(aa[accel_mask])/r.acceleration)))
-                if local>limit:durations[index]*=max(1.03,float(local)/limit*1.03)
+                if local>limit:
+                    if index==2 and 'hand_close_duration_s' in c:
+                        raise ValueError('requested hand duration exceeds joint dynamics')
+                    durations[index]*=max(1.03,float(local)/limit*1.03)
             continue
         clearance=min(r.clearance(row,c['obstacles'],c['collision_margin'],0.) for row in path)
         return dict(times=ts,path=path,phase_end_times=ends,minimum_clearance=clearance,ik_calls=r.ik_calls)

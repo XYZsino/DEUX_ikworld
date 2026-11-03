@@ -1,0 +1,15 @@
+{
+  "ramp_s": 0.4,
+  "follow_s": 0.8,
+  "qualify_s": 0.5,
+  "xy_m": 0.02,
+  "z_m": 0.01,
+  "relative_speed_m_s": 0.02,
+  "height_band_m": 0.015,
+  "max_observation_age_s": 0.5,
+  "max_feedback_gap_s": 0.1,
+  "wait_timeout_s": 120.0,
+  "settle_s": 0.5,
+  "upstream_offset_m": 0.05,
+  "upper_height_m": 0.08
+}

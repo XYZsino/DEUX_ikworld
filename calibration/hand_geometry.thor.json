@@ -1,0 +1,695 @@
+{
+  "schema": "deux.hand_geometry.v1",
+  "units": "m/rad",
+  "urdf": "/home/xyz_thor/DEUX_ikworld/src/deux_task_bringup/urdf/deux_thor_measured_lift.urdf",
+  "urdf_sha256": "260654ca1f705e447b426936eb77baea4713b8ca8c7de0caa248bfd27d548b98",
+  "joint_order": [
+    "thumb_joint_1",
+    "thumb_joint_2",
+    "thumb_joint_3",
+    "index_joint_1",
+    "index_joint_2",
+    "third_joint_1",
+    "third_joint_2"
+  ],
+  "user_order_and_degrees_confirmed": true,
+  "right_contact_pair": "thumb/index",
+  "hardware_motor_mapping_confirmed": false,
+  "physical_contact_calibrated": false,
+  "reader_optical_transform_known": false,
+  "method": "URDF FK; distal tip = mean of mesh vertices and triangle centers in final 5 mm along local extension axis; opposing candidate = closest sampled distal-half surfaces, not measured contact",
+  "hands": {
+    "right": {
+      "initial": {
+        "degrees": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radians": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "within_urdf_limits_1e6_tolerance": true,
+        "distal_links": {
+          "thumb_3": {
+            "link": "right_hand_thumb_3",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/right_hand/right_thumb_3.stl",
+            "tip_local_m": [
+              -0.010389442699114841,
+              0.05406716144336327,
+              1.7777002697590574e-05
+            ],
+            "tip_hand_m": [
+              -0.03993944269911484,
+              0.16286716144336327,
+              0.028517777002697593
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                -0.02955
+              ],
+              [
+                0.0,
+                1.0,
+                0.0,
+                0.10880000000000001
+              ],
+              [
+                0.0,
+                0.0,
+                1.0,
+                0.0285
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "index_2": {
+            "link": "right_hand_index_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/right_hand/right_index_2.stl",
+            "tip_local_m": [
+              0.0103187309813795,
+              -0.0022773672035299396,
+              0.04183170729470773
+            ],
+            "tip_hand_m": [
+              -0.0376312690186205,
+              0.04356763279647006,
+              0.2005947072947077
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                -0.04795
+              ],
+              [
+                0.0,
+                1.0,
+                0.0,
+                0.045845
+              ],
+              [
+                0.0,
+                0.0,
+                1.0,
+                0.158763
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "third_2": {
+            "link": "right_hand_third_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/right_hand/right_third_2.stl",
+            "tip_local_m": [
+              -0.054765463987967555,
+              -0.0011131921974132425,
+              0.04588877266447534
+            ],
+            "tip_hand_m": [
+              -0.006815463987967556,
+              0.04473180780258675,
+              0.19665177266447534
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                0.04795
+              ],
+              [
+                0.0,
+                1.0,
+                0.0,
+                0.045845
+              ],
+              [
+                0.0,
+                0.0,
+                1.0,
+                0.150763
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "thumb_index_tip_midpoint_m": [
+          -0.03878535585886767,
+          0.10321739711991666,
+          0.11455624214870265
+        ],
+        "thumb_index_tip_distance_m": 0.20939955859512105,
+        "closest_distal_surface_pair_m": [
+          [
+            -0.03651644770304362,
+            0.1324061177571615,
+            0.039778121948242186
+          ],
+          [
+            -0.037749980926513674,
+            0.0555244140625,
+            0.17656230163574219
+          ]
+        ],
+        "closest_distal_surface_midpoint_m": [
+          -0.037133214314778645,
+          0.09396526590983074,
+          0.10817021179199218
+        ],
+        "sampled_surface_separation_m": 0.15691472136160273
+      },
+      "target": {
+        "degrees": [
+          0.0,
+          -80.0,
+          20.0,
+          130.0,
+          -50.0,
+          -130.0,
+          50.0
+        ],
+        "radians": [
+          0.0,
+          -1.3962634015954636,
+          0.3490658503988659,
+          2.2689280275926285,
+          -0.8726646259971648,
+          -2.2689280275926285,
+          0.8726646259971648
+        ],
+        "within_urdf_limits_1e6_tolerance": true,
+        "distal_links": {
+          "thumb_3": {
+            "link": "right_hand_thumb_3",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/right_hand/right_thumb_3.stl",
+            "tip_local_m": [
+              -0.010389442699114841,
+              0.05406716144336327,
+              1.7777002697590574e-05
+            ],
+            "tip_hand_m": [
+              -0.03993944269911484,
+              0.10606951978175189,
+              0.11078550293025538
+            ],
+            "T_hand_link": [
+              [
+                0.9999999999999998,
+                0.0,
+                0.0,
+                -0.02955
+              ],
+              [
+                0.0,
+                0.49999999999999994,
+                -0.8660254037844384,
+                0.0790513343960095
+              ],
+              [
+                0.0,
+                0.8660254037844384,
+                0.4999999999999999,
+                0.06395307910843949
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "index_2": {
+            "link": "right_hand_index_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/right_hand/right_index_2.stl",
+            "tip_local_m": [
+              0.0103187309813795,
+              -0.0022773672035299396,
+              0.04183170729470773
+            ],
+            "tip_hand_m": [
+              -0.0376312690186205,
+              0.11728750672555321,
+              0.10255826423145287
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                -0.04795
+              ],
+              [
+                0.0,
+                0.17364817766693041,
+                0.9848077530122079,
+                0.07648677772475912
+              ],
+              [
+                0.0,
+                -0.9848077530122079,
+                0.17364817766693041,
+                0.09305149561253842
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "third_2": {
+            "link": "right_hand_third_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/right_hand/right_third_2.stl",
+            "tip_local_m": [
+              -0.054765463987967555,
+              -0.0011131921974132425,
+              0.04588877266447534
+            ],
+            "tip_hand_m": [
+              -0.006815463987967556,
+              0.11842091525199933,
+              0.10068742810644804
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                0.04795
+              ],
+              [
+                0.0,
+                0.17364817766693041,
+                0.9848077530122079,
+                0.0734225999522832
+              ],
+              [
+                0.0,
+                -0.9848077530122079,
+                0.17364817766693041,
+                0.09162264605128459
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "thumb_index_tip_midpoint_m": [
+          -0.03878535585886767,
+          0.11167851325365255,
+          0.10667188358085412
+        ],
+        "thumb_index_tip_distance_m": 0.014101714555957283,
+        "closest_distal_surface_pair_m": [
+          [
+            -0.04634999847412109,
+            0.09562881462670061,
+            0.08672320534561095
+          ],
+          [
+            -0.04632916641235352,
+            0.09562257944442965,
+            0.08677069152548138
+          ]
+        ],
+        "closest_distal_surface_midpoint_m": [
+          -0.046339582443237305,
+          0.09562569703556513,
+          0.08674694843554617
+        ],
+        "sampled_surface_separation_m": 5.222824498417027e-05
+      }
+    },
+    "left": {
+      "initial": {
+        "degrees": [
+          0.0,
+          32.6,
+          64.2,
+          -53.8,
+          -45.0,
+          90.0,
+          62.0
+        ],
+        "radians": [
+          0.0,
+          0.5689773361501514,
+          1.1205013797803596,
+          -0.9389871375729493,
+          -0.7853981633974483,
+          1.5707963267948966,
+          1.0821041362364843
+        ],
+        "within_urdf_limits_1e6_tolerance": true,
+        "distal_links": {
+          "thumb_3": {
+            "link": "left_hand_thumb_3",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/left_hand/left_thumb_3.stl",
+            "tip_local_m": [
+              0.010272934574001438,
+              0.05406478921692193,
+              1.1026713338793975e-05
+            ],
+            "tip_hand_m": [
+              0.039822934574001434,
+              0.09671585155730604,
+              0.10157891354908409
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                0.02955
+              ],
+              [
+                0.0,
+                -0.11840396830650099,
+                -0.9929655081065372,
+                0.10312828629225732
+              ],
+              [
+                0.0,
+                0.992965508106537,
+                -0.118403968306501,
+                0.047895748260247076
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "index_2": {
+            "link": "left_hand_index_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/left_hand/left_index_2.stl",
+            "tip_local_m": [
+              -0.010309313175642704,
+              -0.0008346686121873921,
+              0.0411293572945117
+            ],
+            "tip_hand_m": [
+              0.0376406868243573,
+              0.11889630315049987,
+              0.13691986079493731
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                0.04795
+              ],
+              [
+                0.0,
+                -0.1529858362840381,
+                0.9882283814465528,
+                0.07812341248575208
+              ],
+              [
+                0.0,
+                -0.9882283814465529,
+                -0.15298583628403817,
+                0.142387226704797
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "third_2": {
+            "link": "left_hand_third_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/left_hand/left_third_2.stl",
+            "tip_local_m": [
+              0.05474707716223436,
+              -0.0011211515184997296,
+              0.04589104273520708
+            ],
+            "tip_hand_m": [
+              0.006797077162234363,
+              0.10437945758526125,
+              0.07476996303867263
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                -0.04795
+              ],
+              [
+                0.0,
+                -0.8829475928589268,
+                0.46947156278589114,
+                0.081845
+              ],
+              [
+                0.0,
+                -0.46947156278589114,
+                -0.8829475928589268,
+                0.11476300000000002
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "thumb_index_tip_midpoint_m": [
+          0.038731810699179366,
+          0.10780607735390296,
+          0.1192493871720107
+        ],
+        "thumb_index_tip_distance_m": 0.04178178060294968,
+        "closest_distal_surface_pair_m": [
+          [
+            0.03975,
+            0.10117574820775345,
+            0.10466388892456677
+          ],
+          [
+            0.0387006950378418,
+            0.10200847396439963,
+            0.12741077225290673
+          ]
+        ],
+        "closest_distal_surface_midpoint_m": [
+          0.0392253475189209,
+          0.10159211108607655,
+          0.11603733058873675
+        ],
+        "sampled_surface_separation_m": 0.022786293560877826
+      },
+      "target": {
+        "degrees": [
+          0.0,
+          32.6,
+          64.2,
+          -78.0,
+          -45.0,
+          130.0,
+          62.0
+        ],
+        "radians": [
+          0.0,
+          0.5689773361501514,
+          1.1205013797803596,
+          -1.361356816555577,
+          -0.7853981633974483,
+          2.2689280275926285,
+          1.0821041362364843
+        ],
+        "within_urdf_limits_1e6_tolerance": true,
+        "distal_links": {
+          "thumb_3": {
+            "link": "left_hand_thumb_3",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/left_hand/left_thumb_3.stl",
+            "tip_local_m": [
+              0.010272934574001438,
+              0.05406478921692193,
+              1.1026713338793975e-05
+            ],
+            "tip_hand_m": [
+              0.039822934574001434,
+              0.09671585155730604,
+              0.10157891354908409
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                0.02955
+              ],
+              [
+                0.0,
+                -0.11840396830650099,
+                -0.9929655081065372,
+                0.10312828629225732
+              ],
+              [
+                0.0,
+                0.992965508106537,
+                -0.118403968306501,
+                0.047895748260247076
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "index_2": {
+            "link": "left_hand_index_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/left_hand/left_index_2.stl",
+            "tip_local_m": [
+              -0.010309313175642704,
+              -0.0008346686121873921,
+              0.0411293572945117
+            ],
+            "tip_hand_m": [
+              0.0376406868243573,
+              0.1199194785782697,
+              0.10537882616406868
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                0.04795
+              ],
+              [
+                0.0,
+                -0.544639035015027,
+                0.838670567945424,
+                0.08497090402935223
+              ],
+              [
+                0.0,
+                -0.8386705679454239,
+                -0.544639035015027,
+                0.12707946763271039
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          },
+          "third_2": {
+            "link": "left_hand_third_2",
+            "mesh": "/home/xyz_thor/DEUX/install/deux_description/share/deux_description/meshes/common/left_hand/left_third_2.stl",
+            "tip_local_m": [
+              0.05474707716223436,
+              -0.0011211515184997296,
+              0.04589104273520708
+            ],
+            "tip_hand_m": [
+              0.006797077162234363,
+              0.06497796733169582,
+              0.046501332196795066
+            ],
+            "T_hand_link": [
+              [
+                1.0,
+                0.0,
+                0.0,
+                -0.04795
+              ],
+              [
+                0.0,
+                -0.9781476007338056,
+                -0.20791169081775918,
+                0.0734225999522832
+              ],
+              [
+                0.0,
+                0.20791169081775915,
+                -0.9781476007338056,
+                0.09162264605128459
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ]
+          }
+        },
+        "thumb_index_tip_midpoint_m": [
+          0.038731810699179366,
+          0.10831766506778787,
+          0.1034788698565764
+        ],
+        "thumb_index_tip_distance_m": 0.02361376395347301,
+        "closest_distal_surface_pair_m": [
+          [
+            0.04067232131958008,
+            0.09923316455952182,
+            0.10449225242128388
+          ],
+          [
+            0.04061129252115885,
+            0.09923665773092032,
+            0.10447569948369768
+          ]
+        ],
+        "closest_distal_surface_midpoint_m": [
+          0.040641806920369464,
+          0.09923491114522107,
+          0.10448397595249079
+        ],
+        "sampled_surface_separation_m": 6.333021574170382e-05
+      }
+    }
+  }
+}

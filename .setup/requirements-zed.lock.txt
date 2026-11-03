@@ -1,0 +1,3 @@
+Cython==3.3.0
+numpy==2.5.4
+pyzed @ https://download.stereolabs.com/zedsdk/5.5/whl/linux_aarch64/pyzed-5.5-cp312-cp312-linux_aarch64.whl#sha256=33cc5d84b59860659dd93b08214e04e4f8d91b6dc319f65b451e74c43ee8c42f

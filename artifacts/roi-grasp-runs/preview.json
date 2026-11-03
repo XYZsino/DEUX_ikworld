@@ -1,0 +1,22 @@
+{
+  "preview_only": false,
+  "execution_enabled": true,
+  "motion_requested": false,
+  "cells": 25,
+  "selectable": false,
+  "arm_ready": false,
+  "timestamp_s": 1793503115.071453,
+  "selection_policy": "observed XY only; user-fixed Z=0.97m and -Y speed=0.09m/s; fixed orientation assumption",
+  "ready_error_rad": 0.8262760208492903,
+  "reason": "ROI target unavailable",
+  "dispatch_ready": false,
+  "replay_policy": "freeze cell/timing at dispatch; perception changes do not cancel playback",
+  "diagnostic_policy": "after dispatch: monitoring errors log only; operator cancel and e-stop enforced",
+  "execution_admission_ready": false,
+  "execution_reason": "one-shot trial already used; restart required",
+  "workflow": "ROI fixed-speed grasp",
+  "phase": "Stopped",
+  "phase_reason": "operator canceled",
+  "x_error_m": -0.0330614332337158,
+  "selected_target_id": "single-4dfe6f18-8"
+}

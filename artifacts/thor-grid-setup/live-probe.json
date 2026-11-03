@@ -1,0 +1,63 @@
+{
+  "actual_hardware_streams": true,
+  "motion_requested": false,
+  "elapsed_s": 15.004520681000031,
+  "received": {
+    "detections": 201,
+    "camera_calibration": 15,
+    "tracking": 151,
+    "arm_feedback": 1203,
+    "grid_preview": 119,
+    "camera_rgb": 158
+  },
+  "latest": {
+    "detections": [
+      {
+        "track_id": "frame-barcode-2",
+        "class_name": "barcode",
+        "confidence": 0.7547116279602051
+      }
+    ],
+    "camera_calibration": {
+      "valid": true,
+      "height_from_floor_m": 1.3791,
+      "mode": "fixed measured lift snapshot, dynamic TF invalidated on lift movement command"
+    },
+    "tracking": {
+      "perception_only": true,
+      "target_id": "",
+      "exit_reason": "",
+      "tracking": false,
+      "window_s": 10.0,
+      "detection_hz": 13.8,
+      "tracking_hz": 0.0,
+      "icp_attempt_hz": 0.0,
+      "icp_pose_hz": 0.0,
+      "accepted_total": 0,
+      "attempt_total": 0,
+      "latency_p50_ms": null,
+      "latency_p95_ms": null,
+      "worker_p50_ms": null,
+      "last_error": null
+    },
+    "grid_preview": {
+      "preview_only": true,
+      "execution_enabled": false,
+      "motion_requested": false,
+      "cells": 25,
+      "selectable": false,
+      "arm_ready": false,
+      "timestamp_s": 1793498783.499693,
+      "ready_error_rad": 1.5224689676603909,
+      "reason": "ROI target unavailable",
+      "dispatch_ready": false
+    }
+  },
+  "grid_command_publishers": {
+    "/arm/deux_arm_controller/joint_trajectory": [],
+    "/hand/right/grip": [],
+    "/hand/right/cmd": []
+  },
+  "grid_action_clients": [],
+  "frame_saved": true
+}

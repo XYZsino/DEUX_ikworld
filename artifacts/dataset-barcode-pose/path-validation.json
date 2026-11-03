@@ -1,0 +1,32 @@
+{
+  "applied_arms": "left_only",
+  "parallel_left_scan": true,
+  "right_scan_joints_rad": [
+    0.9099939602237961,
+    -0.28095674067292226,
+    -0.34806984011767195,
+    -1.42690928511482,
+    -1.3166932483691605,
+    -0.6563393180919463,
+    -0.5415098589391575
+  ],
+  "right_max_change_during_alignment_rad": 0.0,
+  "alignment_duration_s": 0.3,
+  "alignment_is_stationary": true,
+  "alignment_conveyor_margin_m": 0.15474856903189152,
+  "parallel_report": {
+    "left_retreat_s": 1.963,
+    "right_approach_release_s": 3.02,
+    "total_s": 5.96,
+    "sequential_left_duration_s": 1.46,
+    "left_profile": "zero-velocity/acceleration quintic",
+    "original_right_total_s": 5.96,
+    "right_approach_stretch": 1.0,
+    "simultaneous_start": true,
+    "velocity_limit_ratio": 0.9718791139905129,
+    "acceleration_limit_ratio": 0.9358894996543569,
+    "stationary_open_s": 0.5
+  },
+  "parallel_conveyor_margin_m": 0.03185823685021097,
+  "actual_hardware_executed": false
+}

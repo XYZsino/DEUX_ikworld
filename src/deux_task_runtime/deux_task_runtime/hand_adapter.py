@@ -129,16 +129,17 @@ class HandAdapter:
             self.node.get_logger().warning(str(error))
 
     def measured_hand(self):
-        if self.node.config is None or not all(
-            s in self.raw
-            and current(self.raw[s][0].stamp, self.node.now(), self.node.config["max_joint_age"])
-            for s in ("left", "right")
-        ):
-            raise ValueError("hand feedback stale/missing")
+        now=self.node.now()
+        stale=[s for s in ('left','right') if s not in self.raw or self.node.config is None
+               or not current(self.raw[s][0].stamp,now,self.node.config['max_joint_age'])]
+        if stale:
+            details=', '.join(f"{side}: missing" if side not in self.raw else
+                f"{side}: age={now-seconds(self.raw[side][0].stamp):.4f}s" for side in stale)
+            raise ValueError(f"hand feedback stale/missing [HAND_FEEDBACK_STALE] {details}")
         values = {k: v for _, d in self.raw.values() for k, v in d.items()}
         return vector([values[n] for n in HAND_NAMES], 14)
 
-    def validate(self, t, q):
+    def validate(self, t, q, stage=None):
         if not self.command_pubs or self.mapping is None:
             raise ValueError("hand dispatch disabled/unconfigured")
         for i, name in enumerate(HAND_NAMES):
@@ -176,3 +177,11 @@ class HandAdapter:
             self.command(self.measured_hand())
         except (ValueError, KeyError):
             self.node.get_logger().error("feedback lost: no guessed hold; driver watchdog required")
+
+
+def make_hand_adapter(node):
+    path=node.get_parameter("mapping_file").value
+    if path and yaml.safe_load(Path(path).read_text()).get("protocol")=="leader_grip":
+        from .leader_grip_adapter import LeaderGripHandAdapter
+        return LeaderGripHandAdapter(node)
+    return HandAdapter(node)

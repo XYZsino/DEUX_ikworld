@@ -1,0 +1,62 @@
+{
+  "source": {
+    "repo": "woozziam/deux_breadbag_barcodescan_gr00t_261029_unaligned",
+    "revision": "063cda3e517a4bb73fc064bcf748318142217a0b"
+  },
+  "episode": 0,
+  "frames": 638,
+  "duration_s": 21.233333587646484,
+  "selection_rule": "video-identified reading window 7..14s; max(left_X+right_X) among samples with all arm joint speeds below 0.1rad/s",
+  "selected_frame": 243,
+  "timestamp_s": 8.100000381469727,
+  "ee_xyz_m": [
+    [
+      0.4348364842297828,
+      -0.08446524261108136,
+      1.0392883871241156
+    ],
+    [
+      0.6837521366732058,
+      -0.16839018117796198,
+      1.1446301132228618
+    ]
+  ],
+  "left_joints_rad": [
+    0.22640573978424072,
+    0.06961929053068161,
+    0.45757991075515747,
+    1.5634775161743164,
+    0.21725031733512878,
+    -0.040245670825242996,
+    -0.17363879084587097
+  ],
+  "right_joints_rad": [
+    0.5842298269271851,
+    0.24319066107273102,
+    -0.248531311750412,
+    -1.6538872718811035,
+    -1.3097963333129883,
+    -0.6564520001411438,
+    -0.1985580176115036
+  ],
+  "max_sum_frame": 636,
+  "max_sum_time_s": 21.200000762939453,
+  "max_sum_xyz": [
+    [
+      0.505531053537186,
+      0.0005552474021168485,
+      1.0755797430780634
+    ],
+    [
+      0.6278722517713338,
+      -0.22874399418465485,
+      1.0231740403814698
+    ]
+  ],
+  "individual_max_indices": [
+    13,
+    202
+  ],
+  "actual_hardware_executed": false,
+  "rejected_global_max_reason": "global min-X max was frame13 (ready); global sum-X max was frame636 (return), verified in episode video"
+}

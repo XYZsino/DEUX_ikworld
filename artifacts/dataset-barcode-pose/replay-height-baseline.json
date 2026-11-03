@@ -1,0 +1,14 @@
+{
+  "schema": "deux.replay_height_baseline.v1",
+  "heights": {
+    "shoulder_floor_m": 1.34,
+    "lift_origin_base_m": 0.632369722723961,
+    "equivalent_lift_joint_m": -0.160794277276039,
+    "camera_floor_m": 1.3791,
+    "conveyor_floor_m": 0.8,
+    "conveyor_plane_z_at_base_origin_m": 0.7956175223404136
+  },
+  "tolerance_m": 0.001,
+  "source": "same installation height snapshot used in completed 2177-path offline audit",
+  "live_height_sensor_available": false
+}

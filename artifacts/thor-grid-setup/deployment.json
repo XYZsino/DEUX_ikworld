@@ -1,0 +1,14 @@
+{
+  "backup": "/home/xyz_thor/DEUX_ikworld_backups/20261101-105957/DEUX_ikworld",
+  "preview_only": true,
+  "hardware_action_requested": false,
+  "deployed_at": 1793498813.4414914,
+  "sha256": {
+    "GRID_GRASP_SETUP.rst": "783a35f3333ac3df81493f307701d241d5e3a3e8425dbc6ba55f061b58bd8698",
+    "tools/grid_grasp_runtime.py": "f6275cdadb407d109cad94be99ff1ff263ac0bb7036eadfd837b76eba90d01f0",
+    "tools/grid_grasp_trial.py": "37e12079e55f3ec9074022f0e48cc13620ed5e2facec5edcde48b663eb97da87",
+    "tools/parallel_grid_hand.py": "af94356b92be064e5f87f0a325dac0eb2137ed5b89511806988d66783d023576",
+    "tools/start_grid_grasp_test.py": "e3cea3acb3fdf8c2b9900083df432831ecc191ed91f92ad780c0ad44c82b8552",
+    "artifacts/right_grasp_grid_fast/manifest.json": "d5e7b6c6eb4909733fc93e5d30fc74982027c7f7061093010dc29102eb259bfd"
+  }
+}

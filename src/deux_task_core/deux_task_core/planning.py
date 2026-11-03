@@ -39,7 +39,48 @@ def requires_object_pose(config, stage):
     return True
 
 
+def grasp_cache_max_age(config):
+    """Keep a frozen pose across manual review only for a confirmed stationary source."""
+    disabled = config.get('stationary_grasp_pose_expiry_disabled', False)
+    if type(disabled) is not bool:
+        raise ValueError('stationary_grasp_pose_expiry_disabled must be boolean')
+    if disabled:
+        if (config.get('moving_source', False)
+                or config.get('stationary_source_confirmed') is not True
+                or config.get('perception_policy') != 'head_rgbd'):
+            raise ValueError('unlimited grasp cache requires a confirmed stationary head_rgbd source')
+        return float('inf')
+    return config.get('grasp_pose_max_age', 0)
+
+
 def validate_scene(config):
+    grasp_cache_max_age(config)
+    vector(config.get('barcode_aim_offset_base_m', [0., 0., 0.]), 3)
+    visibility = config.get('stationary_grasp_visibility_check_enabled', True)
+    if type(visibility) is not bool:
+        raise ValueError('stationary_grasp_visibility_check_enabled must be boolean')
+    if not visibility and (config.get('moving_source',False)
+            or config.get('stationary_source_confirmed') is not True
+            or config.get('perception_policy') != 'head_rgbd'):
+        raise ValueError('disabled grasp visibility requires confirmed stationary head_rgbd source')
+    if type(config.get('motion_review_required',False)) is not bool:
+        raise ValueError('motion_review_required must be boolean')
+    review_timeout=config.get('motion_review_timeout_s',300.)
+    if not np.isfinite(review_timeout) or not 1 <= review_timeout <= 600:
+        raise ValueError('motion_review_timeout_s must be 1..600')
+    if type(config.get('right_hand_disabled',False)) is not bool:
+        raise ValueError('right_hand_disabled must be boolean')
+    if config.get('right_hand_disabled',False) and not config.get('hand_command_only',False):
+        raise ValueError('right-hand-disabled requires hand_command_only')
+    if type(config.get('skip_barcode_completion',False)) is not bool:
+        raise ValueError('skip_barcode_completion must be boolean')
+    if type(config.get('hand_command_only',False)) is not bool:
+        raise ValueError('hand_command_only must be boolean')
+    if type(config.get('right_hand_preload',False)) is not bool:
+        raise ValueError('right_hand_preload must be boolean')
+    for key in ('hand_close_duration_s','hand_open_duration_s'):
+        if key in config and (not np.isfinite(config[key]) or config[key] <= 0):
+            raise ValueError('positive finite hand duration required')
     from .ik_backends import backend_name
     backend_name(config)
     from .grasp_candidates import validate as validate_candidates
@@ -71,11 +112,15 @@ def validate_scene(config):
     for key, default, lower, upper in (
         ('lift_cartesian_step',.01,.01,.05),
         ('lift_minimum_segment_duration',.3,.02,.3),
+        ('descend_minimum_segment_duration',.3,.02,.3),
         ('lift_start_lead',.5,.15,.5),
     ):
         value=config.get(key,default)
         if not np.isfinite(value) or not lower<=value<=upper:
             raise ValueError(f'invalid {key}')
+    approach_accel=config.get('approach_arm_acceleration_scale',1.)
+    if not np.isfinite(approach_accel) or not 0 < approach_accel <= 1:
+        raise ValueError('approach_arm_acceleration_scale must be in (0, 1]')
     scan_scale=config.get('scan_motion_scale',1.)
     if not np.isfinite(scan_scale) or not 0 < scan_scale <= 1:
         raise ValueError('scan_motion_scale must be in (0, 1]')
@@ -124,7 +169,7 @@ def validate_scene(config):
         pose(config[key])
     if not config.get("synthetic", False):
         pose(config["left_ee_from_reader"])
-        if not config["object_from_labels"]:
+        if not config["object_from_labels"] and config.get("perception_policy")!="head_rgbd":
             raise ValueError("calibrated label poses required")
         for label in config["object_from_labels"]:
             pose(label)
@@ -142,7 +187,6 @@ def validate_scene(config):
     for key in (
         "approach_height",
         "lift_height",
-        "attached_radius",
         "max_target_drift",
         "max_observation_age",
         "max_joint_age",
@@ -158,6 +202,18 @@ def validate_scene(config):
     ):
         if not np.isfinite(config[key]) or config[key] <= 0:
             raise ValueError(f"positive {key} required")
+    # Zero disables the optional carried-object collision envelope.
+    if not np.isfinite(config["attached_radius"]) or config["attached_radius"] < 0:
+        raise ValueError("nonnegative attached_radius required")
+    if 'descend_distance_m' in config:
+        distance=config['descend_distance_m']
+        if not np.isfinite(distance) or distance <= 0:
+            raise ValueError('positive descend_distance_m required')
+        if config.get('moving_source',False):
+            raise ValueError('descend_distance_m requires a stationary source')
+    final_tolerance = config.get("final_tolerance", config["start_tolerance"])
+    if not np.isfinite(final_tolerance) or final_tolerance <= 0:
+        raise ValueError("positive final_tolerance required")
     if config["sample_period"] > 0.05:
         raise ValueError("sample_period must be <= 50ms")
     for name in ("workspace", "destination_bounds"):
@@ -191,7 +247,9 @@ def scene_version(config):
     return hashlib.sha256(payload + b"\0" + robot_bytes).hexdigest()
 
 
-def hermite(knots, velocity, acceleration, dt, minimum_segment_duration=0.3):
+def hermite(knots, velocity, acceleration, dt, minimum_segment_duration=0.3, corner_blend=0.):
+    if not np.isfinite(corner_blend) or not 0 <= corner_blend <= 1:
+        raise ValueError('corner_blend must be in [0, 1]')
     knots = np.asarray(knots, dtype=float)
     durations = np.maximum(
         minimum_segment_duration, 2 * np.max(np.abs(np.diff(knots, axis=0)) / velocity, axis=1)
@@ -203,6 +261,10 @@ def hermite(knots, velocity, acceleration, dt, minimum_segment_duration=0.3):
         for i in range(1, len(knots) - 1):
             same = slopes[i - 1] * slopes[i] > 0
             tangents[i, same] = 2 / (1 / slopes[i - 1, same] + 1 / slopes[i, same])
+            # Optional fixed-route smoothing: move each reversing joint's
+            # zero crossing away from the common knot, avoiding a full-arm stop.
+            reversing = ~same
+            tangents[i, reversing] = corner_blend * .5 * (slopes[i-1, reversing] + slopes[i, reversing])
         times = np.r_[0, np.cumsum(durations)]
         spline = CubicHermiteSpline(times, knots, tangents)
         sample = np.linspace(0, times[-1], int(round(times[-1] / dt)) + 1)
@@ -218,6 +280,55 @@ def hermite(knots, velocity, acceleration, dt, minimum_segment_duration=0.3):
     raise ValueError("trajectory timing failed")
 
 
+def continuous_joint_path(knots, velocity, acceleration, dt):
+    """C2 joint curve, arc-length timing, cosine start/stop ramps.
+
+    Internal waypoints are transit points. Only the two endpoints stop.
+    Every returned path still undergoes the caller's joint/geometry checks.
+    """
+    from scipy.interpolate import CubicSpline
+    knots=np.asarray(knots,float)
+    keep=np.r_[True,np.linalg.norm(np.diff(knots,axis=0),axis=1)>1e-9]
+    knots=knots[keep]
+    if len(knots)<2:
+        return np.array([0.,dt]),np.repeat(knots[:1],2,axis=0)
+    chord=np.r_[0.,np.cumsum(np.linalg.norm(np.diff(knots,axis=0),axis=1))]
+    spline=CubicSpline(chord,knots,bc_type='natural')
+    u=np.linspace(0,chord[-1],8001)
+    curve=spline(u)
+    arc=np.r_[0.,np.cumsum(np.linalg.norm(np.diff(curve,axis=0),axis=1))]
+    duration=max(.3,2*np.max(np.sum(abs(np.diff(knots,axis=0)),axis=0)/velocity))
+    for _ in range(12):
+        duration=np.ceil(duration/dt)*dt
+        t=np.linspace(0,duration,int(round(duration/dt))+1)
+        x=t/duration; ramp=.2; v=1/(1-ramp)
+        def start(z):return v*(z/2-ramp/(2*np.pi)*np.sin(np.pi*z/ramp))
+        fraction=np.where(x<ramp,start(x),np.where(x>1-ramp,1-start(1-x),v*(x-ramp/2)))
+        path=spline(np.interp(fraction*arc[-1],arc,u))
+        speed=np.diff(path,axis=0)/dt
+        acc=np.diff(speed,axis=0)/dt
+        factor=max(np.max(abs(speed)/velocity),np.sqrt(np.max(abs(acc)/acceleration)))
+        if factor<=.98:
+            return t,path
+        duration*=max(1.01,factor/.97)
+    raise ValueError('continuous trajectory timing failed')
+
+
+def fixed_hand_path(knots, velocity, acceleration, dt, duration):
+    """Exact-duration zero-end-velocity hand phase; never silently retime."""
+    knots=np.asarray(knots,float)
+    if len(knots)!=2:
+        raise ValueError('fixed hand duration requires a direct hand phase')
+    delta=knots[1]-knots[0]
+    if np.any(1.5*np.abs(delta)/duration > velocity*1.000001):
+        raise ValueError('requested hand duration exceeds joint velocity limits')
+    if np.any(6*np.abs(delta)/duration**2 > acceleration*1.000001):
+        raise ValueError('requested hand duration exceeds joint acceleration limits')
+    times=np.linspace(0,duration,int(np.ceil(duration/dt))+1)
+    u=times/duration
+    return times,knots[0]+(3*u*u-2*u*u*u)[:,None]*delta
+
+
 class Planner:
     def __init__(self, config):
         self.config = validate_scene(config)
@@ -226,10 +337,30 @@ class Planner:
         attach_backend(self.robot,config)
 
     def plan(self, stage, start, object_pose, canceled=lambda: False, barcode_pose=None):
+        override = self.config.get('placement', {}).get('descent_ik_rotation_tolerance_rad') if stage == 'Place' else None
+        if override is None or self.config.get('placement', {}).get('fixed_joint_motion', False):
+            return Planner._plan(self, stage, start, object_pose, canceled, barcode_pose)
+        original = self.robot.ik_rotation_tolerance_rad
+        try:
+            self.robot.ik_rotation_tolerance_rad = float(override)
+            return Planner._plan(self, stage, start, object_pose, canceled, barcode_pose)
+        finally:
+            self.robot.ik_rotation_tolerance_rad = original
+
+    def _plan(self, stage, start, object_pose, canceled=lambda: False, barcode_pose=None):
         c = self.config
         if stage not in STAGES:
             raise ValueError("unknown stage")
+        if stage == 'Approach' and c.get('temporary_axis_grasp_trial', False):
+            from .axis_grasp_trial import select
+            return select(self, start, object_pose, canceled)
         q = vector(start, 28).copy()
+        if c.get("hand_command_only",False):
+            # Use explicit command postures for planning; raw feedback remains
+            # available to runtime fault checks and arm/EE geometry.
+            q[7:14]=c["hand_closed"][:7]
+            a=np.asarray(c["hand_open"])[7:];b=np.asarray(c["hand_closed"])[7:]
+            q[21:28]=b if np.linalg.norm(q[21:28]-b)<np.linalg.norm(q[21:28]-a) else a
         from .placement import check_start
         check_start(self.robot, c, stage, q)
         obj = pose(object_pose) if requires_object_pose(c, stage) else np.eye(4)
@@ -240,6 +371,11 @@ class Planner:
         fk = self.robot.fk(q)
         goal = q.copy()
         cartesian_target = None
+        fixed_points = None
+        fixed_placement = placement_enabled(c) and c['placement'].get('fixed_joint_motion', False)
+        if fixed_placement and stage in ('PlaceApproach','Place','PlaceRetreat','Retreat'):
+            from .placement import joint_points
+            fixed_points=joint_points(c,stage)
         hand_indices = [JOINT_NAMES.index(n) for n in HAND_NAMES]
         if stage in LOADED_STAGES and stage not in ('Recover','ReadyPose'):
             # Preserve the configured closing setpoint across loaded stages,
@@ -247,11 +383,18 @@ class Planner:
             # Executor still checks this start against measured tolerance.
             q[hand_indices] = c['hand_closed']
             goal[hand_indices] = c['hand_closed']
-        if stage == "Prepare":
+        if c.get("right_hand_preload",False) and stage=="Release":
+            q[21:28]=np.asarray(c["hand_closed"])[7:]
+            goal[21:28]=q[21:28]
+        if fixed_points is not None:
+            goal[14:21] = vector(fixed_points[-1],7)
+            if stage == 'Retreat':
+                goal[:7] = vector(c['home_joints'],28)[:7]
+        elif stage == "Prepare":
             goal = vector(c["home_joints"], 28).copy()
         elif stage == 'ReadyPose':
-            # Keep hand state while returning the arms. Preserve closing preload
-            # if the measured fingers are already near the closed command.
+            # Preserve left-hand grip while returning the arms; open the right hand.
+            # Keep the measured starting posture for a continuous planned path.
             for offset in (0,7):
                 indices=hand_indices[offset:offset+7]
                 closed=np.asarray(c['hand_closed'][offset:offset+7])
@@ -262,6 +405,7 @@ class Planner:
                     q[indices]=closed
             goal=vector(c['home_joints'],28).copy()
             goal[hand_indices]=q[hand_indices]
+            goal[21:28]=np.asarray(c['hand_open'])[7:14]
         elif stage in ("Approach", "Descend"):
             target = obj @ pose(c["grasp_object_from_right_ee"])
             if stage == "Approach":
@@ -270,6 +414,12 @@ class Planner:
             # wrist rotation from home can cross an unreachable configuration.
             # Descend remains Cartesian and all paths retain collision checks.
             if stage == "Descend":
+                if 'descend_distance_m' in c:
+                    # Fixed base-Z drop from the measured approach endpoint.
+                    target = fk[self.robot.ee['right']].copy()
+                    target[2,3] -= c['descend_distance_m']
+                    if c.get('temporary_axis_grasp_trial', False) or c.get('_axis_trial_hold_descent', False):
+                        target[:3,:3] = fk[self.robot.ee['right']][:3,:3]
                 cartesian_target = target
             goal = self.robot.ik("right", target, goal)
             goal[hand_indices] = c.get('hand_pregrasp',c["hand_open"])
@@ -295,7 +445,22 @@ class Planner:
         elif stage == "AlignBarcode":
             if barcode_pose is None:
                 raise ValueError('observed barcode surface required')
-            if c.get('barcode_fixed_wrist'):
+            if c.get('barcode_position_only', False):
+                from .barcode_position import reader_look_at
+                ee_from_reader=pose(c['left_ee_from_reader'])
+                current_reader=fk[self.robot.ee['left']]@ee_from_reader
+                target_reader=reader_look_at(current_reader,pose(barcode_pose)[:3,3],c['read_distance'],
+                    c.get('barcode_aim_offset_base_m', [0., 0., 0.]), yaw_offset_deg=-30.)
+                solver=getattr(self.robot,'ik_solver',None)
+                if not hasattr(solver,'solve_reader_axis'):
+                    raise ValueError('position-only barcode alignment requires PyRoKi reader-axis IK')
+                goal=solver.solve_reader_axis('left',target_reader,ee_from_reader,goal)
+                # Operator-requested extra wrist bend after reader-axis alignment.
+                goal[5] += np.deg2rad(30.)
+                if not self.robot.limits[5,0] <= goal[5] <= self.robot.limits[5,1]:
+                    raise ValueError('left J6 +30deg scan bend exceeds joint limit')
+
+            elif c.get('barcode_fixed_wrist'):
                 from .reader_alignment import solve_fixed_wrist
                 goal=solve_fixed_wrist(self.robot,q,barcode_pose,c,canceled)
                 q[4:7]=c['barcode_fixed_wrist']['joint_values']
@@ -362,6 +527,15 @@ class Planner:
             p = c['placement']
             if stage == 'ClearReader':
                 goal[:7] = vector(p['clear_left_joints'], 7)
+            elif stage == 'PlaceApproach' and 'hover_right_joints' in p:
+                values=vector(p['hover_right_joints'],7)
+                if np.any(values < self.robot.limits[14:21,0]) or np.any(values > self.robot.limits[14:21,1]):
+                    raise ValueError('placement approach joints outside limits')
+                goal[14:21]=values
+                actual=self.robot.ee_fk('right',goal);target=pose(p['hover_right_pose'])
+                angle=Rotation.from_matrix(target[:3,:3]@actual[:3,:3].T).magnitude()
+                if np.linalg.norm(actual[:3,3]-target[:3,3]) > self.robot.ik_position_tolerance_m or angle > self.robot.ik_rotation_tolerance_rad:
+                    raise ValueError('placement approach joint target does not match configured pose tolerance')
             else:
                 target = pose(p['release_right_pose'] if stage == 'Place' else p['hover_right_pose'])
                 goal = self.robot.ik('right', target, goal)
@@ -384,12 +558,35 @@ class Planner:
             else 0.0
         )
 
+        from .placement import trajectory_clearance
+
         def build(knots):
             scale=c.get('scan_motion_scale',1.) if stage=='ScanPose' else 1.
-            times, path = hermite(
-                knots, self.robot.velocity*scale, self.robot.acceleration*scale**2, c["sample_period"],
-                c.get("lift_minimum_segment_duration",.3) if stage=="Lift" else .3
-            )
+            if fixed_placement and stage in ('ClearReader','PlaceApproach','Place','PlaceRetreat','Retreat'):
+                scale=c['placement'].get('joint_motion_scale',1.)
+            acceleration=self.robot.acceleration.copy()*scale**2
+            if stage=='Approach':
+                acceleration[:7]*=c.get('approach_arm_acceleration_scale',1.)
+                acceleration[14:21]*=c.get('approach_arm_acceleration_scale',1.)
+            duration_key={'Close':'hand_close_duration_s','Release':'hand_open_duration_s'}.get(stage)
+            prepare_route_active=stage in ('Prepare','ReadyPose') and c.get('prepare_conveyor_route') is not None
+            if prepare_route_active:
+                times=[0.];path=[knots[0]]
+                for a,b in zip(knots[:-1],knots[1:]):
+                    st,sp=hermite([a,b],self.robot.velocity,acceleration,c['sample_period'])
+                    times.extend((times[-1]+st[1:]).tolist());path.extend(sp[1:])
+                times=np.asarray(times);path=np.asarray(path)
+            elif duration_key and duration_key in c:
+                times,path=fixed_hand_path(knots,self.robot.velocity,self.robot.acceleration,
+                                           c["sample_period"],c[duration_key])
+            elif fixed_placement and c['placement'].get('continuous_motion',False) and stage in ('PlaceApproach','Retreat'):
+                times,path=continuous_joint_path(knots,self.robot.velocity*scale,acceleration,c['sample_period'])
+            else:
+                times, path = hermite(
+                    knots, self.robot.velocity*scale, acceleration, c["sample_period"],
+                    c.get("lift_minimum_segment_duration",.3) if stage=="Lift" else (c.get("descend_minimum_segment_duration",.3) if stage=="Descend" else .3),
+                    corner_blend=c['placement'].get('fixed_joint_corner_blend',0.) if fixed_placement and stage=='PlaceApproach' else 0.
+                )
             clearance = 1e6
             for command in path:
                 if stage=='AlignBarcode' and c.get('barcode_fixed_wrist'):
@@ -399,15 +596,25 @@ class Planner:
                     raise InterruptedError("planning canceled")
                 clearance = min(
                     clearance,
-                    self.robot.clearance(
-                        command, c["obstacles"], c["collision_margin"], attached
-                    ),
+                    trajectory_clearance(self.robot, c, stage, command, attached),
                 )
+            if prepare_route_active:
+                from .prepare_route import validate_path
+                clearance=min(clearance,validate_path(self.robot,path,canceled))
             return times, path, clearance
 
         knots = [q, goal]
+        if fixed_points is not None:
+            knots=[q]
+            for values in fixed_points:
+                waypoint=goal.copy()
+                waypoint[14:21]=vector(values,7)
+                knots.append(waypoint)
         if stage == "Prepare":
             knots = [q, *[vector(w, 28) for w in c.get("prepare_joint_waypoints", [])], goal]
+        if stage in ('Prepare','ReadyPose') and c.get('prepare_conveyor_route') is not None:
+            from .prepare_route import knots as prepare_knots
+            knots=prepare_knots(c,q,goal,self.robot,canceled)
         if cartesian_target is not None:
             first = fk[self.robot.ee["right"]]
             rotations = Slerp(
@@ -440,7 +647,8 @@ class Planner:
             times, path, clearance = build(knots)
         except ValueError as error:
             if (
-                cartesian_target is not None
+                fixed_points is not None
+                or cartesian_target is not None
                 or str(error) != "collision clearance"
                 or c.get("safe_joint_waypoint") is None
             ):
@@ -448,6 +656,31 @@ class Planner:
             middle = vector(c["safe_joint_waypoint"], 28).copy()
             middle[hand_indices] = q[hand_indices]
             times, path, clearance = build([q, middle, goal])
+        if fixed_placement and stage=='PlaceApproach' and c['placement'].get('continuous_motion',False):
+            # One arm action: approach/descent, stationary opening, withdrawal/home.
+            release=path[-1].copy();opened=release.copy()
+            opened[21:28]=np.asarray(c['hand_open'])[7:]
+            ht,hq=fixed_hand_path([release,opened],self.robot.velocity,self.robot.acceleration,
+                                 c['sample_period'],c['hand_open_duration_s'])
+            back=[opened]
+            for values in c['placement']['fixed_joint_waypoints']['PlaceRetreat']+c['placement']['fixed_joint_waypoints']['Retreat']:
+                waypoint=opened.copy();waypoint[14:21]=values;back.append(waypoint)
+            scale=c['placement'].get('joint_motion_scale',1.)
+            bt,bq=continuous_joint_path(back,self.robot.velocity*scale,self.robot.acceleration*scale**2,c['sample_period'])
+            phases=np.array([times[-1],times[-1]+ht[-1],times[-1]+ht[-1]+bt[-1]])
+            times=np.r_[times,phases[0]+ht[1:],phases[1]+bt[1:]]
+            path=np.vstack([path,hq[1:],bq[1:]])
+            for row in path:
+                if canceled():raise InterruptedError('planning canceled')
+                clearance=min(clearance,trajectory_clearance(self.robot,c,stage,row,attached))
+            return dict(times=times,path=path,minimum_clearance=clearance,
+                        ik_calls=self.robot.ik_calls,phase_end_times=phases)
+        if stage == 'PlaceApproach' and c.get('placement',{}).get('prevalidate_descent',False) and not c['placement'].get('continuous_motion',False):
+            # Reject the approach before dispatch if its subsequent descent cannot be planned.
+            try:
+                Planner.plan(self,'Place',path[-1],None,canceled=canceled)
+            except ValueError as error:
+                raise ValueError('placement descent precheck failed before approach dispatch: '+str(error)) from error
         return dict(
             times=times,
             path=path,

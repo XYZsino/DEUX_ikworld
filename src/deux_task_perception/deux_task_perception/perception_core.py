@@ -91,7 +91,7 @@ def transform_matrix(translation, quaternion):
     return matrix
 
 
-def roi_points(depth, projection, box, reference_from_camera, min_height, max_distance, depth_scale=1.0):
+def roi_points(depth, projection, box, reference_from_camera, min_height, max_distance, depth_scale=1.0, diagnostics=None):
     """Rectified registered depth: use CameraInfo.P, not raw-camera K."""
     p = np.asarray(projection, dtype=float).reshape(3, 4)
     box = np.asarray(box, dtype=float)
@@ -104,6 +104,8 @@ def roi_points(depth, projection, box, reference_from_camera, min_height, max_di
     h, w = depth.shape
     x0, y0 = np.maximum(np.ceil(box[:2]), 0).astype(int)
     x1, y1 = np.minimum(np.floor(box[2:])+1, [w, h]).astype(int)
+    if diagnostics is not None:
+        diagnostics.update(roi_pixels=0, valid_depth_points=0, within_distance=0, above_height=0, retained_points=0)
     if x1 <= x0 or y1 <= y0:
         return np.empty((0, 3))
     v, u = np.mgrid[y0:y1, x0:x1]
@@ -115,8 +117,15 @@ def roi_points(depth, projection, box, reference_from_camera, min_height, max_di
     camera = np.column_stack(((u-p[0, 2])*z/p[0, 0]-p[0, 3]/p[0, 0],
                               (v-p[1, 2])*z/p[1, 1]-p[1, 3]/p[1, 1], z))
     reference = camera @ reference_from_camera[:3, :3].T + reference_from_camera[:3, 3]
-    return reference[(np.linalg.norm(camera, axis=1) <= max_distance) &
-                     (reference[:, 2] > min_height)]
+    distance_ok = np.linalg.norm(camera, axis=1) <= max_distance
+    height_ok = reference[:, 2] > min_height
+    keep = distance_ok & height_ok
+    if diagnostics is not None:
+        diagnostics.update(roi_pixels=int(valid.size), valid_depth_points=int(valid.sum()),
+                           within_distance=int(distance_ok.sum()), above_height=int(height_ok.sum()),
+                           retained_points=int(keep.sum()), min_height_m=float(min_height),
+                           max_distance_m=float(max_distance))
+    return reference[keep]
 
 
 class LatestWorker:
@@ -204,3 +213,21 @@ def masked_depth(depth, polygon_xy):
     result = depth.astype(np.float32, copy=True)
     result[mask == 0] = np.nan
     return result
+
+
+def filter_above_plane(points, base_from_reference, plane, clearance, diagnostics=None):
+    """Keep reference-frame points above a unit-normal plane expressed in base."""
+    plane = np.asarray(plane, dtype=float)
+    if (plane.shape != (4,) or not np.isfinite(plane).all()
+            or not np.isclose(np.linalg.norm(plane[:3]), 1., atol=1e-6)
+            or not np.isfinite(clearance) or clearance < 0):
+        raise ValueError('invalid table plane or clearance')
+    base_points = points @ base_from_reference[:3, :3].T + base_from_reference[:3, 3]
+    height = base_points @ plane[:3] + plane[3]
+    keep = height > clearance
+    if diagnostics is not None:
+        diagnostics.update(table_input_points=len(points), table_retained_points=int(keep.sum()),
+                           table_removed_points=int((~keep).sum()), table_clearance_m=float(clearance),
+                           table_signed_height_min_m=float(height.min()) if len(height) else None,
+                           table_signed_height_max_m=float(height.max()) if len(height) else None)
+    return points[keep]

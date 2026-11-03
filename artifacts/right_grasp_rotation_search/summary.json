@@ -1,0 +1,1322 @@
+{
+  "combinations": 11925,
+  "rotations": 53,
+  "solver_cell_rotation_attempts": 20935,
+  "cells_tested": 225,
+  "accepted_paths": 1587,
+  "feasible_cells": 118,
+  "previous_feasible_cells": 39,
+  "new_cells": [
+    [
+      0.3,
+      -0.18
+    ],
+    [
+      0.3,
+      -0.15
+    ],
+    [
+      0.3,
+      -0.12
+    ],
+    [
+      0.3,
+      -0.09
+    ],
+    [
+      0.3,
+      -0.06
+    ],
+    [
+      0.3,
+      -0.03
+    ],
+    [
+      0.3,
+      0.0
+    ],
+    [
+      0.3,
+      0.03
+    ],
+    [
+      0.3,
+      0.06
+    ],
+    [
+      0.3,
+      0.09
+    ],
+    [
+      0.3,
+      0.12
+    ],
+    [
+      0.3,
+      0.15
+    ],
+    [
+      0.33,
+      -0.15
+    ],
+    [
+      0.33,
+      -0.12
+    ],
+    [
+      0.33,
+      -0.09
+    ],
+    [
+      0.33,
+      -0.06
+    ],
+    [
+      0.33,
+      -0.03
+    ],
+    [
+      0.33,
+      0.0
+    ],
+    [
+      0.33,
+      0.03
+    ],
+    [
+      0.33,
+      0.06
+    ],
+    [
+      0.33,
+      0.09
+    ],
+    [
+      0.33,
+      0.12
+    ],
+    [
+      0.33,
+      0.15
+    ],
+    [
+      0.36,
+      -0.18
+    ],
+    [
+      0.36,
+      -0.15
+    ],
+    [
+      0.36,
+      -0.12
+    ],
+    [
+      0.36,
+      -0.09
+    ],
+    [
+      0.36,
+      -0.06
+    ],
+    [
+      0.36,
+      -0.03
+    ],
+    [
+      0.36,
+      0.0
+    ],
+    [
+      0.36,
+      0.03
+    ],
+    [
+      0.36,
+      0.06
+    ],
+    [
+      0.36,
+      0.09
+    ],
+    [
+      0.36,
+      0.12
+    ],
+    [
+      0.36,
+      0.15
+    ],
+    [
+      0.39,
+      -0.18
+    ],
+    [
+      0.39,
+      -0.15
+    ],
+    [
+      0.39,
+      -0.12
+    ],
+    [
+      0.39,
+      -0.09
+    ],
+    [
+      0.39,
+      -0.06
+    ],
+    [
+      0.39,
+      0.0
+    ],
+    [
+      0.39,
+      0.03
+    ],
+    [
+      0.39,
+      0.06
+    ],
+    [
+      0.39,
+      0.09
+    ],
+    [
+      0.39,
+      0.15
+    ],
+    [
+      0.42,
+      -0.18
+    ],
+    [
+      0.42,
+      -0.15
+    ],
+    [
+      0.42,
+      -0.12
+    ],
+    [
+      0.42,
+      -0.09
+    ],
+    [
+      0.42,
+      -0.06
+    ],
+    [
+      0.42,
+      0.0
+    ],
+    [
+      0.42,
+      0.03
+    ],
+    [
+      0.45,
+      -0.18
+    ],
+    [
+      0.45,
+      -0.15
+    ],
+    [
+      0.45,
+      -0.12
+    ],
+    [
+      0.45,
+      -0.09
+    ],
+    [
+      0.48,
+      -0.18
+    ],
+    [
+      0.48,
+      -0.15
+    ],
+    [
+      0.48,
+      -0.12
+    ],
+    [
+      0.48,
+      -0.09
+    ],
+    [
+      0.48,
+      0.12
+    ],
+    [
+      0.51,
+      -0.18
+    ],
+    [
+      0.51,
+      -0.15
+    ],
+    [
+      0.51,
+      -0.12
+    ],
+    [
+      0.51,
+      -0.09
+    ],
+    [
+      0.54,
+      -0.18
+    ],
+    [
+      0.54,
+      -0.15
+    ],
+    [
+      0.54,
+      -0.12
+    ],
+    [
+      0.54,
+      -0.09
+    ],
+    [
+      0.57,
+      -0.18
+    ],
+    [
+      0.57,
+      -0.15
+    ],
+    [
+      0.57,
+      -0.12
+    ],
+    [
+      0.57,
+      -0.09
+    ],
+    [
+      0.6,
+      -0.15
+    ],
+    [
+      0.6,
+      -0.12
+    ],
+    [
+      0.6,
+      -0.09
+    ],
+    [
+      0.63,
+      -0.12
+    ],
+    [
+      0.63,
+      -0.09
+    ],
+    [
+      0.63,
+      -0.03
+    ]
+  ],
+  "combined_feasible_cells": 118,
+  "fixed_rotation_full_rectangle": {
+    "cells": 80,
+    "x_min_m": 0.3,
+    "x_max_m": 0.57,
+    "y_min_m": -0.15,
+    "y_max_m": 0.06
+  },
+  "combined_full_rectangle": {
+    "cells": 80,
+    "x_min_m": 0.3,
+    "x_max_m": 0.57,
+    "y_min_m": -0.15,
+    "y_max_m": 0.06
+  },
+  "best_single_rotation_rectangle": {
+    "id": "axis02_15",
+    "rotvec_deg": [
+      -8.660254037844387,
+      -8.660254037844387,
+      8.660254037844387
+    ],
+    "accepted_paths": 40,
+    "newly_feasible_cells": 23,
+    "full_rectangle": {
+      "cells": 30,
+      "x_min_m": 0.36,
+      "x_max_m": 0.48,
+      "y_min_m": -0.09,
+      "y_max_m": 0.06
+    }
+  },
+  "rotation_count_histogram": {
+    "1": 12,
+    "4": 7,
+    "9": 5,
+    "17": 4,
+    "12": 3,
+    "10": 3,
+    "15": 6,
+    "11": 4,
+    "8": 5,
+    "5": 4,
+    "14": 2,
+    "23": 3,
+    "20": 1,
+    "22": 5,
+    "19": 5,
+    "2": 7,
+    "31": 2,
+    "29": 4,
+    "24": 1,
+    "27": 3,
+    "18": 2,
+    "25": 4,
+    "26": 3,
+    "32": 4,
+    "16": 2,
+    "33": 1,
+    "34": 1,
+    "7": 3,
+    "3": 5,
+    "13": 3,
+    "21": 1,
+    "6": 3
+  },
+  "previous_cells_without_fixed_rotation_solution": [],
+  "accepted_xy_bounds_m": [
+    [
+      0.3,
+      -0.18
+    ],
+    [
+      0.63,
+      0.15
+    ]
+  ],
+  "rejection_counts": {
+    "fixed orientation IK failed (1mm / 1deg)": 1437,
+    "endpoint: fixed orientation IK failed (1mm / 1deg)": 7739,
+    "approach continuous acceleration >90% limit": 1156,
+    "approach continuous joint position limit": 6
+  },
+  "per_rotation": [
+    {
+      "id": "reference",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 39,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.39,
+        "x_max_m": 0.45,
+        "y_min_m": -0.09,
+        "y_max_m": 0.09
+      }
+    },
+    {
+      "id": "axis00_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        -8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 38,
+      "newly_feasible_cells": 18,
+      "full_rectangle": {
+        "cells": 12,
+        "x_min_m": 0.39,
+        "x_max_m": 0.45,
+        "y_min_m": -0.18,
+        "y_max_m": -0.09
+      }
+    },
+    {
+      "id": "axis00_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        -16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 32,
+      "newly_feasible_cells": 17,
+      "full_rectangle": {
+        "cells": 16,
+        "x_min_m": 0.51,
+        "x_max_m": 0.6,
+        "y_min_m": -0.09,
+        "y_max_m": 0.0
+      }
+    },
+    {
+      "id": "axis01_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        -10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 42,
+      "newly_feasible_cells": 18,
+      "full_rectangle": {
+        "cells": 28,
+        "x_min_m": 0.42,
+        "x_max_m": 0.51,
+        "y_min_m": -0.12,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis01_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        -20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 38,
+      "newly_feasible_cells": 22,
+      "full_rectangle": {
+        "cells": 24,
+        "x_min_m": 0.48,
+        "x_max_m": 0.54,
+        "y_min_m": -0.18,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis02_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        -8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 40,
+      "newly_feasible_cells": 23,
+      "full_rectangle": {
+        "cells": 30,
+        "x_min_m": 0.36,
+        "x_max_m": 0.48,
+        "y_min_m": -0.09,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis02_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        -16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 36,
+      "newly_feasible_cells": 20,
+      "full_rectangle": {
+        "cells": 25,
+        "x_min_m": 0.39,
+        "x_max_m": 0.51,
+        "y_min_m": -0.12,
+        "y_max_m": 0.0
+      }
+    },
+    {
+      "id": "axis03_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        0.0,
+        -10.606601717798211
+      ],
+      "accepted_paths": 38,
+      "newly_feasible_cells": 20,
+      "full_rectangle": {
+        "cells": 16,
+        "x_min_m": 0.48,
+        "x_max_m": 0.51,
+        "y_min_m": -0.15,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis03_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        0.0,
+        -20.506096654409877
+      ],
+      "accepted_paths": 21,
+      "newly_feasible_cells": 11,
+      "full_rectangle": {
+        "cells": 10,
+        "x_min_m": 0.54,
+        "x_max_m": 0.57,
+        "y_min_m": -0.15,
+        "y_max_m": -0.03
+      }
+    },
+    {
+      "id": "axis04_15",
+      "rotvec_deg": [
+        -15.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 36,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.42,
+        "x_max_m": 0.48,
+        "y_min_m": -0.15,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis04_29",
+      "rotvec_deg": [
+        -29.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 28,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 12,
+        "x_min_m": 0.48,
+        "x_max_m": 0.51,
+        "y_min_m": -0.18,
+        "y_max_m": -0.03
+      }
+    },
+    {
+      "id": "axis05_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        0.0,
+        10.606601717798211
+      ],
+      "accepted_paths": 35,
+      "newly_feasible_cells": 25,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.36,
+        "x_max_m": 0.42,
+        "y_min_m": -0.12,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis05_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        0.0,
+        20.506096654409877
+      ],
+      "accepted_paths": 28,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 16,
+        "x_min_m": 0.36,
+        "x_max_m": 0.45,
+        "y_min_m": -0.09,
+        "y_max_m": 0.0
+      }
+    },
+    {
+      "id": "axis06_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 37,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.42,
+        "x_max_m": 0.48,
+        "y_min_m": -0.12,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis06_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 20,
+      "newly_feasible_cells": 12,
+      "full_rectangle": {
+        "cells": 9,
+        "x_min_m": 0.39,
+        "x_max_m": 0.45,
+        "y_min_m": -0.03,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis07_15",
+      "rotvec_deg": [
+        -10.606601717798211,
+        10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 33,
+      "newly_feasible_cells": 24,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.36,
+        "x_max_m": 0.42,
+        "y_min_m": -0.12,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis07_29",
+      "rotvec_deg": [
+        -20.506096654409877,
+        20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 20,
+      "newly_feasible_cells": 18,
+      "full_rectangle": {
+        "cells": 7,
+        "x_min_m": 0.33,
+        "x_max_m": 0.33,
+        "y_min_m": -0.15,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis08_15",
+      "rotvec_deg": [
+        -8.660254037844387,
+        8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 34,
+      "newly_feasible_cells": 27,
+      "full_rectangle": {
+        "cells": 24,
+        "x_min_m": 0.33,
+        "x_max_m": 0.42,
+        "y_min_m": -0.09,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis08_29",
+      "rotvec_deg": [
+        -16.74315780649915,
+        16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 18,
+      "newly_feasible_cells": 16,
+      "full_rectangle": {
+        "cells": 9,
+        "x_min_m": 0.33,
+        "x_max_m": 0.39,
+        "y_min_m": -0.06,
+        "y_max_m": 0.0
+      }
+    },
+    {
+      "id": "axis09_15",
+      "rotvec_deg": [
+        0.0,
+        -10.606601717798211,
+        -10.606601717798211
+      ],
+      "accepted_paths": 22,
+      "newly_feasible_cells": 9,
+      "full_rectangle": {
+        "cells": 4,
+        "x_min_m": 0.42,
+        "x_max_m": 0.42,
+        "y_min_m": -0.15,
+        "y_max_m": -0.06
+      }
+    },
+    {
+      "id": "axis09_29",
+      "rotvec_deg": [
+        0.0,
+        -20.506096654409877,
+        -20.506096654409877
+      ],
+      "accepted_paths": 29,
+      "newly_feasible_cells": 11,
+      "full_rectangle": {
+        "cells": 6,
+        "x_min_m": 0.48,
+        "x_max_m": 0.54,
+        "y_min_m": -0.15,
+        "y_max_m": -0.12
+      }
+    },
+    {
+      "id": "axis10_15",
+      "rotvec_deg": [
+        0.0,
+        -15.0,
+        0.0
+      ],
+      "accepted_paths": 36,
+      "newly_feasible_cells": 12,
+      "full_rectangle": {
+        "cells": 12,
+        "x_min_m": 0.45,
+        "x_max_m": 0.51,
+        "y_min_m": 0.0,
+        "y_max_m": 0.09
+      }
+    },
+    {
+      "id": "axis10_29",
+      "rotvec_deg": [
+        0.0,
+        -29.0,
+        0.0
+      ],
+      "accepted_paths": 36,
+      "newly_feasible_cells": 15,
+      "full_rectangle": {
+        "cells": 12,
+        "x_min_m": 0.45,
+        "x_max_m": 0.51,
+        "y_min_m": -0.12,
+        "y_max_m": -0.03
+      }
+    },
+    {
+      "id": "axis11_15",
+      "rotvec_deg": [
+        0.0,
+        -10.606601717798211,
+        10.606601717798211
+      ],
+      "accepted_paths": 36,
+      "newly_feasible_cells": 19,
+      "full_rectangle": {
+        "cells": 25,
+        "x_min_m": 0.36,
+        "x_max_m": 0.48,
+        "y_min_m": -0.06,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis11_29",
+      "rotvec_deg": [
+        0.0,
+        -20.506096654409877,
+        20.506096654409877
+      ],
+      "accepted_paths": 34,
+      "newly_feasible_cells": 16,
+      "full_rectangle": {
+        "cells": 25,
+        "x_min_m": 0.36,
+        "x_max_m": 0.48,
+        "y_min_m": -0.06,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis12_15",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        -15.0
+      ],
+      "accepted_paths": 30,
+      "newly_feasible_cells": 13,
+      "full_rectangle": {
+        "cells": 6,
+        "x_min_m": 0.45,
+        "x_max_m": 0.51,
+        "y_min_m": 0.03,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis12_29",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        -29.0
+      ],
+      "accepted_paths": 52,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 20,
+        "x_min_m": 0.42,
+        "x_max_m": 0.51,
+        "y_min_m": -0.15,
+        "y_max_m": -0.03
+      }
+    },
+    {
+      "id": "axis14_15",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        15.0
+      ],
+      "accepted_paths": 28,
+      "newly_feasible_cells": 22,
+      "full_rectangle": {
+        "cells": 20,
+        "x_min_m": 0.33,
+        "x_max_m": 0.42,
+        "y_min_m": -0.06,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis14_29",
+      "rotvec_deg": [
+        0.0,
+        0.0,
+        29.0
+      ],
+      "accepted_paths": 18,
+      "newly_feasible_cells": 18,
+      "full_rectangle": {
+        "cells": 12,
+        "x_min_m": 0.3,
+        "x_max_m": 0.36,
+        "y_min_m": -0.03,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis15_15",
+      "rotvec_deg": [
+        0.0,
+        10.606601717798211,
+        -10.606601717798211
+      ],
+      "accepted_paths": 36,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 14,
+        "x_min_m": 0.3,
+        "x_max_m": 0.48,
+        "y_min_m": -0.09,
+        "y_max_m": -0.06
+      }
+    },
+    {
+      "id": "axis15_29",
+      "rotvec_deg": [
+        0.0,
+        20.506096654409877,
+        -20.506096654409877
+      ],
+      "accepted_paths": 47,
+      "newly_feasible_cells": 29,
+      "full_rectangle": {
+        "cells": 15,
+        "x_min_m": 0.42,
+        "x_max_m": 0.48,
+        "y_min_m": -0.09,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis16_15",
+      "rotvec_deg": [
+        0.0,
+        15.0,
+        0.0
+      ],
+      "accepted_paths": 36,
+      "newly_feasible_cells": 30,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.33,
+        "x_max_m": 0.39,
+        "y_min_m": -0.09,
+        "y_max_m": 0.09
+      }
+    },
+    {
+      "id": "axis16_29",
+      "rotvec_deg": [
+        0.0,
+        29.0,
+        0.0
+      ],
+      "accepted_paths": 24,
+      "newly_feasible_cells": 22,
+      "full_rectangle": {
+        "cells": 16,
+        "x_min_m": 0.3,
+        "x_max_m": 0.39,
+        "y_min_m": -0.06,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis17_15",
+      "rotvec_deg": [
+        0.0,
+        10.606601717798211,
+        10.606601717798211
+      ],
+      "accepted_paths": 28,
+      "newly_feasible_cells": 26,
+      "full_rectangle": {
+        "cells": 20,
+        "x_min_m": 0.3,
+        "x_max_m": 0.39,
+        "y_min_m": -0.06,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis17_29",
+      "rotvec_deg": [
+        0.0,
+        20.506096654409877,
+        20.506096654409877
+      ],
+      "accepted_paths": 10,
+      "newly_feasible_cells": 10,
+      "full_rectangle": {
+        "cells": 6,
+        "x_min_m": 0.3,
+        "x_max_m": 0.33,
+        "y_min_m": -0.03,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis18_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        -8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 20,
+      "newly_feasible_cells": 10,
+      "full_rectangle": {
+        "cells": 4,
+        "x_min_m": 0.36,
+        "x_max_m": 0.45,
+        "y_min_m": -0.06,
+        "y_max_m": -0.06
+      }
+    },
+    {
+      "id": "axis18_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        -16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 9,
+      "newly_feasible_cells": 7,
+      "full_rectangle": {
+        "cells": 4,
+        "x_min_m": 0.36,
+        "x_max_m": 0.36,
+        "y_min_m": -0.09,
+        "y_max_m": 0.0
+      }
+    },
+    {
+      "id": "axis19_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        -10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 33,
+      "newly_feasible_cells": 11,
+      "full_rectangle": {
+        "cells": 10,
+        "x_min_m": 0.33,
+        "x_max_m": 0.45,
+        "y_min_m": -0.06,
+        "y_max_m": -0.03
+      }
+    },
+    {
+      "id": "axis19_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        -20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 31,
+      "newly_feasible_cells": 14,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.33,
+        "x_max_m": 0.51,
+        "y_min_m": -0.03,
+        "y_max_m": 0.03
+      }
+    },
+    {
+      "id": "axis20_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        -8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 38,
+      "newly_feasible_cells": 22,
+      "full_rectangle": {
+        "cells": 25,
+        "x_min_m": 0.33,
+        "x_max_m": 0.45,
+        "y_min_m": -0.03,
+        "y_max_m": 0.09
+      }
+    },
+    {
+      "id": "axis20_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        -16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 25,
+      "newly_feasible_cells": 17,
+      "full_rectangle": {
+        "cells": 20,
+        "x_min_m": 0.33,
+        "x_max_m": 0.42,
+        "y_min_m": 0.0,
+        "y_max_m": 0.12
+      }
+    },
+    {
+      "id": "axis21_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        0.0,
+        -10.606601717798211
+      ],
+      "accepted_paths": 25,
+      "newly_feasible_cells": 12,
+      "full_rectangle": {
+        "cells": 7,
+        "x_min_m": 0.33,
+        "x_max_m": 0.51,
+        "y_min_m": -0.06,
+        "y_max_m": -0.06
+      }
+    },
+    {
+      "id": "axis21_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        0.0,
+        -20.506096654409877
+      ],
+      "accepted_paths": 28,
+      "newly_feasible_cells": 21,
+      "full_rectangle": {
+        "cells": 7,
+        "x_min_m": 0.33,
+        "x_max_m": 0.33,
+        "y_min_m": -0.12,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis22_15",
+      "rotvec_deg": [
+        15.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 33,
+      "newly_feasible_cells": 22,
+      "full_rectangle": {
+        "cells": 16,
+        "x_min_m": 0.36,
+        "x_max_m": 0.45,
+        "y_min_m": -0.03,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis22_29",
+      "rotvec_deg": [
+        29.0,
+        0.0,
+        0.0
+      ],
+      "accepted_paths": 24,
+      "newly_feasible_cells": 20,
+      "full_rectangle": {
+        "cells": 20,
+        "x_min_m": 0.3,
+        "x_max_m": 0.39,
+        "y_min_m": 0.0,
+        "y_max_m": 0.12
+      }
+    },
+    {
+      "id": "axis23_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        0.0,
+        10.606601717798211
+      ],
+      "accepted_paths": 31,
+      "newly_feasible_cells": 25,
+      "full_rectangle": {
+        "cells": 24,
+        "x_min_m": 0.3,
+        "x_max_m": 0.39,
+        "y_min_m": -0.03,
+        "y_max_m": 0.12
+      }
+    },
+    {
+      "id": "axis23_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        0.0,
+        20.506096654409877
+      ],
+      "accepted_paths": 9,
+      "newly_feasible_cells": 9,
+      "full_rectangle": {
+        "cells": 6,
+        "x_min_m": 0.3,
+        "x_max_m": 0.36,
+        "y_min_m": 0.06,
+        "y_max_m": 0.09
+      }
+    },
+    {
+      "id": "axis24_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        8.660254037844387,
+        -8.660254037844387
+      ],
+      "accepted_paths": 39,
+      "newly_feasible_cells": 23,
+      "full_rectangle": {
+        "cells": 9,
+        "x_min_m": 0.42,
+        "x_max_m": 0.48,
+        "y_min_m": 0.0,
+        "y_max_m": 0.06
+      }
+    },
+    {
+      "id": "axis24_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        16.74315780649915,
+        -16.74315780649915
+      ],
+      "accepted_paths": 43,
+      "newly_feasible_cells": 30,
+      "full_rectangle": {
+        "cells": 15,
+        "x_min_m": 0.3,
+        "x_max_m": 0.42,
+        "y_min_m": -0.09,
+        "y_max_m": -0.03
+      }
+    },
+    {
+      "id": "axis25_15",
+      "rotvec_deg": [
+        10.606601717798211,
+        10.606601717798211,
+        0.0
+      ],
+      "accepted_paths": 32,
+      "newly_feasible_cells": 27,
+      "full_rectangle": {
+        "cells": 18,
+        "x_min_m": 0.33,
+        "x_max_m": 0.39,
+        "y_min_m": -0.06,
+        "y_max_m": 0.09
+      }
+    },
+    {
+      "id": "axis25_29",
+      "rotvec_deg": [
+        20.506096654409877,
+        20.506096654409877,
+        0.0
+      ],
+      "accepted_paths": 18,
+      "newly_feasible_cells": 18,
+      "full_rectangle": {
+        "cells": 12,
+        "x_min_m": 0.3,
+        "x_max_m": 0.33,
+        "y_min_m": -0.03,
+        "y_max_m": 0.12
+      }
+    },
+    {
+      "id": "axis26_15",
+      "rotvec_deg": [
+        8.660254037844387,
+        8.660254037844387,
+        8.660254037844387
+      ],
+      "accepted_paths": 28,
+      "newly_feasible_cells": 26,
+      "full_rectangle": {
+        "cells": 21,
+        "x_min_m": 0.3,
+        "x_max_m": 0.36,
+        "y_min_m": -0.06,
+        "y_max_m": 0.12
+      }
+    },
+    {
+      "id": "axis26_29",
+      "rotvec_deg": [
+        16.74315780649915,
+        16.74315780649915,
+        16.74315780649915
+      ],
+      "accepted_paths": 6,
+      "newly_feasible_cells": 6,
+      "full_rectangle": {
+        "cells": 4,
+        "x_min_m": 0.3,
+        "x_max_m": 0.33,
+        "y_min_m": 0.03,
+        "y_max_m": 0.06
+      }
+    }
+  ],
+  "independent_offset_sample_peaks": {
+    "position_m": 0.00017485509598891597,
+    "reference_angle_deg": 29.040758739708437,
+    "target_angle_deg": 0.13802989480475777,
+    "velocity_ratio": 0.21595070850930387,
+    "acceleration_ratio": 0.895068679260338
+  },
+  "complete_grid_and_source_and_trajectory_hashes_verified": true,
+  "evidence": "offline kinematic and existing collision-model screening; no hardware commands"
+}

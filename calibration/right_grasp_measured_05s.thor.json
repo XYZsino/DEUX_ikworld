@@ -1,0 +1,47 @@
+{
+  "source_log": "/home/xyz_thor/DEUX_ikworld/.setup/right-hand-05s-20261029-022237.json",
+  "source_sha256": "74b369129862a01e60a35f2af27d33bdcaaf54df148a119935b938b65742f274",
+  "joint_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "measured_degrees": [
+    -0.8789062344371549,
+    -75.0585948648601,
+    20.478515641247764,
+    117.07031663823231,
+    -54.31640660089315,
+    -128.58398018250114,
+    51.06445449930712
+  ],
+  "parent_frame": "right_hand_base_link",
+  "estimated_grasp_center_m": [
+    -0.039319170879360404,
+    0.11550124877362467,
+    0.11454467522810696
+  ],
+  "tip_separation_m": 0.015363111531067683,
+  "thumb_tip_m": [
+    -0.0410070727401003,
+    0.1133917469424591,
+    0.10735389722348006
+  ],
+  "index_tip_m": [
+    -0.0376312690186205,
+    0.11761075060479025,
+    0.12173545323273387
+  ],
+  "method": "midpoint of distal mesh tip representatives using measured joint angles and URDF FK",
+  "contact_point_directly_measured": false,
+  "orientation_recalibrated": false,
+  "previous_grasp_origin": {
+    "xyz": "0.0 0.13 0.1",
+    "rpy": "0 0 1.5707963267948966"
+  },
+  "applied_to": "/home/xyz_thor/DEUX_ikworld/src/deux_task_bringup/urdf/deux_thor_measured_lift.urdf"
+}

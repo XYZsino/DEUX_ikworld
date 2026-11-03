@@ -1,0 +1,33 @@
+{
+  "offline_tests_passed": 38,
+  "test_files": [
+    "tools/test_lookup_bt_support.py",
+    "tools/test_stop_lookup_bt.py",
+    "tools/test_attention_return_runtime.py",
+    "tools/test_lookup_lift_scan.py",
+    "tools/test_scan_bbox_gate.py",
+    "tools/test_fast_scan.py"
+  ],
+  "checks": [
+    "measured URDF/conveyor model",
+    "simultaneous arm movement",
+    "exact reverse geometry and timing",
+    "synthetic controller success/rejection/error/final error/cancellation",
+    "shutdown ordering and failure preserves servers",
+    "shutdown admission latch"
+  ],
+  "jazzy_transport_tested": true,
+  "hardware_tested": false,
+  "thor_deployed": true,
+  "files_sha256": {
+    "tools/lookup_bt_support.py": "d4a8780eaabf328da7c598b2c944332ec55a78a9eb9689312087db15cb03d6db",
+    "tools/lookup_bt_server.py": "22c5745e564e4a5a45b453809f7b5c65f956c6673ca87e738ecd115ac54ea81d",
+    "tools/lookup_bt_node.py": "0186b160082597a7b7640bf45550f9a3c9f97a32c9eb7731b8ee060e87ddfa97",
+    "tools/stop_lookup_bt.py": "58cfe6e6ed4f58568b4adebeb13232a04a5240c100721a5a1209e2d9438acfd1",
+    "stop_lookup_bt.bash": "19de005a6713f814f93fdd6c1683d200fd1359bacfe0ec69ab6e53d721ff6adc",
+    "src/deux_task_runtime/deux_task_runtime/task_node.py": "2220e4dcae6ead708fb68a9a7d05bc3d57123ccdb47ee62df8d42e9caeba6852",
+    "src/deux_task_gui/deux_task_gui/index.html": "bca50c13e6a7d515636c4ea26ed8be3fb0a1c2a0b206673e46313e27da4f3e0b",
+    "calibration/attention_ready_route.json": "84e3c42382857582395bd395fdc7ea1f72630e2b17aa221c26f6dc5fa14a90dc"
+  },
+  "jazzy_test": "tools/test_ready_attention_ros.py; ROS_DOMAIN_ID=227; fake controller only"
+}

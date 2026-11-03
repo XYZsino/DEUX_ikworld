@@ -5,3 +5,16 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 *.egg-info/
+
+.venv/
+.setup/
+.venv-zed/
+
+/build_lookup_bt/
+
+/install_lookup_bt/
+
+# Runtime logs and process identifiers
+*.log
+*.jsonl
+*.pid

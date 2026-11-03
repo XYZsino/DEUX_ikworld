@@ -9,13 +9,15 @@ from .perception_core import downsample, voxel_downsample, rot, solve_yaw
 CONFIG = dict(initial_angles=24, coarse_iterations=5, refine_candidates=2, refine_iterations=20, plateau_patience=3, rmse_absolute_tolerance_m=3e-05, rmse_relative_tolerance=0.002)
 
 def fit_icp(points, model, normals, camera, *, initial_angles=24,
-            yaw_span_deg=360.0, coarse_point_limit=0, coarse_voxel_size_m=0.0, support_plane_z=None):
+            yaw_span_deg=360.0, coarse_point_limit=0, coarse_voxel_size_m=0.0, support_plane_z=None,
+            initial_yaws=None, initial_translation=None, coarse_rank_reduced=False):
     """Use fewer observation points for coarse iterations only.
 
     support_plane_z optionally constrains the upright model bottom to a calibrated
     support surface. This pre-grasp constraint must not be used on a held bag.
-    Zero disables coarse subsampling. Candidate ranking, refinement and final
-    metrics always use the original downsampled cloud (at most 1600 points).
+    Zero disables coarse subsampling. With coarse_rank_reduced, initial ranking
+    uses the coarse cloud; finalist baseline, refinement and final metrics use
+    the original downsampled cloud (at most 1600 points).
     yaw_span_deg controls seed coverage, not a constraint on fitted yaw.
     A positive coarse_voxel_size_m builds a separate cloud from raw points,
     capped at 1600 just like the fine cloud. It excludes coarse_point_limit.
@@ -35,6 +37,12 @@ def fit_icp(points, model, normals, camera, *, initial_angles=24,
     fixed_z = None if support_plane_z is None else float(support_plane_z - np.min(model[:, 2]))
     config = dict(CONFIG, support_plane_z=support_plane_z, initial_angles=initial_angles, yaw_span_deg=yaw_span_deg,
                   coarse_point_limit=coarse_point_limit, coarse_voxel_size_m=coarse_voxel_size_m)
+    if initial_yaws is not None:
+        initial_yaws=np.asarray(initial_yaws,float)
+        if initial_yaws.ndim!=1 or not 1<=len(initial_yaws)<=24 or not np.isfinite(initial_yaws).all():raise ValueError('invalid explicit yaw seeds')
+    if initial_translation is not None:
+        initial_translation=np.asarray(initial_translation,float)
+        if initial_translation.shape!=(3,) or not np.isfinite(initial_translation).all():raise ValueError('invalid initial translation')
     start = time.perf_counter()
     q = downsample(points)
     m = model[::3]
@@ -60,14 +68,18 @@ def fit_icp(points, model, normals, camera, *, initial_angles=24,
     center = (np.quantile(q, 0.1, axis=0) + np.quantile(q, 0.9, axis=0)) / 2
     mc = (m.min(0) + m.max(0)) / 2
 
-    def score(theta, t):
+    def score(theta, t, reduced=False):
+        score_q=coarse_q if reduced else q
+        score_target=coarse_target if reduced else target
         R = rot(theta)
-        dist = tree.query((q - t) @ R)[0]
+        dist = tree.query((score_q - t) @ R)[0]
         rmse = float(np.sqrt(np.mean(np.sort(dist)[:max(1, int(len(dist) * 0.8))] ** 2)))
         cov = float(np.mean(dist < 0.01))
         transformed = m @ R.T + t
         visible = np.sum(norm @ R.T * (camera - transformed), axis=1) > 0
-        sd = target.query(transformed[visible])[0]
+        visible_points=transformed[visible]
+        if reduced and len(visible_points)>400:visible_points=visible_points[np.linspace(0,len(visible_points)-1,400).astype(int)]
+        sd = score_target.query(visible_points)[0]
         mr = float(np.sqrt(np.mean(np.sort(sd)[:max(1, int(len(sd) * 0.8))] ** 2))) if len(sd) else 0.1
         mv = float(np.mean(sd < 0.01)) if len(sd) else 0.0
         return dict(theta=float(theta), translation=t.tolist(), score=rmse + 0.35 * mr + 0.015 * (1 - cov), trimmed_rmse_m=rmse, target_coverage_10mm=cov, visible_model_rmse_m=mr, visible_model_coverage_10mm=mv)
@@ -94,6 +106,8 @@ def fit_icp(points, model, normals, camera, *, initial_angles=24,
             transformed = m @ R.T + t
             visible = np.sum(norm @ R.T * (camera - transformed), axis=1) > 0
             vid = np.flatnonzero(visible)[::3]
+            if coarse_rank_reduced and fit_q is coarse_q and not early and len(vid)>400:
+                vid=vid[np.linspace(0,len(vid)-1,400).astype(int)]
             sd, si = fit_target.query(transformed[vid])
             ok = sd <= min(0.06, np.quantile(sd, 0.8)) if len(sd) else np.zeros(0, bool)
             if ok.any():
@@ -114,18 +128,24 @@ def fit_icp(points, model, normals, camera, *, initial_angles=24,
                 reason = 'pose_converged'
                 break
         return (theta, t, iterations, reason)
+    setup_end = time.perf_counter()
     candidates = []
+    coarse_start = time.perf_counter()
     half_span = np.deg2rad(yaw_span_deg) / 2
-    for i, theta0 in enumerate(np.linspace(-half_span, half_span, initial_angles, endpoint=False)):
-        t0 = center - mc @ rot(theta0).T
+    seeds=initial_yaws if initial_yaws is not None else np.linspace(-half_span, half_span, initial_angles, endpoint=False)
+    for i, theta0 in enumerate(seeds):
+        t0 = initial_translation.copy() if initial_translation is not None else center - mc @ rot(theta0).T
         if fixed_z is not None: t0[2] = fixed_z
         theta, t, it, reason = run(theta0, t0.copy(), t0, CONFIG['coarse_iterations'], 0, False, coarse_q, coarse_target)
-        c = score(theta, t)
+        c = score(theta, t, reduced=coarse_rank_reduced)
         c.update(candidate_id=i, initial_theta=float(theta0), initial_translation=t0.tolist(), coarse_iterations=it, refine_iterations=0, iterations=it, refined=False, stop_reason=reason)
         candidates.append(c)
+    coarse_end = time.perf_counter()
     order = sorted(range(len(candidates)), key=lambda i: candidates[i]['score'])[:CONFIG['refine_candidates']]
+    refine_start = time.perf_counter()
     for i in order:
         c = candidates[i]
+        if coarse_rank_reduced:c.update(score(c['theta'],np.array(c['translation'])))
         theta, t, it, reason = run(c['theta'], np.array(c['translation']), np.array(c['initial_translation']), CONFIG['refine_iterations'], c['coarse_iterations'], True, q, target)
         new = score(theta, t)
         if new['score'] < c['score']:
@@ -134,11 +154,13 @@ def fit_icp(points, model, normals, camera, *, initial_angles=24,
         else:
             c['pose_stage'] = 'coarse'
         c.update(refine_iterations=it, iterations=c['coarse_iterations'] + it, refined=True, stop_reason=reason)
-    candidates.sort(key=lambda c: c['score'])
-    best = candidates[0]
+    refine_end = time.perf_counter()
+    eligible=[c for c in candidates if c['refined']] if coarse_rank_reduced else candidates
+    best = min(eligible,key=lambda c:c['score'])
+    candidates.sort(key=lambda c:c['score'])
     R = rot(best['theta'])
     T = np.eye(4)
     T[:3, :3] = R
     T[:3, 3] = best['translation']
     np.testing.assert_allclose(R[:, 2], [0, 0, 1], atol=1e-12)
-    return dict(status='fitted', points=len(points), fit_points=len(q), coarse_fit_points=len(coarse_q), coarse_voxel_points=coarse_voxel_points, coarse_fallback=coarse_fallback, yaw_deg=float(np.degrees(best['theta'])), T_reference_model=T.tolist(), seconds=time.perf_counter() - start, **best, multistart=candidates, algorithm='coarse_selection_early_stop', config=config, total_iterations=sum((c['iterations'] for c in candidates)), refined_candidates=len(order))
+    return dict(timing_ms=dict(setup=(setup_end-start)*1000, coarse_search=(coarse_end-coarse_start)*1000, refine=(refine_end-refine_start)*1000, finalize=(time.perf_counter()-refine_end)*1000), status='fitted', seed_count=len(seeds), coarse_rank_reduced=coarse_rank_reduced, points=len(points), fit_points=len(q), coarse_fit_points=len(coarse_q), coarse_voxel_points=coarse_voxel_points, coarse_fallback=coarse_fallback, yaw_deg=float(np.degrees(best['theta'])), T_reference_model=T.tolist(), seconds=time.perf_counter() - start, **best, multistart=candidates, algorithm='coarse_selection_early_stop', config=config, total_iterations=sum((c['iterations'] for c in candidates)), refined_candidates=len(order))

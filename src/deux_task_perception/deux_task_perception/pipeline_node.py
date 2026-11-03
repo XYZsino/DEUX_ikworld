@@ -26,6 +26,7 @@ class PipelineNode(Node):
         self.worker = None
         self.diag = self.create_publisher(DiagnosticArray, f'/task/{name}/diagnostics', 10)
         self.completion = self.create_guard_condition(self._poll)
+        self.recovery_timer = self.create_timer(.1, self._recover_completed)
         self.diag_timer = self.create_timer(.5, self._diagnostic)
 
     def positive(self, *keys):
@@ -78,6 +79,12 @@ class PipelineNode(Node):
             self.status = 'result published (not hardware verification)'
         except Exception as error:
             self.reject(f'{type(error).__name__}: {error}')
+
+    def _recover_completed(self):
+        # Guard notifications may be coalesced while a callback is running.
+        # Drain completed work on the executor even if its wakeup was missed.
+        if self.worker is not None and self.worker.future is not None and self.worker.future.done():
+            self._poll()
 
     def _diagnostic(self):
         status = DiagnosticStatus()

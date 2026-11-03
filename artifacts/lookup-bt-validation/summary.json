@@ -1,0 +1,73 @@
+{
+  "synthetic_only": true,
+  "actual_full_bt_executed": false,
+  "production_thor_files_modified": true,
+  "ros_distribution": "jazzy",
+  "isolated_thor_workspace": "/tmp/deux-lookup-bt-validation",
+  "offline_unittests": {
+    "passed": 38,
+    "command": "PYTHONPATH=tools:src/deux_task_core /usr/bin/python3 -m unittest tools/test_lookup_bt_support.py tools/test_classified_grid_runtime.py tools/test_rotation_grid_runtime.py tools/test_grid_grasp_runtime.py tools/test_parallel_grid_hand.py tools/test_roi_grasp_planner.py"
+  },
+  "ros_tests": [
+    {
+      "domain": 211,
+      "test": "test_lookup_bt_ros.py",
+      "passed": true,
+      "scope": "Actual coordinator coroutine and ROS child actions; fake child results, fake post-grasp stages. Sequential normal/transverse; handoff mismatch; scan/barcode failure; lease ownership; barcode read; three read timeouts; explicit cancellation."
+    },
+    {
+      "domain": 212,
+      "test": "test_grid_grasp_execution_ros.py --lookup-bt --object-x .60 --vision-fault",
+      "passed": true,
+      "first_close_s": 2.501690626144409,
+      "last_close_s": 3.0029542446136475,
+      "scope": "Actual lookup child server, fake arm/hand; complete vision loss does not cancel replay."
+    },
+    {
+      "domain": 213,
+      "test": "test_grid_grasp_execution_ros.py --lookup-bt --object-x .60 --object-yaw 90",
+      "passed": true,
+      "first_close_s": 2.5017824172973633,
+      "last_close_s": 3.002725124359131,
+      "scope": "Actual +90deg selection and new action result handoff with fake hardware."
+    },
+    {
+      "domain": 214,
+      "test": "test_grid_grasp_execution_ros.py --lookup-bt --object-x .60 --object-yaw -90 --stop-fault",
+      "passed": true,
+      "scope": "Explicit estop cancels fake controller during -90deg replay."
+    }
+  ],
+  "interface_build": {
+    "passed": true,
+    "workspace": "/tmp/deux-lookup-bt-validation",
+    "package": "deux_task_msgs",
+    "duration_s": 18.4
+  },
+  "limitations": [
+    "No physical full BT execution.",
+    "Post-grasp ROS sequence tests stub stages; actual ScanPose and preparation geometry separately tested offline.",
+    "Production configuration skips visual pick verification and barcode completion; temporary placement settings unchanged."
+  ],
+  "source_sha256": {
+    "tools/lookup_bt_node.py": "f196fa39c9160eed7997437128b13cac051c710b57a8e7387ea74668005b3d17",
+    "tools/lookup_bt_server.py": "7d0acb08595f7438119b201553fd31cdd80eebfc5c2d01c77c41b222764111e3",
+    "tools/lookup_bt_support.py": "583a1d68d08c37bd5fddaf86a87336ac03839b7ec59977120111ac8d8c8ffaf0",
+    "tools/lookup_perception_bridge.py": "c539e6380181790cc5ef9ea7f2cea0bc4e62732e31b3cf53bb28698c0bdd0b6f",
+    "tools/test_lookup_bt_ros.py": "f0d4a5e2a1b0218788f27c147fe9a63f7ad18b3f6a3f8ed7bfa20cd2da66fabd",
+    "tools/test_lookup_bt_support.py": "d87a31ef2a292b2111348e3065c0d8e95ca0abd63fbcf0bd85e215f9ab3f8f0d",
+    "tools/test_grid_grasp_execution_ros.py": "55cff6f8c24a413adadf3ff1891e4597c77e771522112d713201cbd56127870c",
+    "src/deux_task_msgs/action/LookupGrasp.action": "ce2c161887234491dc705c0cfd37d5eec6b7740fa2cf0685ffaf77ba5af426f5",
+    "lookup_bt.thor.launch.py": "2b4efa7d853090f1b52b05624c93de42c90c6da73a988d34237f1fef32751394"
+  },
+  "deployment": {
+    "backup": "/home/xyz_thor/DEUX_ikworld_backups/20261101-132747-before-lookup-full-bt",
+    "files_applied": 15,
+    "started_bt": false,
+    "motion_requested": false,
+    "interface_build_passed": true,
+    "interface_build_duration_s": 28.1,
+    "imports_passed": true,
+    "offline_geometry_tests_passed": 4
+  }
+}

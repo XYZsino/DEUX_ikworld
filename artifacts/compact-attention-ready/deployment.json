@@ -1,0 +1,38 @@
+{
+  "backup": "/home/xyz_thor/DEUX_ikworld_backups/compact-ready-19700101-112152",
+  "files": {
+    "tools/lookup_bt_support.py": {
+      "sha256": "40c1ab26e3d599d7b76aceddea09513007a888647d0b553af58636ff86d7febe",
+      "previously_present": true
+    },
+    "tools/test_lookup_bt_support.py": {
+      "sha256": "3f2f1c68a115b40c3be2602a5d9df506a35891f73a6ac43e05b46943719b29b2",
+      "previously_present": true
+    },
+    "tools/build_compact_ready.py": {
+      "sha256": "9feb9d97acfeda5faa40fa61037631696d2cb4c8cad26d4f604f6bdb8fb1b98b",
+      "previously_present": false
+    },
+    "tools/render_compact_ready.py": {
+      "sha256": "5de417ce444a3c4913bc258ab474b15eaf11f774c4e6f9f19287ec63e9557881",
+      "previously_present": false
+    },
+    "calibration/attention_ready_route.json": {
+      "sha256": "84e3c42382857582395bd395fdc7ea1f72630e2b17aa221c26f6dc5fa14a90dc",
+      "previously_present": false
+    },
+    "artifacts/compact-attention-ready/skeleton.gif": {
+      "sha256": "67d2023288a3b5afe0e54db9fd8c4711103436337a8aeaacfa2feb17bff08212",
+      "previously_present": false
+    },
+    "artifacts/compact-attention-ready/skeleton.png": {
+      "sha256": "e5bfe7a9ec3ed3c97cce88517a31687557505ce04d306e7f86d45226db058e24",
+      "previously_present": false
+    },
+    "artifacts/compact-attention-ready/summary.json": {
+      "sha256": "5e2e1d1fc0bdd3356f768c1f9b654d0c112cdbdd4ec39ee16eb343c7f3a4b8be",
+      "previously_present": false
+    }
+  },
+  "hardware_motion": false
+}

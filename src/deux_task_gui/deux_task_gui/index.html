@@ -6,22 +6,75 @@
 </style>
 <header><div><h1>DEUX 작업 제어</h1><p>Behavior Tree 관제 · 파지 → 스캔 → 적재</p></div><div class="row"><span id="deployment" class="badge">연결 대기</span><span id="connection" role="status" class="off">연결 확인 중</span></div></header>
 <section class="panel"><div class="row"><span>현재 단계</span><span id="attempts" class="muted"></span></div><div id="current" aria-live="polite">—</div><p id="reason">작업 서버의 상태를 기다립니다.</p><div class="row"><label>대상 ID <input id="target" placeholder="비워두면 자동 선택" maxlength="128"></label><div class="controls"><button id="start" disabled>작업 시작</button> <button id="stop" disabled>중단</button> <button id="ready" disabled>준비자세로 이동</button></div></div><p class="muted">중단은 작업 취소 요청입니다. 준비자세 이동은 작업의 중단 완료를 확인한 뒤 실행하며, 새 작업을 시작하지 않습니다.</p><p class="muted">이 화면에서 시작한 작업을 제어합니다. 브라우저를 닫아도 작업은 계속됩니다. 비상정지는 장비의 별도 비상정지 장치를 사용하세요.</p><div id="error" role="alert"></div></section>
+<section class="panel" id="roi-panel" hidden><h2>ROI 추종·예약 파지</h2><p id="roi-status" aria-live="polite"></p></section>
 <div class="workspace"><section class="panel" id="sim-view" hidden><div class="row"><h2>실시간 MuJoCo</h2><span id="sim-time" class="muted"></span></div><img id="sim-image" alt="현재 MuJoCo 물리 장면" style="display:block;width:100%;border-radius:10px"><p class="muted">현재 시뮬레이션 화면입니다. 녹화 재생이 아닙니다. 브라우저를 닫아도 SIM은 계속 실행됩니다.</p></section>
-<section class="panel" id="rgb-view"><div class="row"><h2>ZED RGB · 선택 대상</h2><span id="rgb-time" class="muted">영상 대기</span></div><img id="rgb-image" alt="ZED RGB와 선택 대상 3D 박스" hidden style="display:block;width:100%;border-radius:10px"><p id="rgb-info" class="muted">/task/observation 수신 대기</p><p class="muted">청록색 박스: 같은 프레임의 깊이와 선택 마스크로 계산한 가시 표면의 3D 범위. 가려진 부분을 포함한 전체 물체 크기 추정은 아닙니다.</p></section></div>
+<section class="panel" id="rgb-view"><div class="row"><h2>ZED RGB · 선택 대상</h2><label><input id="rgb-toggle" type="checkbox" checked style="width:auto" aria-controls="rgb-content">RGB 영상 표시</label><span id="rgb-time" class="muted">영상 대기</span></div><div id="rgb-content"><img id="rgb-image" alt="ZED RGB와 ICP 포즈 축" hidden style="display:block;width:100%;border-radius:10px"><div class="row"><button id="roi-edit">추적 ROI 지정</button><button id="roi-save" hidden>ROI 저장</button><button id="roi-cancel" hidden>취소</button><span id="roi-info" class="muted">ROI 미지정 · 추적 대기</span></div><canvas id="roi-canvas" width="640" height="360" hidden style="width:100%;cursor:crosshair;background:#111"></canvas><p id="via-roi-info" style="color:#ff70ff">경유점 봉투 검사 ROI 수신 대기</p><p id="path-info" class="muted"></p><p id="intercept-stats" class="muted"></p><p id="grasp-info" class="muted"></p><p id="icp-monitor" class="muted"></p><p id="rgb-info" class="muted">ZED RGB 수신 대기</p><p class="muted">ICP 포즈: X 빨강 · Y 초록 · Z 파랑. 촬영 시점이 일치하는 포즈만 표시합니다.</p></div></section></div>
+<section class="panel" id="ik-debug" hidden><h2>IK 실패 진단 · 실행되지 않은 자세</h2>
+<p id="ik-error"></p><p class="muted">회색: 계획 시작 시 팔 · 주황: 거절된 IK 결과 · O: 봉투 · G: 파지점 · T: 접근 목표 · X 빨강 / Y 초록 / Z 파랑</p>
+<div style="display:flex;flex-wrap:wrap;gap:12px"><canvas id="ik-front" width="600" height="400" style="width:min(100%,600px);background:#fff;border-radius:10px"></canvas></div>
+<pre id="ik-values" style="white-space:pre-wrap"></pre></section>
+<section class="panel" id="motion-review"><h2>다음 동작 확인</h2>
+<p id="review-status">실행할 계획 대기 중</p>
+<p class="muted">회색: 현재 팔 · 주황: 목표 팔 · 파랑: 경로 중간 자세 · 점선: 손끝 경로 · X 빨강 / Y 초록 / Z 파랑</p>
+<div style="display:flex;flex-wrap:wrap;gap:12px"><canvas id="review-front" width="600" height="400" style="width:min(100%,600px);background:#fff;border-radius:10px"></canvas></div>
+<label>경로 미리보기 <input id="review-scrub" type="range" min="0" max="1" value="1" step="1" style="width:65%"></label>
+<p id="review-time"></p><p id="review-warning" class="muted"></p>
+<button id="review-approve" disabled>이 동작 실행</button> <button id="review-reject" disabled>거절 · 단계 중단</button>
+<p class="muted">승인은 표시된 계획 한 번에만 유효합니다. 거절·취소·만료 시 실행하지 않습니다. 스켈레톤은 충돌 안전성을 보장하지 않습니다.</p>
+</section>
+
 <section class="panel"><h2>작업 흐름</h2><p class="muted">강조된 항목이 BT에서 현재 보고한 단계입니다. 단계 지정 시작은 제공하지 않습니다. 재시도 시 이전 단계로 돌아갈 수 있습니다.</p><p id="flow-position" class="muted"></p><div id="flow"></div><p id="outcome"></p><details><summary>최근 단계 변경</summary><ol id="history"></ol></details></section>
 <details class="panel" id="time-search"><summary>미래 시점별 파지 후보</summary><p id="time-summary">시간 후보 계산 대기</p><p class="muted">열: 접근 시작부터 도착까지의 시간 · 행: 파지 자세. 통과=전체 경로 검증, 예비=대표 포즈만 통과, 거절=IK·충돌·시간·불확실성 검사 탈락. 셀을 누르면 사유를 표시합니다.</p><div id="time-grid"></div><pre id="time-detail"></pre></details>
 <details class="panel" id="auth"><summary>접속 설정</summary><p>실행 로그의 접속 링크를 사용하거나 토큰을 입력하세요. 토큰은 이 탭에서만 보관합니다.</p><label>접속 토큰 <input id="token" type="password" autocomplete="off"></label><button id="connect">연결</button><p class="muted">SIM / REAL 표시는 서버 실행 설정입니다. 이 화면에서 구동 환경을 전환하지 않습니다.</p></details>
 <script>
-const $=id=>document.getElementById(id), labels={ReadyPose:'준비자세 복귀',ClearReader:'왼손 리더 후퇴',PlaceApproach:'수거함 위로 이동',PlaceRetreat:'수거함에서 손 빼기',ObserveScene:'관측 시야 확보',TrackAndSelect:'추적·대상 선택',EstimatePose:'ICP 포즈 추정',ScanPose:'오른팔 스캔 자세',ReacquireHeldTarget:'손 근처 봉투 재선택',VerifyVisualPick:'봉투·바코드 확인',TrackBarcode:'바코드 추적',Idle:'대기',Prepare:'준비 자세',SelectTarget:'대상 선택',Approach:'예측 접근',WaitIntercept:'물체 진입 대기',Track:'속도 맞춤 추종',TrackGrasp:'추종·파지 계획',Descend:'하강',Close:'파지',Lift:'상승',VerifyLift:'파지 확인',ScanSearch:'바코드 탐색',AlignBarcode:'바코드 정렬',WaitBarcode:'바코드 읽기',Place:'배치',Release:'놓기',Retreat:'후퇴',VerifyPlace:'배치 확인',Recover:'복구',Succeeded:'flow 완료',Failed:'실패',Canceled:'중단됨',Ready:'준비 완료'};
+const $=id=>document.getElementById(id), labels={ViaBBoxCheck:'경유점 봉투 확인',ViaEmptyReturnReady:'봉투 없음 · 준비 복귀',ReturnToAttention:'차렷 복귀',Attention:'차렷 복귀 완료',AttentionReturnFailed:'차렷 복귀 실패',ReadyPose:'준비자세 복귀',ClearReader:'왼손 리더 후퇴',PlaceApproach:'수거함 위로 이동',PlaceRetreat:'수거함에서 손 빼기',ObserveScene:'관측 시야 확보',TrackAndSelect:'추적·대상 선택',EstimatePose:'ICP 포즈 추정',ScanPose:'오른팔 스캔 자세',ReacquireHeldTarget:'손 근처 봉투 재선택',VerifyVisualPick:'봉투·바코드 확인',TrackBarcode:'바코드 추적',Idle:'대기',Prepare:'준비 자세',SelectTarget:'대상 선택',Approach:'예측 접근',WaitIntercept:'물체 진입 대기',Track:'속도 맞춤 추종',TrackGrasp:'추종·파지 계획',Descend:'하강',Close:'파지',Lift:'상승',VerifyLift:'파지 확인',ScanSearch:'바코드 탐색',AlignBarcode:'바코드 정렬',WaitBarcode:'바코드 읽기',Place:'배치',Release:'놓기',Retreat:'후퇴',VerifyPlace:'배치 확인',Recover:'복구',Succeeded:'flow 완료',Failed:'실패',Canceled:'중단됨',Ready:'준비 완료'};
 const stages=['Prepare','SelectTarget','Approach','Descend','Close','Lift','VerifyLift','ScanSearch','AlignBarcode','WaitBarcode','Place','Release','Retreat','VerifyPlace','Recover'];
 const placementStages=['ClearReader','PlaceApproach','Place','Release','PlaceRetreat','Retreat'];
-const headStages=['Prepare','TrackAndSelect','EstimatePose','Approach','WaitIntercept','TrackGrasp','Descend','Close','Lift','ScanPose','ReacquireHeldTarget','VerifyVisualPick','TrackBarcode','AlignBarcode','WaitBarcode'];let shownFlow='';
+const headStages=['Prepare','TrackAndSelect','EstimatePose','Approach','WaitIntercept','TrackGrasp','Descend','Close','ScanPose','ReacquireHeldTarget','VerifyVisualPick','TrackBarcode','AlignBarcode','WaitBarcode'];let shownFlow='';
 function renderFlow(workflow){if(workflow===shownFlow)return;shownFlow=workflow;$('flow').replaceChildren();for(const name of workflow.startsWith('head_rgbd_pick_scan')?[...headStages,...(workflow==='head_rgbd_pick_scan_place'?placementStages:[])]:stages){const el=document.createElement('div');el.className='step'+(name==='Recover'?' branch':'');el.dataset.state=name;el.append(labels[name]);const sub=document.createElement('small');sub.textContent=name;el.append(sub);$('flow').append(el)}}
 renderFlow('transfer');
 let token=new URLSearchParams(location.hash.slice(1)).get('token')||sessionStorage.getItem('deux-token')||'',busy=false,last=null;
 if(location.hash)history.replaceState(null,'',location.pathname);if(token)sessionStorage.setItem('deux-token',token);else $('auth').open=true;
-function controls(s){const owned=s?.owned, available=s?.connected, active=s?.status?.active, waiting=s?.awaiting_idle; $('start').disabled=busy||!available||owned||active||waiting;$('stop').disabled=busy||(!owned&&!s?.ready_pending);$('ready').disabled=busy||!available||!s?.ready_available||s?.stopping||s?.ready_pending||waiting||(active&&!owned)}
+function controls(s){const owned=s?.owned, available=s?.connected&&!s?.perception_only, active=s?.status?.active, waiting=s?.awaiting_idle; $('start').disabled=busy||!available||owned||active||waiting;$('stop').disabled=busy||(!owned&&!s?.ready_pending);$('ready').disabled=busy||!available||!s?.ready_available||s?.stopping||s?.ready_pending||waiting||(active&&!owned)}
 async function api(path,body){const res=await fetch('/api/'+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(2500)});const data=await res.json();if(!res.ok)throw Error(data.error||res.status);return data}
+let review=null,reviewKey='',reviewBusy=false;
+function line3(ctx,project,a,b,color,width=2,dashed=false){const p=project(a),q=project(b);ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dashed?[4,5]:[]);ctx.moveTo(...p);ctx.lineTo(...q);ctx.stroke();ctx.setLineDash([])}
+function drawReview(id,azimuth,scene=review,index=Number($('review-scrub').value)){
+ const review=scene;
+ const canvas=$(id),ctx=canvas.getContext('2d');ctx.clearRect(0,0,600,400);if(!review?.current)return;
+ const frame=review.frames[index]||review.target;
+ const all=[review.current,review.target,...review.frames].flatMap(f=>['left','right'].flatMap(s=>f[s].points));
+ for(const [,ee] of review.overlays||[]){const p=ee.slice(0,3).map(r=>r[3]);all.push(p);for(let i=0;i<3;i++)all.push(p.map((v,j)=>v+ee[j][i]*.07))}
+ const lo=[0,1,2].map(i=>Math.min(...all.map(p=>p[i]))-.12),hi=[0,1,2].map(i=>Math.max(...all.map(p=>p[i]))+.12);
+ const mid=lo.map((v,i)=>(v+hi[i])/2),az=azimuth*Math.PI/180,el=24*Math.PI/180;
+ function raw(p){const x=p[0]-mid[0],y=p[1]-mid[1],z=p[2]-mid[2];return [-Math.sin(az)*x+Math.cos(az)*y,Math.sin(el)*(Math.cos(az)*x+Math.sin(az)*y)-Math.cos(el)*z]}
+ const corners=[];for(const x of [lo[0],hi[0]])for(const y of [lo[1],hi[1]])for(const z of [lo[2],hi[2]])corners.push(raw([x,y,z]));
+ const scale=Math.min(470/(Math.max(...corners.map(p=>p[0]))-Math.min(...corners.map(p=>p[0]))),280/(Math.max(...corners.map(p=>p[1]))-Math.min(...corners.map(p=>p[1]))));
+ const project=p=>{const a=raw(p);return [300+a[0]*scale,215+a[1]*scale]};
+ for(let k=0;k<=4;k++){const x=lo[0]+(hi[0]-lo[0])*k/4,y=lo[1]+(hi[1]-lo[1])*k/4;line3(ctx,project,[x,lo[1],lo[2]],[x,hi[1],lo[2]],'#e5e7eb',1);line3(ctx,project,[lo[0],y,lo[2]],[hi[0],y,lo[2]],'#e5e7eb',1)}
+ function axes(ee){const p=ee.slice(0,3).map(row=>row[3]);['#dc2626','#16a34a','#2563eb'].forEach((c,i)=>{const end=p.map((v,j)=>v+ee[j][i]*.07);line3(ctx,project,p,end,c);ctx.fillStyle=c;ctx.fillText('XYZ'[i],...project(end))})}
+ function skeleton(f,color,width){for(const s of ['left','right']){const pts=f[s].points;for(let i=1;i<pts.length;i++)line3(ctx,project,pts[i-1],pts[i],color,width);ctx.fillStyle=color;for(const p of pts){ctx.beginPath();ctx.arc(...project(p),3,0,2*Math.PI);ctx.fill()}axes(f[s].ee)}}
+ for(const s of ['left','right']){const pts=review.path[s].map(ee=>ee.slice(0,3).map(row=>row[3]));for(let i=1;i<pts.length;i++)line3(ctx,project,pts[i-1],pts[i],'#6d8b9d',1,true)}
+ skeleton(review.current,'#64748b',4);skeleton(review.target,'#ea8800',3);if(!review.diagnostic)skeleton(frame,'#0284c7',2);
+ ctx.font='14px sans-serif';
+ for(const [label,ee] of review.overlays||[]){
+  axes(ee);const p=project(ee.slice(0,3).map(r=>r[3]));ctx.fillStyle='#111827';
+  const offsets={O:[-68,18],G:[12,25],T:[12,-18]},offset=offsets[label]||[8,-8];
+  ctx.fillText(({O:'O · 봉투',G:'G · 파지',T:'T · 접근'})[label]||label,p[0]+offset[0],p[1]+offset[1]);
+ }
+ ctx.fillStyle='#334155';ctx.fillText('Perspective',16,24);ctx.fillText(`${review.frame} · metres · Z ${lo[2].toFixed(2)} ~ ${hi[2].toFixed(2)}`,16,382);
+ const base=lo;['#dc2626','#16a34a','#2563eb'].forEach((c,i)=>{const end=base.map((v,j)=>v+(i===j?.15:0));line3(ctx,project,base,end,c);ctx.fillStyle=c;ctx.fillText('XYZ'[i],...project(end))});
+}
+function reviewControls(){const pending=review?.status==='pending'&&review?.fresh; $('review-approve').disabled=reviewBusy||!pending||!review.approvable;$('review-reject').disabled=reviewBusy||!pending}
+function renderReview(d){review=d;const key=d?.request_id||'';if(key!==reviewKey){reviewKey=key;$('review-scrub').max=Math.max(0,(d?.frames?.length||1)-1);$('review-scrub').value=$('review-scrub').max}
+ $('review-status').textContent=d?`${labels[d.stage]||d.stage} · ${d.duration_s.toFixed(2)}초 · ${d.status} · ${d.fresh?'연결됨':'승인 서버 연결 끊김'} · ${d.plan_id}`:'실행할 계획 대기 중';
+ $('review-warning').textContent=d?[d.warning,d.reason].filter(Boolean).join(' · '):'';
+ $('review-time').textContent=d?`경로 시각 ${(d.times[Number($('review-scrub').value)]||0).toFixed(2)}초 / ${d.duration_s.toFixed(2)}초 · 승인 대기 ${Math.ceil(d.remaining_s||0)}초`:'';
+ reviewControls();drawReview('review-front',-55);
+}
+$('review-scrub').oninput=()=>renderReview(review);
+for(const decision of ['approve','reject'])$('review-'+decision).onclick=async()=>{if(!review)return;reviewBusy=true;reviewControls();try{await api('command',{command:'motion_'+decision,target_id:review.request_id})}catch(e){$('error').textContent=e.message}finally{reviewBusy=false;reviewControls()}};
+
 let timeReportKey='';
 function renderTimeCandidates(d){
  const key=d?`${d.target_id}/${d.computed_at_s}/${d.latest_validation}/${d.validation_ok}`:'';
@@ -33,9 +86,65 @@ function renderTimeCandidates(d){
  for(const id of [...new Set(d.candidates.map(c=>c.candidate_id))]){const tr=document.createElement('tr'),th=document.createElement('th');th.textContent=id;tr.append(th);
   for(const t of d.time_bins_s){const c=d.candidates.find(c=>c.candidate_id===id&&Math.abs(c.arrival_after_start_s-t)<.0001);const td=document.createElement('td'),b=document.createElement('button');b.type='button';b.textContent=c.feasible?'통과':c.screening_passed&&!c.full_path_checked?'예비':'거절';b.className=c.feasible?'tc-pass':c.screening_passed&&!c.full_path_checked?'tc-screen':'tc-fail';b.title=c.reason||'대표 포즈/전체 경로 결과';b.onclick=()=>{$('time-detail').textContent=JSON.stringify(c,null,2)};td.append(b);tr.append(td)}table.append(tr)}$('time-grid').replaceChildren(table);
 }
-async function poll(){try{const s=await api('state');last=s;renderTimeCandidates(s.time_candidates);$('connection').textContent=s.connected?'ROS 연결됨':'ROS 상태 수신 끊김';$('connection').className=s.connected?'ok':'off';$('deployment').textContent=(s.deployment||'—').toUpperCase();$('sim-view').hidden=!s.frame_available;$('sim-time').textContent=s.frame_available?`SIM ${(s.simulation_time||0).toFixed(2)}초 · ${s.frame_fresh?'LIVE':'영상 수신 지연'}`:'';const rgb=s.rgb||{};$('rgb-time').textContent=rgb.fresh?`LIVE · ${(rgb.acquired_s||0).toFixed(2)}초`:'영상 수신 대기 / 지연';$('rgb-info').textContent=rgb.fresh?(rgb.box_valid?`대상 ${rgb.target_id} · 관측 3D 크기 ${(rgb.dimensions_m||[]).map(v=>(v*100).toFixed(1)).join(' × ')}cm`:(rgb.reason||'3D 박스 대기')):'유효한 ZED RGB 입력을 기다립니다.';if(!rgb.fresh)$('rgb-image').hidden=true;const st=s.status||{};renderFlow(st.workflow||'transfer');$('current').textContent=(labels[st.state]||st.state||'—')+(s.stopping?' · 중단 처리 중':s.ready_pending?' · 준비자세 이동 대기':'');$('reason').textContent=[st.reason,s.message&&(!st.reason||!s.message.includes(st.reason))?s.message:''].filter(Boolean).join(' · ');$('attempts').textContent=`파지 ${st.grasp_attempt||0}회 · 스캔 ${st.scan_attempt||0}회 · 대상 ${st.target_id||'자동'}`;const terminal=['Failed','Canceled'].includes(st.state), names=[...document.querySelectorAll('.step')].map(el=>el.dataset.state), lastStage=(s.history||[]).slice().reverse().find(h=>names.includes(h.state))?.state, highlighted=st.state==='ReadyPose'?'Prepare':terminal?lastStage:st.state;document.querySelectorAll('.step').forEach(el=>{el.classList.toggle('active',el.dataset.state===highlighted);el.classList.toggle('halted',terminal&&el.dataset.state===highlighted)});$('flow-position').textContent=names.includes(highlighted)?`순서 ${names.indexOf(highlighted)+1} / ${names.length} · ${terminal?'마지막 실행 단계':'현재 단계'}: ${labels[highlighted]||highlighted}`:st.state==='Succeeded'?'이번 flow 완료':'';$('history').replaceChildren(...(s.history||[]).slice().reverse().map(h=>{const li=document.createElement('li');li.textContent=new Date(h.at*1000).toLocaleTimeString()+' · '+(labels[h.state]||h.state);return li}));$('outcome').textContent=s.result?`최근 결과: ${s.result.success?'성공':'종료'} · ${s.result.reason}`:'';$('error').textContent='';controls(s)}catch(e){$('connection').textContent='GUI 연결 끊김';$('connection').className='off';$('error').textContent=e.message;controls(null)}finally{setTimeout(poll,400)}}
+let ikKey='';
+function renderIK(d){
+ if(!d||d.id===ikKey)return;ikKey=d.id;$('ik-debug').hidden=false;
+ $('ik-error').textContent=`${d.stage} · ${d.frame} · ${d.error}`;
+ const frames=[['O',d.object_pose],['G',d.grasp_pose],['T',d.target_pose]];
+ const xyz=m=>m.slice(0,3).map(r=>r[3]);
+ const text=frames.map(([label,m])=>`${label} XYZ [m]: ${xyz(m).map(v=>v.toFixed(4)).join(', ')}`);
+ text.push(`관측 기록 시각: ${new Date(d.computed_at_s*1000).toLocaleTimeString()} · 위치 오차: ${d.position_error_m===null?'—':(d.position_error_m*100).toFixed(2)+'cm'} · 회전 오차: ${d.rotation_error_deg===null?'—':d.rotation_error_deg.toFixed(2)+'°'}`);
+ text.push('봉투 → 파지 프레임 변환 (4×4):\n'+d.grasp_transform.map(r=>r.map(v=>v.toFixed(4)).join('  ')).join('\n'));
+ if(d.attempt?.limit_joints?.length)text.push('관절 제한 초과: '+d.attempt.limit_joints.join(', '));
+ $('ik-values').textContent=text.join('\n');
+ drawReview('ik-front',-55,{
+  current:d.current,target:d.rejected||d.current,frames:[],
+  path:{left:[],right:[]},frame:d.frame,overlays:frames,diagnostic:true
+ },0);
+}
+
+async function poll(){try{const s=await api('state');last=s;const rp=s.grid_preview||{};$('roi-panel').hidden=!rp.workflow;$('roi-status').textContent=`${rp.fresh?'LIVE':'상태 수신 지연'} · ${rp.phase||'Idle'} · 대상 ${rp.selected_target_id||'—'} · X 오차 ${rp.x_error_m==null?'—':(rp.x_error_m*1000).toFixed(1)+'mm'} · 격자 ${rp.locked_cell_id||rp.planned_cell_id||'—'} · 시작 ${rp.start_in_s==null?'—':rp.start_in_s.toFixed(2)+'초'} / 접촉 ${rp.contact_in_s==null?'—':rp.contact_in_s.toFixed(2)+'초'} · ${rp.phase_reason||''}`;renderIK(s.ik_diagnostic);renderReview(s.motion_preview);renderTimeCandidates(s.time_candidates);$('connection').textContent=s.connected?'ROS 연결됨':'ROS 상태 수신 끊김';$('connection').className=s.connected?'ok':'off';$('deployment').textContent=(s.deployment||'—').toUpperCase();$('sim-view').hidden=!s.frame_available;$('sim-time').textContent=s.frame_available?`SIM ${(s.simulation_time||0).toFixed(2)}초 · ${s.frame_fresh?'LIVE':'영상 수신 지연'}`:'';const rgb=s.rgb||{};$('via-roi-info').textContent=rgb.via_presence_roi_visible?'자홍색 VIA BAG ROI: 경유점 봉투 검사 · 사방 10% 여유 / 초록색: 추적 ROI':'경유점 봉투 검사 ROI 표시 대기';$('path-info').textContent=s.perception_only?'실시간 조건부 검증 · 상부 위치는 1초 앞 · 하강 1.2~2.4초 + 닫힘 0.5초 · 실제 접근·실행 없음':'';const m=s.icp_preview||{};const g=s.grasp_preview||{};$('intercept-stats').textContent=s.perception_only?`가상 추종 상태 경로 성공 ${g.successes||0}/${g.attempts||0} · 후보 ${g.feasible_count||0}/${g.candidate_count||0} · 이후 ICP 비교 ${g.audit_matched||0}건${g.audit_last?` · 최근 오차 ${(g.audit_last.error_m*100).toFixed(1)}cm (${g.audit_last.stage})`:''} · 실행 없음`:'';$('grasp-info').textContent=s.perception_only?(g.feasible&&!g.expired?`조건부 파지 G(자홍) · 가상 상부 A(청록) · 가상 접촉 ${(g.contact_in_s||0).toFixed(2)}초 후 · IK/계획 ${(g.planning_ms||0).toFixed(0)}ms · C(노랑): 가상 닫힘 완료 · 현재 자세에서 접근 미검증 · 실행 없음`:`조건부 검증: ${g.expired?'예상 도달 시각 만료':g.reason||'IK 계산 대기'}${g.planning?' · 계산 중':''}`):'';if(s.perception_only&&g.preview_kind==='position_first_alignment'){$('path-info').textContent='위치 우선 접근하며 정렬(최대 15°/초) → 상부 추적하며 정렬(최대 30°/초) · 하강·개폐·실행 없음';$('intercept-stats').textContent=`현재 측정 자세에서 경로 검증 ${g.successes||0}/${g.attempts||0} · 실행 없음`;$('grasp-info').textContent=g.feasible&&!g.expired?`A(청록): 위치 접근 완료 · R(주황): 추적·정렬 진행점 · 접근 ${(g.durations_s?.Approach||0).toFixed(1)}초 + 정렬 ${(g.durations_s?.Align||0).toFixed(1)}초 · 남은 정렬 ${(g.rotation_remaining_deg||0).toFixed(1)}° · 계산 ${(g.planning_ms||0).toFixed(0)}ms · 실행 없음`:`위치 우선 검증: ${g.expired?'예상 시각 만료':g.reason||'계산 대기'}${g.planning?' · 계산 중':''}`;}$('icp-monitor').textContent=s.perception_only?`인식 전용 · 검출 ${(m.detection_hz||0).toFixed(1)} Hz · 추적 ${(m.tracking_hz||0).toFixed(1)} Hz · ICP 성공 ${(m.icp_pose_hz||0).toFixed(2)} Hz / 처리 ${(m.icp_attempt_hz||0).toFixed(2)} Hz · 지연 P50 ${m.latency_p50_ms==null?'—':m.latency_p50_ms.toFixed(0)} ms · 최근 10초`:'';$('rgb-time').textContent=!rgbEnabled?'표시 꺼짐':rgb.fresh?`LIVE · ${(rgb.acquired_s||0).toFixed(2)}초`:'영상 수신 대기 / 지연';$('rgb-info').textContent=rgb.fresh?(rgb.icp_axes_valid?`대상 ${rgb.target_id} · ICP XYZ 축${rgb.icp_axes_held?` · 마지막 추정 유지 (${(rgb.icp_pose_age_s||0).toFixed(1)}초 전)`:""}`:(rgb.icp_axes_reason||'ICP 포즈 대기')):'유효한 ZED RGB 입력을 기다립니다.';if(rgb.predicted_preview)$('rgb-info').textContent=`예측 ICP XYZ 축 · ${rgb.target_id} · 원본 관측 ${(rgb.prediction_age_s||0).toFixed(2)}초 전 · ${rgb.prediction_stale?'예측 한도 도달: 마지막 예측 유지':rgb.prediction_velocity_valid?'속도 기반 예측':'속도 초기화 대기: 측정 자세 표시'}`;if(!rgb.fresh)$('rgb-image').hidden=true;const iw=s.intercept_window||{};if(iw.zone){$('path-info').textContent='주황: 파지 구간 후보 · 접근 완료 시 봉투와 만남 · 고정 1초 선행 없음';$('grasp-info').textContent=iw.validated?'청록 MEET: 전체 경로 검증 통과 · '+iw.arrival_in_s.toFixed(2)+'초 후 만남':'파지 구간은 도달성 보장이 아닙니다. 대상마다 하강·닫힘·정지 경로를 검사합니다.';}const st=s.status||{};$('ready').textContent=st.workflow==='MovingUpperTrial'?'이동 상부 접근 시험':'준비자세로 이동';renderFlow(st.workflow||'transfer');$('current').textContent=(labels[st.state]||st.state||'—')+(s.stopping?' · 중단 처리 중':s.ready_pending?' · 준비자세 이동 대기':'');$('reason').textContent=[st.reason,s.message&&(!st.reason||!s.message.includes(st.reason))?s.message:''].filter(Boolean).join(' · ');$('attempts').textContent=`파지 ${st.grasp_attempt||0}회 · 스캔 ${st.scan_attempt||0}회 · 대상 ${st.target_id||'자동'}`;const terminal=['Failed','Canceled'].includes(st.state), names=[...document.querySelectorAll('.step')].map(el=>el.dataset.state), lastStage=(s.history||[]).slice().reverse().find(h=>names.includes(h.state))?.state, highlighted=st.state==='ReadyPose'?'Prepare':terminal?lastStage:st.state;document.querySelectorAll('.step').forEach(el=>{el.classList.toggle('active',el.dataset.state===highlighted);el.classList.toggle('halted',terminal&&el.dataset.state===highlighted)});$('flow-position').textContent=names.includes(highlighted)?`순서 ${names.indexOf(highlighted)+1} / ${names.length} · ${terminal?'마지막 실행 단계':'현재 단계'}: ${labels[highlighted]||highlighted}`:st.state==='Succeeded'?'이번 flow 완료':'';$('history').replaceChildren(...(s.history||[]).slice().reverse().map(h=>{const li=document.createElement('li');li.textContent=new Date(h.at*1000).toLocaleTimeString()+' · '+(labels[h.state]||h.state);return li}));$('outcome').textContent=s.result?`최근 결과: ${s.result.success?'성공':'종료'} · ${s.result.reason}`:'';$('error').textContent='';controls(s)}catch(e){$('connection').textContent='GUI 연결 끊김';$('connection').className='off';$('error').textContent=e.message;controls(null);if(review)renderReview({...review,fresh:false})}finally{setTimeout(poll,400)}}
 for(const cmd of ['start','stop','ready'])$(cmd).onclick=async()=>{busy=true;controls(last);try{await api('command',{command:cmd,target_id:$('target').value})}catch(e){$('error').textContent=e.message}finally{busy=false;controls(last)}};
+
+let roiPoints=[], roiSaved=null, roiEditing=false, roiImage=null;
+const rc=$('roi-canvas');
+function drawRoi(){const ctx=rc.getContext('2d');ctx.clearRect(0,0,rc.width,rc.height);if(roiImage)ctx.drawImage(roiImage,0,0,rc.width,rc.height);if(roiPoints.length){ctx.beginPath();roiPoints.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));if(roiPoints.length===4)ctx.closePath();ctx.strokeStyle='#00ff90';ctx.lineWidth=2;ctx.stroke();roiPoints.forEach((p,i)=>{ctx.fillStyle='#ffff00';ctx.beginPath();ctx.arc(...p,4,0,7);ctx.fill();ctx.font='16px sans-serif';ctx.fillText(String(i+1),p[0]+6,p[1]-6);});}}
+$('roi-edit').onclick=async()=>{try{const res=await fetch('/api/rgb',{headers:{Authorization:'Bearer '+token}});if(!res.ok)throw Error('현재 RGB 영상이 필요합니다');const bmp=await createImageBitmap(await res.blob());roiImage=bmp;rc.width=bmp.width;rc.height=bmp.height;roiPoints=[];roiEditing=true;rc.hidden=false;$('roi-save').hidden=false;$('roi-cancel').hidden=false;$('roi-info').textContent='테두리를 따라 꼭짓점 4개를 클릭하세요. 다섯 번째 클릭은 다시 시작합니다.';drawRoi();}catch(e){$('roi-info').textContent=e.message;}};
+rc.onclick=e=>{if(!roiEditing)return;const r=rc.getBoundingClientRect();if(roiPoints.length===4)roiPoints=[];roiPoints.push([(e.clientX-r.left)*rc.width/r.width,(e.clientY-r.top)*rc.height/r.height]);drawRoi();};
+function roiDone(){roiEditing=false;rc.hidden=true;$('roi-save').hidden=true;$('roi-cancel').hidden=true;$('roi-info').textContent=roiSaved?'ROI 저장됨 · 영역에 새로 진입하는 봉투 1개 추적':'ROI 미지정 · 추적 대기';if(roiImage){roiImage.close();roiImage=null;}}
+$('roi-cancel').onclick=roiDone;
+$('roi-save').onclick=async()=>{try{if(roiPoints.length!==4)throw Error('꼭짓점 4개를 선택하세요');const result=await api('tracking-roi',{width:rc.width,height:rc.height,points:roiPoints});roiSaved=result.roi;roiDone();}catch(e){$('roi-info').textContent=e.message;}};
+async function loadRoi(){try{roiSaved=(await api('tracking-roi')).roi;if(!roiEditing)roiDone();}catch{}finally{setTimeout(loadRoi,3000);}}loadRoi();
 let frameUrl='';async function framePoll(){try{if(last?.frame_available&&token){const r=await fetch('/api/frame',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(2500)});if(r.ok){const u=URL.createObjectURL(await r.blob());$('sim-image').src=u;if(frameUrl)URL.revokeObjectURL(frameUrl);frameUrl=u;}}}catch{}finally{setTimeout(framePoll,400)}}framePoll();
-let rgbUrl='';async function rgbPoll(){try{if(last?.rgb?.fresh&&token){const r=await fetch('/api/rgb',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(2500)});if(r.ok){const u=URL.createObjectURL(await r.blob());$('rgb-image').src=u;$('rgb-image').hidden=false;if(rgbUrl)URL.revokeObjectURL(rgbUrl);rgbUrl=u;}else $('rgb-image').hidden=true;}}catch{$('rgb-image').hidden=true;}finally{setTimeout(rgbPoll,250)}}rgbPoll();
+let rgbUrl='',rgbRequest=null,rgbEnabled=true;
+try{rgbEnabled=localStorage.getItem('deux-rgb-visible')!=='false';}catch{}
+function applyRgbVisibility(){
+ $('rgb-toggle').checked=rgbEnabled;$('rgb-content').hidden=!rgbEnabled;
+ if(!rgbEnabled){
+  if(rgbRequest)rgbRequest.abort();
+  $('rgb-image').hidden=true;$('rgb-image').removeAttribute('src');
+  if(rgbUrl)URL.revokeObjectURL(rgbUrl);rgbUrl='';
+  if(roiEditing)roiDone();
+  $('rgb-time').textContent='표시 꺼짐';
+ }else $('rgb-time').textContent='영상 수신 대기';
+}
+$('rgb-toggle').onchange=()=>{rgbEnabled=$('rgb-toggle').checked;try{localStorage.setItem('deux-rgb-visible',String(rgbEnabled));}catch{}applyRgbVisibility();};
+applyRgbVisibility();
+async function rgbPoll(){
+ let request=null,timer=null;
+ try{
+  if(rgbEnabled&&token){
+   request=new AbortController();rgbRequest=request;timer=setTimeout(()=>request.abort(),2500);
+   const r=await fetch('/api/rgb',{headers:{Authorization:'Bearer '+token},signal:request.signal});
+   if(r.ok){
+    const blob=await r.blob();
+    if(!rgbEnabled||request.signal.aborted)return;
+    const u=URL.createObjectURL(blob);$('rgb-image').src=u;$('rgb-image').hidden=false;
+    if(rgbUrl)URL.revokeObjectURL(rgbUrl);rgbUrl=u;
+   }else $('rgb-image').hidden=true;
+  }
+ }catch{$('rgb-image').hidden=true;}
+ finally{clearTimeout(timer);if(rgbRequest===request)rgbRequest=null;setTimeout(rgbPoll,250);}
+}rgbPoll();
 $('connect').onclick=()=>{token=$('token').value.trim();sessionStorage.setItem('deux-token',token);$('token').value=''};poll();
 </script></html>

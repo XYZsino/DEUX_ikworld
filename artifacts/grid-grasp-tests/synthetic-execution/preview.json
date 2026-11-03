@@ -1,0 +1,43 @@
+{
+  "preview_only": false,
+  "execution_enabled": true,
+  "motion_requested": true,
+  "cells": 39,
+  "selectable": false,
+  "arm_ready": false,
+  "timestamp_s": 1793502676.5405061,
+  "selection_policy": "observed XY only; user-fixed Z=0.97m and -Y speed=0.09m/s; fixed orientation assumption",
+  "ready_error_rad": 0.7439745855116584,
+  "target_id": "execution-synthetic",
+  "observed_object_xyz_m": [
+    0.48,
+    0.016033523082733148,
+    0.97
+  ],
+  "observed_grasp_xyz_m": [
+    0.48,
+    0.013156006336212151,
+    0.97
+  ],
+  "observed_velocity_m_s": [
+    0.0,
+    -0.09,
+    0.0
+  ],
+  "grasp_z_source": "user-fixed physical grasp plane base_link Z=0.97m; estimator Z is model center",
+  "reason": "stored replay committed; vision is diagnostic only",
+  "dispatch_ready": false,
+  "replay_policy": "freeze cell/timing at dispatch; perception changes do not cancel playback",
+  "diagnostic_policy": "after dispatch: monitoring errors log only; operator cancel and e-stop enforced",
+  "locked_cell_id": "x+016_y-002",
+  "trajectory_start_at_s": 1793502676.3535779,
+  "vision_reason": "no cell with sufficient lead time / XY alignment",
+  "workflow": "ROI fixed-speed grasp",
+  "phase": "DescendClose",
+  "phase_reason": "fixed cell, contact time and validated path",
+  "x_error_m": 0.00025983849949806626,
+  "selected_target_id": "execution-synthetic",
+  "planned_cell_id": "x+016_y-002",
+  "contact_in_s": 0.8126933574676514,
+  "start_in_s": -0.18731021881103516
+}

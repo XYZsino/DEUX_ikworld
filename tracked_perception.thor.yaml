@@ -1,0 +1,43 @@
+perception_node:
+  ros__parameters:
+    confidence: 0.5
+    barcode_confidence: 0.5
+    barcode_position_only: true
+    camera_input: direct
+    icp_yaw_span_deg: 180.0
+    icp_initial_angles: 12
+    weights: /home/xyz_thor/DEUX_ikworld/models/deux_1102_bread_detection.pt
+    device: '0'
+    width: 640
+    height: 360
+    input_bag_classes: s1,s1_1
+    input_barcode_class: bar
+    bag_class: bread_bag
+    barcode_class: barcode
+    target_classes:
+    - bread_bag
+    require_instance_mask: false
+    roi_only_depth: true
+    model_path: /home/xyz_thor/DEUX_ikworld/models/breadbag_model_v5/mesh/opaque_envelope.obj
+    model_origin: bounds_center
+    reference_frame: base_link
+    base_frame: base_link
+    resting_on_reference_plane: false
+    filter_motion: true
+    ignore_tracking_ids: false
+    table_plane_filter_enabled: true
+    table_plane_provisional: true
+    table_plane_base:
+    - -0.09607966802719037
+    - -0.007858798708256029
+    - 0.995342622755927
+    - -0.7403108725810376
+    table_plane_clearance_m: 0.07
+    single_target_tracking: true
+    tracking_roi_file: /home/xyz_thor/DEUX_ikworld/.setup/single-track-roi.json
+    icp_adaptive_search: true
+    icp_acquisition_angles: 6
+    icp_local_yaw_offset_deg: 10.0
+    icp_coarse_point_limit: 400
+    icp_coarse_voxel_size_m: 0.0
+    tracking_require_roi_entry: false

@@ -1,0 +1,19 @@
+{
+  "source_cell": "x+021_y-001_axis09_29",
+  "profile": "via_preserved_fast_scan",
+  "existing": {
+    "via_s": 6.0,
+    "left_start_s": 4.0,
+    "left_scan_s": 6.0,
+    "right_scan_s": 8.0
+  },
+  "candidate": {
+    "via_s": 6.0,
+    "left_start_s": 6.0,
+    "left_scan_s": 7.8,
+    "right_scan_s": 7.8,
+    "equal_segment_duration_s": 1.8
+  },
+  "right_prefix_preserved": true,
+  "hardware_applied": false
+}

@@ -1,0 +1,18 @@
+{
+  "unit_tests": 12,
+  "jazzy_synthetic_present": true,
+  "jazzy_synthetic_background_recovery": true,
+  "live_readonly_overlay_saved": true,
+  "actual_grasp_exclusion_verified": false,
+  "model_file": "deux_1102_bread_detection.pt",
+  "model_sha256": "77b77a20acfc12cc967f22223ef2a11bf4230437c94754caf23ffcab79e2f8b4",
+  "model_task": "detect",
+  "files": {
+    "tools/via_hand_mask.py": "57df6072d92c34d6d5f2256144aa489f36b82d5ea13cbfc31805fb7dbc75d558",
+    "tools/via_frame_archive.py": "86ee9505f293f0a17c79873fcc74f6428df35020bdc33c73aabf46551c28a723",
+    "tools/via_depth_gate.py": "3674aaab95317ce65331e3b708788588acd25f9fdaefa6b835863cf71c81bfd2",
+    "tools/lookup_bt_node.py": "4f57ce7ea7284d83296e372f1356a38d7c8ea3a3ef5fb584f03377f9194c51d6",
+    "tools/scan_bbox_gate.py": "4297b12c7a2643a6d0724791008c8d44e2c2126e39fe80d091355b277808d60a",
+    "tracked_perception.thor.yaml": "16ac1022aedc61c1433e9cb81a23097c0c8846a60b20d4d9631df1342c3bd391"
+  }
+}

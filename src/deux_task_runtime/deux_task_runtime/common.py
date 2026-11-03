@@ -138,14 +138,23 @@ class RuntimeNode(Node):
             raise ValueError("scene unavailable")
         if c.get("synthetic", False):
             return
-        if (
-            c.get("calibration_confirmed") is not True
-            or c.get("command_ownership_confirmed") is not True
-        ):
-            raise ValueError("installation calibration/command ownership unconfirmed")
+        if c.get("calibration_confirmed") is not True:
+            raise ValueError("installation calibration unconfirmed")
+        policy = c.get("command_ownership_policy", "reject")
+        if policy not in ("reject", "warn"):
+            raise ValueError("invalid command_ownership_policy")
+        reasons = []
+        if c.get("command_ownership_confirmed") is not True:
+            reasons.append("command ownership unconfirmed")
         if self.count_publishers("/arm/deux_arm_controller/joint_trajectory"):
-            raise ValueError(
-                "competing direct arm command publisher; isolate teleop/state launch"
+            reasons.append("competing direct arm command publisher registered")
+        if reasons:
+            message = "; ".join(reasons)
+            if policy == "reject":
+                raise ValueError(message)
+            self.get_logger().warning(
+                message + "; continuing under explicit warning-only ownership policy",
+                throttle_duration_sec=5.0,
             )
         if c.get("require_state_status", True):
             if (
@@ -153,7 +162,11 @@ class RuntimeNode(Node):
                 or self.robot_status.get("teleop") != "off"
                 or self.robot_status.get("mode") not in c["allowed_state_modes"]
             ):
-                raise ValueError("state mode/teleop not admitted")
+                raise ValueError(
+                    f"state mode/teleop not admitted: received={self.robot_status!r}; "
+                    f"allowed_modes={c['allowed_state_modes']!r}, required_teleop=off; "
+                    f"publishers={self.count_publishers('/state/status')}"
+                )
             if not self.count_publishers("/state/status"):
                 raise ValueError("state status publisher lost")
 
@@ -177,6 +190,7 @@ class RuntimeNode(Node):
 
     def on_observation(self, msg):
         self.observation = msg
+        self.observation_received_monotonic = time.monotonic()
 
     def check_target_rotation(self, actual, planned):
         rotation = pose_matrix(actual)[:3, :3] @ pose_matrix(planned)[:3, :3].T
@@ -196,7 +210,18 @@ class RuntimeNode(Node):
         if not obs.joints_valid or not current(
             obs.joints_acquired_at, now, c["max_joint_age"]
         ):
-            raise ValueError("measured joints unavailable/stale: " + obs.joints_reason)
+            received = getattr(self, "observation_received_monotonic", None)
+            receive_age = time.monotonic() - received if received is not None else float("nan")
+            detail = (
+                f"valid={obs.joints_valid} "
+                f"joint_age={now-seconds(obs.joints_acquired_at):.4f}s "
+                f"limit={c['max_joint_age']:.4f}s "
+                f"observation_age={now-seconds(obs.header.stamp):.4f}s "
+                f"since_receive={receive_age:.4f}s "
+                f"sequence={obs.sequence}; {obs.joints_reason or 'valid at observation creation'}"
+            )
+            self.get_logger().error("Joint freshness check failed: " + detail)
+            raise ValueError("measured joints unavailable/stale: " + detail)
 
     def subscribe_joints(self):
         from .joint_feedback import JointFeedback
@@ -264,7 +289,8 @@ class ExclusiveAction:
             if goal.is_cancel_requested:
                 goal.canceled()
                 result.success = False
-                result.reason = "canceled"
+                # Preserve execution stop confirmation and failure evidence.
+                result.reason = "canceled" + (f": {result.reason}" if result.reason and result.reason != "canceled" else "")
             elif result.success:
                 goal.succeed()
             else:

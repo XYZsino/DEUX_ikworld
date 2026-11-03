@@ -1,0 +1,14 @@
+{
+  "joint": "arm_l_joint6",
+  "joint_only": true,
+  "joint_delta_deg": 20.0,
+  "before_j6_deg": -22.305907081959212,
+  "after_j6_deg": -2.3059070819592127,
+  "other_arm_joints_unchanged": true,
+  "after_left_xyz_m": [
+    0.40797273276393886,
+    -0.004625898207103629,
+    1.17351670114388
+  ],
+  "actual_hardware_executed": false
+}

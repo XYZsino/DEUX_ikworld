@@ -1,55 +1,545 @@
-# Template only. Each consumer loads this file at startup; missing measurements reject startup.
 schema: deux.scene.v1
-ik_backend: pyroki  # Alternatives: scipy or curobo. Shared timing/collision checks remain enabled.
+ik_backend: pyroki
 base_frame: base_link
 synthetic: false
-calibration_confirmed: false
+calibration_confirmed: true
 command_ownership_confirmed: false
+command_ownership_policy: warn
 require_state_status: true
-allowed_state_modes: []  # Explicitly approved stationary mode names; no /state/set_mode calls.
-model_id: ''
+allowed_state_modes:
+- standby
+model_id: obj-sha256:b8dcee2925eff9d0235e8f5139ff1b7317e81b048e3910d7cb3b104cffaa1dce:bounds_center:metres
 source_box_height: 0.07
 robot:
-  urdf_path: ''  # Expanded URDF, all 28 joints, calibrated grasp links; no invented lift pose.
+  ik_position_tolerance_m: 0.03
+  ik_rotation_tolerance_rad: 0.3490658503988659
+  urdf_path: ../urdf/deux_thor_measured_lift.urdf
   base_frame: base_link
-  ee_links: {left: '', right: ''}
+  ee_links:
+    left: left_grasp
+    right: right_grasp
   fixed_joints: {}
-  acceleration_limits: []  # 28 measured/approved limits in JOINT_NAMES order.
-  collision_spheres: []  # {link, center: [x,y,z], radius}; conservative envelopes of robot/reader.
+  acceleration_limits:
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 3.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  - 60.0
+  collision_spheres:
+  - link: left_grasp
+    center:
+    - 0.0
+    - 0.0
+    - 0.0
+    radius: 0.035
+  - link: right_grasp
+    center:
+    - 0.0
+    - 0.0
+    - 0.0
+    radius: 0.035
   allowed_collision_pairs: []
   attachment_touch_links: []
-grasp_object_from_right_ee: []
-scan_right_pose: []
-scan_left_pose: []  # Used only by synthetic fixture when no label geometry is supplied.
-left_ee_from_reader: []
-object_from_labels: []  # Front/back label frames; local +Z is outward surface normal.
-read_distance: 0.15
-retreat_left_pose: []
-destination_pose: []
-hand_open: []
-hand_closed: []
-prepare_joint_waypoints: []  # Optional calibrated 28-joint waypoints before home_joints.
-prepare_before_first_task: true  # Once per task_node lifetime, after measured success.
-# User-supplied home pose (rad), ordered per deux_task_core.model.JOINT_NAMES.
-# right_hand_thumb_joint_2 sign corrected to +1.0 per user; see user_home_pose.yaml.
-home_joints: [0.807611, -0.539279, -0.279199, 1.536379, -0.800389, -0.056719, -0.664892, 0.070002, 0.349999, 1.18, -1.400001, -0.9, 1.400001, 0.9, -1.072517, 0.92558, 0.511504, -1.776357, -0.481181, 0.539503, 0.646462, 0.0, 1.0, -1.0, 0.3, 0.2, -0.3, -0.2]
-workspace: {min: [], max: []}
-destination_bounds: {min: [], max: []}
-obstacles: []  # Calibrated AABBs including source box walls and destination walls.
+  collision_check_enabled: true
+  joint_limit_tolerance: 0.001
+grasp_object_from_right_ee:
+- - 0.07911518249695759
+  - -0.9891575605224886
+  - -0.1237259405285295
+  - 0.0
+- - -0.9874320494756449
+  - -0.09479492909839744
+  - 0.126458962061032
+  - 0.0
+- - -0.13681643017853137
+  - 0.11216613516755346
+  - -0.9842255953564577
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+scan_right_pose:
+- - -0.9366471570857617
+  - -0.1006640482267494
+  - 0.33549791730763856
+  - 0.6866039134408415
+- - -0.1111919630333701
+  - 0.9937232395974619
+  - -0.012266639340526492
+  - 0.011513607823154394
+- - -0.3321572676909932
+  - -0.04879418488434396
+  - -0.9419610804282341
+  - 1.1426056127868491
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+scan_left_pose:
+- - -2.3490920068070243e-06
+  - -0.4651143318709544
+  - 0.885250618911231
+  - 0.39800000000234764
+- - -0.9999999999964791
+  - -2.2204460492424952e-16
+  - -2.6535897933527295e-06
+  - 0.08849973464147837
+- - 1.2342226439914043e-06
+  - -0.8852506189143476
+  - -0.4651143318693169
+  - 0.7892057227218323
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+left_ee_from_reader:
+- - -1.478900977669865e-16
+  - -2.131675554256224e-16
+  - 1.0000000000000002
+  - -0.050000000000000044
+- - 1.0
+  - 8.628843516558975e-17
+  - 5.871703198400029e-17
+  - -0.09899999999999987
+- - -1.1695111881960184e-16
+  - 1.0000000000000002
+  - 1.6804016776073118e-16
+  - 0.10399999999999987
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+object_from_labels: []
+read_distance: 0.12
+retreat_left_pose:
+- - -2.3490920068070243e-06
+  - -0.4651143318709544
+  - 0.885250618911231
+  - 0.39800000000234764
+- - -0.9999999999964791
+  - -2.2204460492424952e-16
+  - -2.6535897933527295e-06
+  - 0.08849973464147837
+- - 1.2342226439914043e-06
+  - -0.8852506189143476
+  - -0.4651143318693169
+  - 0.7892057227218323
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+destination_pose:
+- - -0.08732210962217517
+  - 0.942323028885438
+  - -0.32311322845607277
+  - 0.1985060414249655
+- - 0.9823344219434157
+  - 0.13534285528633982
+  - 0.12923387709124778
+  - -0.6108921337192684
+- - 0.16551112541526528
+  - -0.3061202717154064
+  - -0.9374947715100377
+  - 0.8949508584335262
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+hand_open:
+- 0.0
+- 0.5689773361501514
+- 1.1205013797803596
+- -1.361356816555577
+- -0.7853981633974483
+- 2.2689280275926285
+- 1.0821041362364843
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+hand_closed:
+- 0.0
+- 0.5689773361501514
+- 1.1205013797803596
+- -1.361356816555577
+- -0.7853981633974483
+- 2.2689280275926285
+- 1.0821041362364843
+- 0.0
+- -1.3962634015954636
+- 0.3490658503988659
+- 2.2689280275926285
+- -0.8726646259971648
+- -2.2689280275926285
+- 0.8726646259971648
+prepare_joint_waypoints: []
+prepare_before_first_task: true
+home_joints:
+- 0.807611
+- -0.539279
+- -0.279199
+- 1.536379
+- -0.800389
+- -0.056719
+- -0.664892
+- 0.0
+- 0.5689773361501514
+- 1.1205013797803596
+- -1.361356816555577
+- -0.7853981633974483
+- 2.2689280275926285
+- 1.0821041362364843
+- -0.011635004542768002
+- 0.27141985297203064
+- -0.3133821487426758
+- -1.7462043762207031
+- -1.3662546873092651
+- 0.08945601433515549
+- -0.309567391872406
+- 0.0
+- -0.6981317007977318
+- 0.17453292519943295
+- 1.1344640137963142
+- -0.4363323129985824
+- -1.1344640137963142
+- 0.4363323129985824
+workspace:
+  min:
+  - -0.6
+  - -1.0
+  - 0.1
+  max:
+  - 1.2
+  - 1.0
+  - 1.6
+destination_bounds:
+  min:
+  - 0.06350604142496549
+  - -0.7458921337192684
+  - 0.6949508584335262
+  max:
+  - 0.33350604142496554
+  - -0.4758921337192684
+  - 1.0949508584335261
+obstacles: []
 safe_joint_waypoint: null
-approach_height: 0.05
-lift_height: 0.10
-attached_radius: 0.20  # Must bound bag + uncertain attachment from right grasp origin.
+approach_height: 0.08
+descend_distance_m: 0.06
+descend_minimum_segment_duration: 0.15
+lift_height: 0.1
+attached_radius: 0.0
 max_target_drift: 0.02
 max_target_angle_rad: 0.15
 max_observation_age: 0.5
 max_joint_age: 0.2
-max_object_age: 0.6
+max_object_age: 1.5
 max_plan_age: 1.0
 sample_period: 0.02
 collision_margin: 0.02
 start_tolerance: 0.05
-tracking_tolerance: 0.15
+tracking_tolerance: 0.2617993877991494
 settle_timeout: 2.0
 scan_timeout: 3.0
 verification_timeout: 2.0
+thor_geometry:
+  shoulder_height_from_floor_m: 1.34
+  base_height_from_floor_m: 0.0006302772760391166
+  base_height_source: CAD wheel contact datum; not measured tire compression
+  shoulder_z_in_base_m: 1.339369722723961
+  lift_origin_z_in_base_m: 0.632369722723961
+  equivalent_prismatic_lift_joint_m: -0.160794277276039
+  camera_height_from_floor_m: 1.3791
+  camera_extrinsics_file: ../../../calibration/zed2i_extrinsics.thor.json
+  grasp_frames_calibrated: false
+  source_urdf: ../urdf/deux_fixed_zed2i.urdf
+  fixed_lift_snapshot: true
+  pending:
+  - actual bin coordinates before enabling placement
+  - physical refinement of SIM reader and object grasp transforms
+hand_close_duration_s: 0.5
+hand_open_duration_s: 0.5
+right_hand_preload: true
+hand_command_only: true
+motion_review_required: false
+motion_review_timeout_s: 300.0
+scan_right_joints:
+- 0.9099939602237961
+- -0.28095674067292226
+- -0.34806984011767195
+- -1.42690928511482
+- -1.3166932483691605
+- -0.6563393180919463
+- -0.5415098589391575
+barcode_reader_roll_candidates:
+- -1.5707963267948966
+- 0.0
+- 1.5707963267948966
+- 3.141592653589793
+barcode_view_angles_deg:
+- - -45.0
+  - -45.0
+- - 0.0
+  - -45.0
+- - 45.0
+  - -45.0
+- - 0.0
+  - 0.0
+perception_policy: head_rgbd
+moving_source: false
+stationary_source_confirmed: true
+grasp_pose_max_age: 20.0
+skip_barcode_completion: true
+placement:
+  enabled: true
+  calibrated: false
+  clear_left_joints:
+  - 0.8076106068176119
+  - -0.5392788615535845
+  - -0.279198973241034
+  - 1.536378726045994
+  - -0.8003885080907891
+  - -0.05671930437290872
+  - -0.6648923480224322
+  hover_right_pose:
+  - - -0.37875790628124756
+    - 0.9202716910927213
+    - -0.0981960437226875
+    - 0.34224097708394163
+  - - 0.9146730103441751
+    - 0.35603706212816844
+    - -0.19133973591250453
+    - -0.6122021952601013
+  - - -0.14112311142180048
+    - -0.16228870867834583
+    - -0.9765995302364964
+    - 1.0335275222906077
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  position_tolerance_m: 0.025
+  rotation_tolerance_rad: 0.5235987755982988
+  descent_ik_rotation_tolerance_rad: 0.5235987755982988
+  left_tolerance_rad: 0.10471975511965978
+  hand_tolerance_rad: 0.15
+  source: demonstration_temporary_operator_confirmed
+  release_at_approach: false
+  hover_right_joints: &id001
+  - -0.2280377745628357
+  - 0.5357823967933655
+  - 1.0182815194129944
+  - -1.545068383216858
+  - -1.1360369324684143
+  - -0.65194171667099
+  - -0.3132953494787216
+  coordinate_source: Measured right-arm joints from episodes 0 and 1; FK in current
+    URDF base frame
+  finish_after_release: false
+  prevalidate_descent: true
+  release_right_pose:
+  - - -0.08732210962217517
+    - 0.942323028885438
+    - -0.32311322845607277
+    - 0.1985060414249655
+  - - 0.9823344219434157
+    - 0.13534285528633982
+    - 0.12923387709124778
+    - -0.6108921337192684
+  - - 0.16551112541526528
+    - -0.3061202717154064
+    - -0.9374947715100377
+    - 0.8949508584335262
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  fixed_joint_motion: true
+  fixed_joint_corner_blend: 0.6
+  skip_fixed_motion_collision_checks: true
+  fixed_joint_waypoints:
+    PlaceApproach:
+    - - 0.48749114367422497
+      - 0.32539774062542015
+      - 0.05241572850252378
+      - -1.6693309732809796
+      - -1.240876994685806
+      - -0.6465074554309493
+      - -0.32136117272714715
+    - - 0.2963730632616768
+      - 0.4677193981689909
+      - 0.3754709813099663
+      - -1.7093918919109687
+      - -1.189153630282635
+      - -0.6516050522088527
+      - -0.30590117344268014
+    - - -0.004864472824821643
+      - 0.5357823967933655
+      - 0.7676925473997953
+      - -1.7070767397584246
+      - -1.1451419021076674
+      - -0.6519465148174395
+      - -0.3176145619599602
+    - *id001
+    Place:
+    - - -0.31048087775707245
+      - 0.5318872183561325
+      - 1.082055389881134
+      - -1.2679294049739838
+      - -1.1372875273227692
+      - -0.5880940556526184
+      - -0.31392866373062134
+    - - -0.31052109599113464
+      - 0.5247196108102798
+      - 1.082055389881134
+      - -1.0011508762836456
+      - -1.1606393456459045
+      - -0.4893670082092285
+      - -0.30899518728256226
+    PlaceRetreat:
+    - - -0.24731660820543766
+      - 0.5267035216093063
+      - 0.9611649513244629
+      - -1.1298370510339737
+      - -1.2241480946540833
+      - -0.35866816341876984
+      - -0.30840860307216644
+    - - -0.18411212041974068
+      - 0.5286874324083328
+      - 0.8402745127677917
+      - -1.2585232257843018
+      - -1.287656843662262
+      - -0.22796931862831116
+      - -0.30782201886177063
+    Retreat:
+    - - -0.011635004542768002
+      - 0.27141985297203064
+      - -0.3133821487426758
+      - -1.7462043762207031
+      - -1.3662546873092651
+      - 0.08945601433515549
+      - -0.309567391872406
+  joint_motion_scale: 1.0
+  allow_uncalibrated_demonstration: true
+  demonstration_reference:
+    dataset: woozziam/deux_breadbag_barcodescan_gr00t_261028
+    episodes:
+    - 0
+    - 1
+    mapping: phase-aligned mean of measured right arm joints; current URDF FK
+    segments:
+    - episode: 0
+      start: 11.733333
+      hover: 13.5
+      opening_start: 14.233333587646484
+      withdraw: 15.199999809265137
+    - episode: 1
+      start: 12.1
+      hover: 13.5
+      opening_start: 14.333333015441895
+      withdraw: 15.633333206176758
+  continuous_motion: true
+observe_right_joints:
+- -1.072517
+- 0.92558
+- 0.511504
+- -1.776357
+- -0.481181
+- 0.539503
+- 0.646462
+target_selection_policy: legacy
+scan_motion_scale: 0.35
+thor_development:
+  confirmed_shoulder_height_m: 1.34
+  conveyor_height_floor_m: 0.8
+  conveyor_speed_m_s: 0.0
+  collision_checks: grasp spheres only (radius 0.035m); environment pending
+  hand_command_only: true
+  hand_planning_acceleration_rad_s2: 60.0
+  placement_source: original SIM EE targets; operator confirmed temporary use; not
+    measured
+  reader_transform_source: SIM head_calibration.yaml
+  scan_target_source: measured EE base Z +10cm trial; .setup/ee-base-z10-trial/report.json
+  object_grasp_source: SIM hand-base orientation composed with measured pinch midpoint
+right_hand_disabled: false
+final_tolerance: 0.10471975511965978
+stationary_grasp_pose_expiry_disabled: true
+stationary_grasp_visibility_check_enabled: false
+approach_arm_acceleration_scale: 1.0
+barcode_position_only: true
+left_hand_ready_fraction: 0.0
+barcode_align_left_close_duration_s: 0.5
+temporary_axis_grasp_trial: true
+barcode_aim_offset_base_m:
+- 0.0
+- 0.0
+- 0.1
+barcode_observation_required_during_alignment: false
+prepare_conveyor_route:
+  right_waypoints:
+  - - -0.010872053101396162
+    - 0.0001907377737087046
+    - -0.2256427862973993
+    - 0.02613107499809253
+    - 0.22220950637064085
+    - 0.21000228885328376
+    - 0.047493705653467444
+  - - -0.22512914203444126
+    - 0.541163686542177
+    - -0.9397755036110523
+    - -0.20951986036838383
+    - -1.0689603489182995
+    - 0.14602543232702062
+    - 0.5620188362245293
+  - - 0.7356159276177408
+    - 1.3475504466698365
+    - -0.5839182613037182
+    - -0.041822582197205554
+    - -1.4383108596879184
+    - 0.09382663269148349
+    - 0.953588573232923
+  - - 1.3203611476002317
+    - 0.9581856329510229
+    - -0.7780726917416527
+    - -0.4446292905856925
+    - -1.0917896478037235
+    - 0.35837753422233454
+    - 0.8297635365902969
+  - - -0.011635004542768002
+    - 0.27141985297203064
+    - -0.3133821487426758
+    - -1.7462043762207031
+    - -1.3662546873092651
+    - 0.08945601433515549
+    - -0.309567391872406
+  source: .setup/episode0-ready-route.json
+  stopped_waypoints: true
+skip_visual_pick_verification: true
+
+right_hand_ready_fraction: 0.5

@@ -16,9 +16,16 @@ def knots(durations, overlap):
 def initial_durations(config,robot):
     cfg=config['conveyor_tracking']
     if 'fixed_grasp_durations_s' in cfg:
-        return np.asarray(cfg['fixed_grasp_durations_s'],dtype=float)
+        d=np.asarray(cfg['fixed_grasp_durations_s'],dtype=float)
+        if 'hand_close_duration_s' in config and not np.isclose(
+                d[2]+d[1]*cfg.get('close_descent_overlap',0.),config['hand_close_duration_s']):
+            raise ValueError('fixed grasp schedule conflicts with requested hand duration')
+        return d
     d=np.array([cfg['durations'][s] for s in ('Track','Descend','Close')],dtype=float)
+    d[2]=config.get('hand_close_duration_s',d[2])
     overlap=d[1]*cfg.get('close_descent_overlap',0.)
+    if 'hand_close_duration_s' in config and d[2]-overlap<.05:
+        raise ValueError('hand duration shorter than descent overlap')
     # Close in config describes the complete finger motion, including the part
     # overlapping descent. The last phase contains only the remaining time.
     d[2]=max(.05,d[2]-overlap)
@@ -38,5 +45,6 @@ def initial_durations(config,robot):
         a=np.diff(np.vstack([np.zeros(len(hands)),v,np.zeros(len(hands))]),axis=0)/np.r_[np.diff(ts),np.diff(ts)[-1]][:,None]
         factor=max(np.max(abs(v)/robot.velocity[hands]),np.sqrt(np.max(abs(a)/robot.acceleration[hands])))
         if factor<=limit:return d
+        if 'hand_close_duration_s' in config:raise ValueError('requested hand duration exceeds joint dynamics')
         d[2]=(d[2]+overlap)*max(1.03,float(factor)/limit*1.03)-overlap
     raise ValueError('finger closure timing did not converge')

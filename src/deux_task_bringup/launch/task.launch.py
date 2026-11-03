@@ -2,7 +2,8 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
@@ -12,7 +13,7 @@ def generate_launch_description():
         DeclareLaunchArgument("scene_config", default_value=""),
         DeclareLaunchArgument("planner_python", default_value="",
                              description="Planner Python 3.12 interpreter with the selected IK backend installed"),
-        DeclareLaunchArgument("hand_mapping", default_value=""),
+        DeclareLaunchArgument("hand_mapping", default_value=PathJoinSubstitution([FindPackageShare('deux_task_bringup'),'config','hand_mapping.yaml'])),
         DeclareLaunchArgument("hardware_enabled", default_value="false"),
         DeclareLaunchArgument("dry_run", default_value="true"),
         DeclareLaunchArgument("use_sim_time", default_value="false"),

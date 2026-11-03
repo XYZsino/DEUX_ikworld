@@ -1,0 +1,15 @@
+{
+  "offline_tests_passed": 23,
+  "jazzy_synthetic_passed": true,
+  "controller_interpolation": "splines",
+  "hardware_smoothness_verified": false,
+  "velocity_cap_rad_s": 0.3,
+  "acceleration_cap_rad_s2": 0.25,
+  "jerk_cap_rad_s3": 0.8,
+  "files": {
+    "tools/lookup_empty_return.py": "484dafc666f9d986f957c08a2e214937e5c6b2f363b5074f71022c33d1eab85c",
+    "tools/lookup_bt_server.py": "2d64af54fcc0e74e34e8fb48df7ec7d668c61ef575f62f8c5a5ec71f0098d142",
+    "tools/lookup_bt_node.py": "64262a7af381de336fc1e8faaddec76d295e01488cd5a2a1c100887d58d08523",
+    "tools/stop_lookup_bt.py": "fd79fcf9a8b534b63d153ba8b943698cd52232a5b5118915a75600bf918b784e"
+  }
+}

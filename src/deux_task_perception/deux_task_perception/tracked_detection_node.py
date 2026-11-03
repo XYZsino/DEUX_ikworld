@@ -4,6 +4,9 @@ This node consumes registered RGB-D only. Object IDs come from the tracker and
 label association uses current image containment, never a simulated bag pose.
 """
 from copy import deepcopy, copy
+import json
+from queue import SimpleQueue
+from std_msgs.msg import String
 import numpy as np
 from scipy.spatial.transform import Rotation
 from rclpy.qos import QoSProfile, DurabilityPolicy, qos_profile_sensor_data
@@ -15,7 +18,7 @@ from .pipeline_node import PipelineNode, run, LATEST_QOS
 from .core import normalize_rgb, normalize_depth, validate_bundle, stamp_ns
 from .yolo_backend import YoloTracker
 from .icp_node import matrix
-from .barcode_geometry import surface
+from .barcode_geometry import surface, center_position
 from .perception_core import masked_depth
 from .visible_geometry import surface_bounds, workspace_roi
 from deux_task_core.configuration import load_configuration
@@ -23,14 +26,33 @@ from deux_task_core.configuration import load_configuration
 
 class TrackedDetectionNode(PipelineNode):
     def __init__(self, detector=None, *, node_name="tracked_detection_node", extra_defaults=None, icp_transport=True, **kwargs):
-        defaults = dict(input_topic='/task/observation',config_file='',
-            weights='',device='cpu',confidence=.25,width=640,height=480,sync_slop_s=.02,
-            base_frame='base_link',track_max_age_s=.75,bag_class='bread_bag',barcode_class='barcode')
+        defaults = dict(input_topic='/task/observation',camera_input='observation',config_file='',
+            barcode_position_only=False,weights='',device='cpu',confidence=.25,barcode_confidence=-1.,width=640,height=480,sync_slop_s=.02,
+            base_frame='base_link',track_max_age_s=.75,bag_class='bread_bag',barcode_class='barcode',
+            input_bag_classes='bread_bag',input_barcode_class='barcode',ignore_tracking_ids=False,
+            single_target_tracking=False,tracking_roi_file='',tracking_require_roi_entry=True)
         defaults.update(extra_defaults or {})
         super().__init__(node_name, defaults, **kwargs)
         self.selection_config = load_configuration(self.cfg['config_file'])[0] if self.cfg['config_file'] else {}
-        self.detector=detector or YoloTracker(self.cfg['weights'],self.cfg['device'],self.cfg['confidence'],self.cfg['track_max_age_s'])
+        barcode_confidence = self.cfg['barcode_confidence']
+        if barcode_confidence == -1.:
+            barcode_confidence = self.cfg['confidence']
+        if not np.isfinite(barcode_confidence) or not 0 <= barcode_confidence <= 1:
+            raise ValueError('barcode_confidence must be -1 or within [0, 1]')
+        self.barcode_confidence = barcode_confidence
+        self.detector=detector or (None if self.cfg['single_target_tracking'] else YoloTracker(self.cfg['weights'],self.cfg['device'],
+            min(self.cfg['confidence'],barcode_confidence),self.cfg['track_max_age_s']))
+        if self.cfg['single_target_tracking']:
+            if self.cfg['ignore_tracking_ids']:raise ValueError('single tracking requires real track IDs')
+            from .single_target_backend import SingleTargetDetector
+            from .tracking_roi import default_path
+            self.detector=detector or SingleTargetDetector(self.cfg['weights'],self.cfg['device'],self.cfg['confidence'],
+                [s.strip() for s in self.cfg['input_bag_classes'].split(',')],self.cfg['input_barcode_class'],
+                self.cfg['tracking_roi_file'] or default_path(),self.cfg['track_max_age_s'],
+                require_entry=self.cfg['tracking_require_roi_entry'])
         self.request=None
+        self.tracking_events=SimpleQueue()
+        self.tracking_event_pub=self.create_publisher(String,'/task/tracking_event',10)
         self.tf=Buffer();self.listener=TransformListener(self.tf,self)
         self.detections=self.create_publisher(DetectionArray,'/task/detections',qos_profile_sensor_data)
         self.icp=(self.create_publisher(DetectionFrame,'/task/detection_frames',LATEST_QOS)
@@ -38,7 +60,14 @@ class TrackedDetectionNode(PipelineNode):
         self.labels=self.create_publisher(BarcodeTarget,'/task/barcode_target',qos_profile_sensor_data)
         self.candidates=self.create_publisher(VisualEvidenceArray,'/task/visual_candidates',qos_profile_sensor_data)
         self.evidence=self.create_publisher(VisualEvidence,'/task/visual_evidence',qos_profile_sensor_data)
-        self.subscription=self.create_subscription(Observation,self.cfg['input_topic'],self.enqueue,LATEST_QOS)
+        if self.cfg['camera_input'] == 'direct':
+            from .camera_input import CameraInput
+            self.camera = CameraInput(self, self.enqueue, width=self.cfg['width'], height=self.cfg['height'])
+            self.subscription = None
+        elif self.cfg['camera_input'] == 'observation':
+            self.subscription=self.create_subscription(Observation,self.cfg['input_topic'],self.enqueue,LATEST_QOS)
+        else:
+            raise ValueError('camera_input must be direct or observation')
         self.requests=self.create_subscription(PerceptionRequest,'/task/perception_request',self.set_request,
             QoSProfile(depth=1,durability=DurabilityPolicy.TRANSIENT_LOCAL))
         self.start_worker(self.detect)
@@ -67,13 +96,41 @@ class TrackedDetectionNode(PipelineNode):
             self.cfg['width'],self.cfg['height'],int(self.cfg['sync_slop_s']*1e9))
         out=DetectionFrame(header=deepcopy(obs.header),sequence=obs.sequence,
             detector_id=self.detector.identity,depth=obs.depth,depth_info=obs.depth_info)
-        for b in self.detector.track(normalize_rgb(obs.rgb),stamp_ns(obs.header)*1e-9):
-            if b['class_name'] not in (self.cfg['bag_class'],self.cfg['barcode_class']):continue
-            out.boxes.append(BoundingBox(class_id=b['class_id'],class_name=b['class_name'],
+        rgb = normalize_rgb(obs.rgb)
+        if self.cfg['ignore_tracking_ids']:
+            # Detection only: ByteTrack identity/confirmation is not a prerequisite.
+            boxes = [dict(class_id=c, class_name=n, confidence=v, xyxy=xy, track_id='')
+                     for c,n,v,xy in self.detector(rgb)]
+        else:
+            if self.cfg['single_target_tracking']:
+                req=self.request
+                self.detector.hold_target=bool(req and req.target_id and req.mode in ('locate','barcode') and stamp_ns(obs.header)<self.expiry(req))
+            boxes = self.detector.track(rgb,stamp_ns(obs.header)*1e-9)
+            # Barcode-mode presence is independent of the conveyor entry ROI.
+            # Keep acquisition/locate tracking and its identities unchanged.
+            if self.cfg['single_target_tracking'] and self.request is not None and self.request.mode=='barcode':
+                boxes=boxes+list(getattr(self.detector,'scan_bags',[]))
+            event=getattr(self.detector,'exit_event',None)
+            if event:self.tracking_events.put(event)
+        for b in boxes:
+            name = b['class_name']
+            if name in [s.strip() for s in self.cfg['input_bag_classes'].split(',')]:
+                if not self.cfg['single_target_tracking'] and b['confidence'] < self.cfg['confidence']:continue
+                name = self.cfg['bag_class']
+            elif name == self.cfg['input_barcode_class']:
+                if b['confidence'] < self.barcode_confidence:continue
+                name = self.cfg['barcode_class']
+            else:
+                continue
+            out.boxes.append(BoundingBox(class_id=b['class_id'],class_name=name,
                 confidence=b['confidence'],track_id=b['track_id'],xyxy=b['xyxy'],polygon_xy=b.get('polygon_xy',[])))
+        if self.cfg['ignore_tracking_ids']:
+            out.boxes = single_object_slots(out.boxes, self.cfg['bag_class'], self.cfg['barcode_class'])
         return out
 
     def _poll(self):
+        while not self.tracking_events.empty():
+            self.tracking_event_pub.publish(String(data=json.dumps(self.tracking_events.get_nowait())))
         now=self.now()
         if self.worker is None:return
         done=self.worker.poll()
@@ -122,6 +179,27 @@ class TrackedDetectionNode(PipelineNode):
         out=VisualEvidence(header=deepcopy(frame.header),sequence=frame.sequence,
             request_id=req.request_id,target_id=req.target_id,bag_visible=len(targets)==1)
         out.header.frame_id=self.cfg['base_frame']
+        if req.mode=='barcode' and not candidate_only:
+            # Barcode acquisition deliberately does not depend on bag tracking/ROI.
+            candidates=[b for b in frame.boxes if b.class_name==self.cfg['barcode_class']]
+            out.barcode_visible=len(candidates)==1
+            if out.barcode_visible:
+                out.barcode_track_id=candidates[0].track_id
+                try:
+                    when=Time.from_msg(frame.header.stamp,clock_type=self.get_clock().clock_type)
+                    bc=matrix(self.tf.lookup_transform(self.cfg['base_frame'],frame.header.frame_id,when))
+                    depth,_=normalize_depth(frame.depth)
+                    center,fraction=center_position(depth,frame.depth_info.p,candidates[0].xyxy,3.)
+                    position=(bc@np.r_[center,1.])[:3]
+                    label=BarcodeTarget(header=out.header,sequence=frame.sequence,request_id=req.request_id,
+                        target_id=req.target_id,barcode_track_id=out.barcode_track_id,
+                        orientation_valid=False,plane_rmse_m=float('nan'),valid_fraction=fraction)
+                    label.pose.position.x,label.pose.position.y,label.pose.position.z=map(float,position)
+                    label.pose.orientation.w=1.
+                    self.labels.publish(label)
+                except Exception as exc:self.reject(f'barcode center geometry unavailable: {exc}')
+            self.evidence.publish(out)
+            return out
         if len(targets)!=1:self.evidence.publish(out);return
         selected=targets[0]
         candidates=[]
@@ -149,19 +227,25 @@ class TrackedDetectionNode(PipelineNode):
                     out.surface_center_valid=True
                     out.surface_center.x,out.surface_center.y,out.surface_center.z=map(float,center)
             # Same geometry is used for the GUI box and selection evidence.
-            if selected.polygon_xy:
+            if len(selected.polygon_xy) or len(selected.xyxy):
                 try:
-                    lo,hi=surface_bounds(depth,frame.depth_info.p,selected.polygon_xy,bc)
+                    lo,hi=surface_bounds(depth,frame.depth_info.p,selected.polygon_xy,bc,bbox=selected.xyxy)
                     out.bbox3d_min.x,out.bbox3d_min.y,out.bbox3d_min.z=map(float,lo)
                     out.bbox3d_max.x,out.bbox3d_max.y,out.bbox3d_max.z=map(float,hi)
                     out.bbox3d_valid=True
                 except ValueError:pass
             if not candidate_only and req.mode=='barcode' and out.barcode_visible:
-                pose,rmse,fraction=surface(depth,frame.depth_info.p,candidates[0].xyxy,3.)
-                pose=bc@pose
+                position_only=self.cfg['barcode_position_only']
+                if position_only:
+                    center,fraction=center_position(depth,frame.depth_info.p,candidates[0].xyxy,3.)
+                    pose=np.eye(4);pose[:3,3]=(bc@np.r_[center,1.])[:3]
+                    rmse=float('nan')  # No plane was fitted.
+                else:
+                    pose,rmse,fraction=surface(depth,frame.depth_info.p,candidates[0].xyxy,3.)
+                    pose=bc@pose
                 label=BarcodeTarget(header=out.header,sequence=frame.sequence,request_id=req.request_id,
                     target_id=req.target_id,barcode_track_id=out.barcode_track_id,
-                    orientation_valid=True,plane_rmse_m=rmse,valid_fraction=fraction)
+                    orientation_valid=not position_only,plane_rmse_m=rmse,valid_fraction=fraction)
                 label.pose.position.x,label.pose.position.y,label.pose.position.z=map(float,pose[:3,3])
                 q=Rotation.from_matrix(pose[:3,:3]).as_quat()
                 label.pose.orientation.x,label.pose.orientation.y,label.pose.orientation.z,label.pose.orientation.w=map(float,q)
@@ -172,3 +256,15 @@ class TrackedDetectionNode(PipelineNode):
 
 
 def main(args=None):run(TrackedDetectionNode,args)
+
+
+def single_object_slots(boxes, bag_class, barcode_class):
+    """Protocol IDs are fixed slots, not tracker identities; ambiguity is rejected."""
+    bags = [b for b in boxes if b.class_name == bag_class]
+    if len(bags) != 1:
+        return []
+    bags[0].track_id = 'single-bag'
+    labels = [b for b in boxes if b.class_name == barcode_class]
+    for i, label in enumerate(labels):
+        label.track_id = f'frame-barcode-{i}'
+    return bags + labels

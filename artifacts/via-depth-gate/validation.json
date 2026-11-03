@@ -1,0 +1,24 @@
+{
+  "unit_tests_passed": 9,
+  "jazzy_synthetic_cases_passed": [
+    "five_valid_frames_continue",
+    "background_depth_cancel_and_return",
+    "four_frames_cancel_and_return"
+  ],
+  "live_readonly": {
+    "depth_encoding": "16UC1",
+    "depth_units": "mm converted to m",
+    "ee_z_now_m": 0.454127,
+    "via_ee_z_m": 0.374106,
+    "background_box_z_m": 0.964,
+    "background_rejected": true
+  },
+  "new_motion_hardware_verified": false,
+  "required_frames": 5,
+  "depth_tolerance_m": 0.15,
+  "files": {
+    "tools/via_depth_gate.py": "16266d8cde06125f991e674673efc465c0ba2effea7e7c989589269c98e34b6c",
+    "tools/lookup_bt_node.py": "6fa70f4edb218bd05139e717088fd2c0a7c9170eb9c732d015fc89e1431f68f9",
+    "lookup_bt.thor.launch.py": "18e7a2433430339e07b180b344f1a92aa1f9f205cc5e3f9a46b2e2df36327b73"
+  }
+}

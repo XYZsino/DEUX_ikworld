@@ -1,0 +1,46 @@
+{
+  "valid_cells": 39,
+  "rejected_cells": 4048,
+  "contact_s": 3.0,
+  "close_start_s": 2.5,
+  "close_complete_s": 3.0,
+  "lift_start_s": 3.0,
+  "lift_complete_s": 4.5,
+  "stopped_s": 5.0,
+  "velocity_m_s": [
+    0.0,
+    -0.09,
+    0.0
+  ],
+  "orientation_cone_deg": 30.0,
+  "complete_grid_and_hashes_verified": true,
+  "max_close_relative_xy_speed_m_s": 0.00015831247306616103,
+  "parallel_hand_helper_sha256": "af94356b92be064e5f87f0a325dac0eb2137ed5b89511806988d66783d023576",
+  "rejection_counts": {
+    "position / 30deg orientation cone IK": 3742,
+    "continuous joint position limit": 214,
+    "continuous acceleration >90% limit": 87,
+    "IK branch discontinuity": 5
+  },
+  "recommended_full_rectangle": {
+    "x_min_m": 0.45,
+    "x_max_m": 0.57,
+    "y_min_m": -0.06,
+    "y_max_m": 0.06,
+    "cells": 25
+  },
+  "valid_xy_bounds_m": [
+    [
+      0.39,
+      -0.06
+    ],
+    [
+      0.6,
+      0.12
+    ]
+  ],
+  "max_position_error_m": 0.0007687160464684093,
+  "max_orientation_error_deg": 29.523022572188445,
+  "max_velocity_limit_ratio": 0.1799954041325411,
+  "max_acceleration_limit_ratio": 0.8876631702539782
+}

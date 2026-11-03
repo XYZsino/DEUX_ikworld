@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "frame": "base_link",
+  "origin_base_m": [
+    0.595,
+    -0.115,
+    0.97
+  ],
+  "direction_xy": [
+    0.0,
+    -1.0
+  ],
+  "along_m": [
+    -0.135,
+    0.135
+  ],
+  "half_width_m": 0.075,
+  "z_range_m": [
+    0.9,
+    1.05
+  ],
+  "enforce_height_range": false,
+  "min_nominal_joint_margin_deg": 3.0,
+  "tracking_lookahead_s": 0.0,
+  "note": "Demonstration XY grasp window; live ICP height; not a reachability certificate."
+}

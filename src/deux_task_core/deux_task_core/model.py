@@ -116,13 +116,21 @@ class RobotModel:
         if not np.isfinite(self.joint_limit_tolerance) or not 0 <= self.joint_limit_tolerance <= .001:
             raise ValueError('joint limit numerical tolerance must be within 0..0.001 rad')
         self.spheres = config["collision_spheres"]
-        if not self.spheres:
+        self.collision_check_enabled=config.get('collision_check_enabled',True)
+        if type(self.collision_check_enabled) is not bool:
+            raise ValueError('collision_check_enabled must be boolean')
+        if self.collision_check_enabled and not self.spheres:
             raise ValueError("calibrated collision envelopes required")
         for s in self.spheres:
             vector(s["center"], 3)
             if not np.isfinite(s["radius"]) or s["radius"] <= 0:
                 raise ValueError("invalid collision radius")
         self.ignore = {frozenset(p) for p in config.get("allowed_collision_pairs", [])}
+        self.ik_position_tolerance_m = float(config.get('ik_position_tolerance_m', .002))
+        self.ik_rotation_tolerance_rad = float(config.get('ik_rotation_tolerance_rad', .02))
+        if (not np.isfinite([self.ik_position_tolerance_m,self.ik_rotation_tolerance_rad]).all()
+                or self.ik_position_tolerance_m <= 0 or not 0 < self.ik_rotation_tolerance_rad <= np.pi):
+            raise ValueError('invalid IK residual tolerance')
         self.ik_calls = 0
         links = self.fk(np.mean(self.limits, axis=1))
         if any(
@@ -218,7 +226,7 @@ class RobotModel:
         )
         q[indices] = result.x
         r = residual(result.x)
-        if np.linalg.norm(r[:3]) > 0.002 or np.linalg.norm(r[3:6]) / 0.15 > 0.02:
+        if np.linalg.norm(r[:3]) > self.ik_position_tolerance_m or np.linalg.norm(r[3:6]) / 0.15 > self.ik_rotation_tolerance_rad:
             raise ValueError("IK unreachable")
         return q
 
@@ -226,6 +234,7 @@ class RobotModel:
         q = vector(q, 28)
         if np.any(q < self.limits[:, 0] - self.joint_limit_tolerance) or np.any(q > self.limits[:, 1] + self.joint_limit_tolerance):
             raise ValueError("joint limit")
+        if not self.collision_check_enabled:return 1e6
         links = self.fk(q)
         spheres = [
             (

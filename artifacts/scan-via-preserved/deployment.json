@@ -1,0 +1,12 @@
+{
+  "thor_deployed": true,
+  "hardware_verified": false,
+  "offline_tests_passed": 38,
+  "jazzy_synthetic_tests": [
+    "ready-attention-test.log",
+    "fast-scan-test.log"
+  ],
+  "accepted": 2175,
+  "rejected": 2,
+  "right_prefix_preserved": true
+}

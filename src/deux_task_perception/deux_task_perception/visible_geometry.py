@@ -32,9 +32,23 @@ def workspace_roi(region, base_from_camera, projection, width, height, vertical_
     return np.r_[lo, hi]
 
 
-def surface_bounds(depth, projection, polygon, base_from_camera):
+def selection_polygon(polygon, bbox=None):
+    """Use an instance polygon when present, otherwise a validated bbox ROI."""
+    values = np.asarray(polygon, dtype=float)
+    if values.size:
+        if values.size < 6 or values.size % 2 or not np.isfinite(values).all():
+            raise ValueError('invalid instance polygon')
+        return values
+    box = np.asarray(bbox, dtype=float)
+    if box.shape != (4,) or not np.isfinite(box).all() or np.any(box[2:] <= box[:2]):
+        raise ValueError('valid bbox required without instance mask')
+    x0, y0, x1, y1 = box
+    return np.array([x0,y0,x1,y0,x1,y1,x0,y1])
+
+
+def surface_bounds(depth, projection, polygon, base_from_camera, bbox=None):
     """Robust visible-surface AABB, not a complete object model or ICP pose."""
-    selected = masked_depth(depth, polygon)
+    selected = masked_depth(depth, selection_polygon(polygon, bbox))
     ys, xs = np.where(np.isfinite(selected) & (selected > .05) & (selected < 3.))
     stride = max(1, len(xs)//6000)
     ys, xs = ys[::stride], xs[::stride]

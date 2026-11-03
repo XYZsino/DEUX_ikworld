@@ -1,3 +1,5 @@
+from deux_task_core.barcode_position import label_quality
+from deux_task_core.planning import grasp_cache_max_age
 from deux_task_core.planning import requires_object_pose
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
@@ -38,8 +40,24 @@ def prepare_backend(config, version):
     return backend_name(config)
 
 
-def compute(config, version, stage, start, target, barcode=None, motion=None, candidate_id='', timing=None, covariance=None):
-    data=compute_plan(config,version,stage,start,target,barcode,motion,candidate_id,timing,covariance)
+def compute(config, version, stage, start, target, barcode=None, motion=None, candidate_id='', timing=None, covariance=None, reader_extra_yaw_deg=0., dataset_reading_pose=None):
+    planner=cached_planner(config,version)
+    planner.robot.last_ik_attempt=None
+    try:
+        if stage=='AlignBarcode' and dataset_reading_pose is not None:
+            from .dataset_reading_pose import build_reading_plan
+            data=build_reading_plan(config,dataset_reading_pose,start)
+            data['ik_backend']=backend_name(config)
+            return data
+        from .reader_yaw import adjusted_reader
+        with adjusted_reader(planner,stage,reader_extra_yaw_deg):
+            data=compute_plan(config,version,stage,start,target,barcode,motion,candidate_id,timing,covariance)
+    except ValueError as exc:
+        if motion is not None or stage not in ('Approach','Descend'):
+            raise
+        from .ik_diagnostic import report
+        return dict(planning_error=str(exc),ik_backend=backend_name(config),
+            ik_diagnostic=report(planner.robot,config,version,stage,start,target,str(exc)))
     data['ik_backend']=backend_name(config)
     if 'candidate_report' in data:
         data['candidate_report']['ik_backend']=data['ik_backend']
@@ -66,6 +84,14 @@ class MotionPlannerNode(RuntimeNode):
     def __init__(self, **kwargs):
         super().__init__("motion_planner_node", observe_state=True, **kwargs)
         self.subscribe_joints()
+        self.declare_parameter('dataset_reading_pose_file','')
+        from .dataset_reading_pose import load_pose
+        self.dataset_reading_pose=load_pose(self.get_parameter('dataset_reading_pose_file').value)
+        self.declare_parameter('barcode_reader_extra_yaw_deg',0.)
+        from .reader_yaw import rotate_target
+        rotate_target(np.eye(4),self.get_parameter('barcode_reader_extra_yaw_deg').value)
+        from .common import LATCHED
+        self.ik_diagnostic_pub=self.create_publisher(String,'/task/ik_diagnostic',LATCHED)
         self.candidate_pub=self.create_publisher(String,'/task/grasp_candidates',10)
         self.pool = ProcessPoolExecutor(
             max_workers=1, mp_context=multiprocessing.get_context("spawn")
@@ -90,12 +116,12 @@ class MotionPlannerNode(RuntimeNode):
         self.planning_latency.sample(self.now(), time.monotonic())
 
     def validate_label(self, req):
+        if getattr(self,'dataset_reading_pose',None) is not None:return None
         b = req.barcode_target
-        if (not b.request_id or b.target_id != req.target_id or not b.orientation_valid
+        if (not b.request_id or b.target_id != req.target_id
                 or b.header.frame_id != self.config['base_frame']
                 or not current(b.header.stamp, self.now(), self.config['max_object_age'])
-                or not np.isfinite([b.plane_rmse_m,b.valid_fraction]).all()
-                or not 0 <= b.plane_rmse_m <= .003 or not .7 <= b.valid_fraction <= 1.):
+                or not label_quality(b, self.config)):
             raise ValueError('fresh associated barcode surface required')
         return pose_matrix(b.pose)
 
@@ -104,7 +130,7 @@ class MotionPlannerNode(RuntimeNode):
             cfg=self.config['conveyor_tracking']
             return cfg.get('approach_prediction_max_age',self.config['max_object_age']) if stage=='Approach' else cfg['occlusion_prediction_max_age']
         if not self.config.get('moving_source',False) and self.config.get('perception_policy')=='head_rgbd' and stage in ('Approach','Descend','Close'):
-            return self.config['grasp_pose_max_age']
+            return grasp_cache_max_age(self.config)
         return None
 
     def validate(self, request):
@@ -176,7 +202,8 @@ class MotionPlannerNode(RuntimeNode):
         else:
             self.work = self.pool.submit(
                 compute, c, version, req.stage, start, target_pose,
-                self.validate_label(req) if req.stage == "AlignBarcode" else None,motion,req.grasp_candidate_id,timing,covariance
+                self.validate_label(req) if req.stage == "AlignBarcode" else None,motion,req.grasp_candidate_id,timing,covariance,
+                float(self.get_parameter('barcode_reader_extra_yaw_deg').value),self.dataset_reading_pose
             )
         wall = time.monotonic()
         clock = self.now()
@@ -261,6 +288,16 @@ class MotionPlannerNode(RuntimeNode):
                 work_wall=time.monotonic();work_clock=self.now()
                 self.work=self.pool.submit(compute,c,version,req.stage,start,target_pose,None,motion,'',None,covariance)
                 continue
+            if data.get('ik_diagnostic'):
+                from pathlib import Path
+                detail=dict(data['ik_diagnostic'],target_id=req.target_id,computed_at_s=self.now())
+                payload=json.dumps(detail,allow_nan=False)
+                self.ik_diagnostic_pub.publish(String(data=payload))
+                try:
+                    directory=Path(self.get_parameter('config_file').value).resolve().parents[3]/'.setup/ik-diagnostics'
+                    directory.mkdir(parents=True,exist_ok=True)
+                    (directory/'latest.json').write_text(payload+'\n')
+                except OSError as error:self.get_logger().warning(f'IK diagnostic save failed: {error}')
             if data.get('planning_error'):raise ValueError(data['planning_error'])
             if reuse_path:
                 # Retain the selected path, original acquisition and absolute start.
@@ -343,7 +380,7 @@ class MotionPlannerNode(RuntimeNode):
             raise ValueError("robot moved during planning")
         if self.config_version != version:
             raise ValueError("scene version changed")
-        result = PlanMotion.Result(success=True, reason=f"planned (IK: {data['ik_backend']})")
+        result = PlanMotion.Result(success=True, reason=("planned recorded dataset posture (no IK)" if 'dataset_reading_reference' in data else f"planned (IK: {data['ik_backend']})"))
         plan = result.plan
         plan.header.stamp = self.get_clock().now().to_msg()
         plan.header.frame_id = c["base_frame"]
@@ -369,11 +406,12 @@ class MotionPlannerNode(RuntimeNode):
             plan.target_pose.orientation.w = 1.0
         plan.barcode_target = req.barcode_target
         plan.trajectory.joint_names = list(JOINT_NAMES)
+        # Static integrated placement also carries release/return phase boundaries.
+        plan.phase_end_times=[float(value) for value in data.get('phase_end_times',[])]
         if moving:
             plan.follows_conveyor=True;plan.target_velocity=deepcopy(obj.velocity)
             plan.target_velocity.linear.x,plan.target_velocity.linear.y,plan.target_velocity.linear.z=map(float,velocity[:3])
             plan.target_velocity.angular.z=float(velocity[3])
-            plan.phase_end_times=data.get('phase_end_times',[]).tolist() if 'phase_end_times' in data else []
             plan.trajectory.header.stamp=ros_time(scheduled)
         plan.ik_calls = data["ik_calls"]
         plan.minimum_clearance = data["minimum_clearance"]

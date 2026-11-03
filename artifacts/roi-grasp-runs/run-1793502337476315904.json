@@ -1,0 +1,31 @@
+{
+  "physical_grasp_verified": false,
+  "policy": {
+    "x_tolerance_m": 0.02,
+    "x_deadband_m": 0.005,
+    "standby_y_m": 0.12,
+    "upper_z_m": 1.05,
+    "grasp_entry_xy_m": [
+      [
+        0.3,
+        0.03
+      ],
+      [
+        0.69,
+        0.4
+      ]
+    ],
+    "dispatch_lead_s": 0.3,
+    "alignment_min_s": 0.5,
+    "descent_durations_s": [
+      1.0,
+      1.5,
+      2.0,
+      2.5
+    ]
+  },
+  "success": false,
+  "reason": "arm must be stationary before planning/dispatch",
+  "warnings": [],
+  "hand_timing": null
+}

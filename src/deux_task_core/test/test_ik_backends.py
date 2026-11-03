@@ -104,3 +104,19 @@ def test_batch_preserves_other_joints_and_reports_per_target_errors(tmp_path):
     np.testing.assert_array_equal(solved[0],q[0])
     np.testing.assert_array_equal(solved[1],q[1])
     assert robot.ik_calls==2
+
+@pytest.mark.parametrize('upper',[False,True])
+def test_solver_roundoff_clamps_to_exact_bound_then_checks_fk(tmp_path,upper):
+ robot=RobotModel(fixture(tmp_path)['robot']);solver=FixedAnswer(robot)
+ q=np.zeros(28);indices=[JOINT_NAMES.index(n) for n in arm_names('right')]
+ j=indices[1];q[j]=robot.limits[j,int(upper)]
+ target=robot.ee_fk('right',q);values=q[indices].copy();sign=1 if upper else -1
+ values[1]+=sign*np.deg2rad(.000076)
+ result=solver.checked('right',target,q,values)
+ assert result[j]==q[j]
+ assert not robot.last_ik_attempt['limit_joints']
+ values[1]=q[j]+sign*2e-5
+ with pytest.raises(ValueError,match='joint limit'):solver.checked('right',target,q,values)
+ values[1]=q[j]+sign*1e-6
+ bad=target.copy();bad[0,3]+=.5
+ with pytest.raises(ValueError,match='residual'):solver.checked('right',bad,q,values)

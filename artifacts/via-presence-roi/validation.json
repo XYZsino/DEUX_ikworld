@@ -1,0 +1,21 @@
+{
+  "thor_deployed": true,
+  "hardware_motion_tested": false,
+  "live_camera_roi_captured": true,
+  "unit_tests": 38,
+  "synthetic_present_passed": true,
+  "synthetic_absent_cancel_and_ready_passed": true,
+  "preserved_motion": true,
+  "window_relative_to_via_s": [
+    -0.5,
+    0.5
+  ],
+  "per_side_margin_fraction": 0.1,
+  "files": {
+    "tools/lookup_bt_node.py": "6c6d7b20255543200015e40780b0ac735c469b5b418c97b07f8bf3a045a1b815",
+    "tools/lookup_bt_server.py": "770ae4f353c6af0facb38efa7cf2c3a77fe87cd8ef444db384c6cff2dff38f87",
+    "tools/grid_grasp_trial.py": "3ceb106146c298105314d30879fa69761a533cc4620203aefbcfbf22ba6f9631",
+    "src/deux_task_runtime/deux_task_runtime/common.py": "4e639b5ed04d236a07ad9e90bf1d37faf966731aa5aed4c3764846d4d1b3e278",
+    "calibration/via_presence_roi.json": "7eb19ee7aae1d3073228f696df7e5ffe11425f75743811bdd4cf53215dc4afe0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "message": "deux_hand_msgs/msg/LeaderGrip",
+  "topics": {
+    "left": "/hand/left/grip",
+    "right": "/hand/right/grip"
+  },
+  "fields": {
+    "header": "std_msgs/Header",
+    "side": "string: left or right",
+    "grasp": "float32: 0.0 open to 1.0 closed",
+    "valid": "bool: valid=true permits updating target in selected Leader mode"
+  },
+  "mode_selection": {
+    "message": "deux_hand_msgs/msg/HandUiMessage",
+    "topic": "/hand/{side}/ui_request",
+    "field": "uint8 leader_mode"
+  },
+  "pose_source": "hand Pi deux_hand_leader.yaml leader_modes; exact active endpoints not verified",
+  "documented_modes": {
+    "1": "three-finger",
+    "2": "thumb/index pinch; third fixed curled",
+    "3": "right pinch with third moving; left scanner"
+  },
+  "user_angles_match_active_mode": false,
+  "existing_publisher": "deux_leader_bridge",
+  "subscriber": "deux_hand",
+  "current_ikworld_adapter": "/hand/{side}/cmd deux_hand_msgs/msg/HandCtlMessage; not LeaderGrip",
+  "command_sent": false
+}

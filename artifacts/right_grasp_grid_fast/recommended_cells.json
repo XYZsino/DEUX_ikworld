@@ -1,0 +1,613 @@
+{
+  "frame": "base_link",
+  "contact_z_m": 0.97,
+  "rectangle": {
+    "x_min_m": 0.45,
+    "x_max_m": 0.57,
+    "y_min_m": -0.06,
+    "y_max_m": 0.06,
+    "cells": 25
+  },
+  "cells": [
+    {
+      "xy_m": [
+        0.45,
+        -0.06
+      ],
+      "file": "x+015_y-002.json",
+      "sha256": "eb1ca2bd470bdc0271e5b8df2f3825ff97671b39737053576417868564c1b52d",
+      "checks": {
+        "position_error_m": 0.0002593201749345978,
+        "orientation_error_deg": 29.49999828876916,
+        "velocity_limit_ratio": 0.07492903077618426,
+        "acceleration_limit_ratio": 0.8876631702539782,
+        "min_measured_surface_margin_m": 0.08567344115378633
+      },
+      "events": {
+        "approach_complete_s": 2.0,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.45,
+        -0.03
+      ],
+      "file": "x+015_y-001.json",
+      "sha256": "e7cc62e617fbc78afa89cc9c97b418d5b846ffe536f88573ade4c33b965796c8",
+      "checks": {
+        "position_error_m": 9.989110414239148e-05,
+        "orientation_error_deg": 29.499999355819046,
+        "velocity_limit_ratio": 0.08322624687823707,
+        "acceleration_limit_ratio": 0.8547229000986393,
+        "min_measured_surface_margin_m": 0.08593091804562888
+      },
+      "events": {
+        "approach_complete_s": 2.0,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.45,
+        0.0
+      ],
+      "file": "x+015_y+000.json",
+      "sha256": "c20240e1d60fb3c703810f094b604beed7b0b86d3faff658d31f844df42602a4",
+      "checks": {
+        "position_error_m": 0.0002627163122521103,
+        "orientation_error_deg": 29.50000015758811,
+        "velocity_limit_ratio": 0.1424852073374788,
+        "acceleration_limit_ratio": 0.8345023733420787,
+        "min_measured_surface_margin_m": 0.08619143365308948
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.45,
+        0.03
+      ],
+      "file": "x+015_y+001.json",
+      "sha256": "47cb87de3877b8efc506dc1081ad82d2cb613cc64c299401126a3be4a5bc9e05",
+      "checks": {
+        "position_error_m": 0.0003296135789356699,
+        "orientation_error_deg": 29.499999462177374,
+        "velocity_limit_ratio": 0.14449793640039565,
+        "acceleration_limit_ratio": 0.7255717918364076,
+        "min_measured_surface_margin_m": 0.08644898221351921
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.45,
+        0.06
+      ],
+      "file": "x+015_y+002.json",
+      "sha256": "f7b9a61492b32964f0e3c8c338a1aea0be8b3de5af7e026c1a699fab7e9aef57",
+      "checks": {
+        "position_error_m": 0.00041800876830535487,
+        "orientation_error_deg": 29.499999811296465,
+        "velocity_limit_ratio": 0.17595641082939992,
+        "acceleration_limit_ratio": 0.8674174964947973,
+        "min_measured_surface_margin_m": 0.08670654219576338
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.48,
+        -0.06
+      ],
+      "file": "x+016_y-002.json",
+      "sha256": "f12b78ccaafce5b4933e27d7e062480eade8aadae801e4697a65f154bead283a",
+      "checks": {
+        "position_error_m": 0.0001547515790427125,
+        "orientation_error_deg": 29.49999999032799,
+        "velocity_limit_ratio": 0.09251599433300574,
+        "acceleration_limit_ratio": 0.8606848516468523,
+        "min_measured_surface_margin_m": 0.08562204910283203
+      },
+      "events": {
+        "approach_complete_s": 1.8,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.48,
+        -0.03
+      ],
+      "file": "x+016_y-001.json",
+      "sha256": "92072fb709ec8e4930a9161b11c865aef498fbc59ddd24f13dbf4ffffefc94e1",
+      "checks": {
+        "position_error_m": 0.00031783184585894113,
+        "orientation_error_deg": 29.500000407947496,
+        "velocity_limit_ratio": 0.13534233901632367,
+        "acceleration_limit_ratio": 0.8569872494089577,
+        "min_measured_surface_margin_m": 0.08588070302552214
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.48,
+        0.0
+      ],
+      "file": "x+016_y+000.json",
+      "sha256": "3de83fef75ed440e2e111de2a4085b94a771e36c9269ac30217a71fd3490ca0d",
+      "checks": {
+        "position_error_m": 0.00030291653078203543,
+        "orientation_error_deg": 29.4999643184415,
+        "velocity_limit_ratio": 0.1333886277537421,
+        "acceleration_limit_ratio": 0.7819762164947214,
+        "min_measured_surface_margin_m": 0.08613826578606507
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.48,
+        0.03
+      ],
+      "file": "x+016_y+001.json",
+      "sha256": "f9a60c9769be3c47fcc2523138f85a8c4a01bce8dd8f00dc8c5b7b418f02c65f",
+      "checks": {
+        "position_error_m": 0.0003850062166516699,
+        "orientation_error_deg": 29.499901883590155,
+        "velocity_limit_ratio": 0.14968196600879752,
+        "acceleration_limit_ratio": 0.7478272352095438,
+        "min_measured_surface_margin_m": 0.086395730371402
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.48,
+        0.06
+      ],
+      "file": "x+016_y+002.json",
+      "sha256": "29fa12b7e001d74c5dd4e6f0298b351a20f5dd1614e66687d530650edd6397ef",
+      "checks": {
+        "position_error_m": 0.0004156926511608638,
+        "orientation_error_deg": 29.500097463195715,
+        "velocity_limit_ratio": 0.1513325934876319,
+        "acceleration_limit_ratio": 0.7516105017326821,
+        "min_measured_surface_margin_m": 0.08665314254241607
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.51,
+        -0.06
+      ],
+      "file": "x+017_y-002.json",
+      "sha256": "54e2fcbb5f55f908b1a4367f30ad364fcb9217c99b703b57e6b7db7c0848eba8",
+      "checks": {
+        "position_error_m": 0.0002361895874973988,
+        "orientation_error_deg": 29.500001870915483,
+        "velocity_limit_ratio": 0.11838142792716548,
+        "acceleration_limit_ratio": 0.8722493159706187,
+        "min_measured_surface_margin_m": 0.08557001107114709
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.51,
+        -0.03
+      ],
+      "file": "x+017_y-001.json",
+      "sha256": "9c42813cdcc8d8136af93b623343abad7d8f7bc92a00d798467d432b281e1b17",
+      "checks": {
+        "position_error_m": 0.0002763156737803187,
+        "orientation_error_deg": 29.450949754080895,
+        "velocity_limit_ratio": 0.12998812601014129,
+        "acceleration_limit_ratio": 0.7693441557040566,
+        "min_measured_surface_margin_m": 0.08582753084586273
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.51,
+        0.0
+      ],
+      "file": "x+017_y+000.json",
+      "sha256": "0de8f371d1b9317b87bfc092de2c4692a73d3cedef29ac5e1859b2ec40d60274",
+      "checks": {
+        "position_error_m": 0.00035058840083744466,
+        "orientation_error_deg": 29.499999769106065,
+        "velocity_limit_ratio": 0.1354151775752399,
+        "acceleration_limit_ratio": 0.697660488597626,
+        "min_measured_surface_margin_m": 0.08608495909902683
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.51,
+        0.03
+      ],
+      "file": "x+017_y+001.json",
+      "sha256": "63f8f585186b29fe355906e20aab9beb76fe74a9624c006cddac5ea7e5d8842b",
+      "checks": {
+        "position_error_m": 0.00035324296165812556,
+        "orientation_error_deg": 29.500000268451693,
+        "velocity_limit_ratio": 0.13388597563236562,
+        "acceleration_limit_ratio": 0.673552540043357,
+        "min_measured_surface_margin_m": 0.08634231644868295
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.51,
+        0.06
+      ],
+      "file": "x+017_y+002.json",
+      "sha256": "9c279305fffd4fa9b87ed48a249b9aa719350bdf535dce959ace692db83cddf0",
+      "checks": {
+        "position_error_m": 0.0005487947439572058,
+        "orientation_error_deg": 29.50000012308149,
+        "velocity_limit_ratio": 0.1408973597211797,
+        "acceleration_limit_ratio": 0.7109530640129575,
+        "min_measured_surface_margin_m": 0.08659971772450611
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.54,
+        -0.06
+      ],
+      "file": "x+018_y-002.json",
+      "sha256": "dfe09c6d062286b557dfba69439c6863839eda8ed6c3667761eb9141416e90ee",
+      "checks": {
+        "position_error_m": 0.00029661674263667674,
+        "orientation_error_deg": 29.500000326414753,
+        "velocity_limit_ratio": 0.11652268182349915,
+        "acceleration_limit_ratio": 0.7955253616225922,
+        "min_measured_surface_margin_m": 0.085516750781506
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.54,
+        -0.03
+      ],
+      "file": "x+018_y-001.json",
+      "sha256": "caf41a56641ae9297cf5a6bc28e3468966c40c17b527a8a335a4296200384149",
+      "checks": {
+        "position_error_m": 0.0002915251332797602,
+        "orientation_error_deg": 29.500002444782023,
+        "velocity_limit_ratio": 0.1254402232241531,
+        "acceleration_limit_ratio": 0.7099805222779018,
+        "min_measured_surface_margin_m": 0.08577420341462891
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.54,
+        0.0
+      ],
+      "file": "x+018_y+000.json",
+      "sha256": "e6eb84d55c9b0a0d3e293c4ade5adad1da7cf8cf5592bb9eeef216a211e0c70d",
+      "checks": {
+        "position_error_m": 0.0002748559929876181,
+        "orientation_error_deg": 29.499999308197467,
+        "velocity_limit_ratio": 0.11983755290663776,
+        "acceleration_limit_ratio": 0.6761952156058667,
+        "min_measured_surface_margin_m": 0.08603155364778925
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.54,
+        0.03
+      ],
+      "file": "x+018_y+001.json",
+      "sha256": "0c100579523c82828ac11c5232382862cd9b80fedd2bd821d7209f3ddff86f4b",
+      "checks": {
+        "position_error_m": 0.00044961852628563664,
+        "orientation_error_deg": 29.499999442948916,
+        "velocity_limit_ratio": 0.13881657829516675,
+        "acceleration_limit_ratio": 0.7247240684276292,
+        "min_measured_surface_margin_m": 0.08628899284342231
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.54,
+        0.06
+      ],
+      "file": "x+018_y+002.json",
+      "sha256": "e1a04b8023d99277a8775309c88ca97931c0d9a6b4eb53964fd2c6dda9044a4a",
+      "checks": {
+        "position_error_m": 0.0005920374948425106,
+        "orientation_error_deg": 29.50000024036185,
+        "velocity_limit_ratio": 0.15026274126018388,
+        "acceleration_limit_ratio": 0.8321725146600819,
+        "min_measured_surface_margin_m": 0.08654621173548
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.57,
+        -0.06
+      ],
+      "file": "x+019_y-002.json",
+      "sha256": "9fbe5045d72fd62b69dc7b73bada6c71eca120e22fe9b27fe97a8893670406bc",
+      "checks": {
+        "position_error_m": 0.00064988315249209,
+        "orientation_error_deg": 29.499999985115757,
+        "velocity_limit_ratio": 0.12356726193732838,
+        "acceleration_limit_ratio": 0.7603923610375741,
+        "min_measured_surface_margin_m": 0.08546342683931099
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.57,
+        -0.03
+      ],
+      "file": "x+019_y-001.json",
+      "sha256": "a3690f8024ba965a492c63937fcc66c36088de8ad52c18fb5ab01377b949d180",
+      "checks": {
+        "position_error_m": 0.000344487193773108,
+        "orientation_error_deg": 29.499999763383034,
+        "velocity_limit_ratio": 0.12359065220328169,
+        "acceleration_limit_ratio": 0.7059853967011129,
+        "min_measured_surface_margin_m": 0.08572083579309017
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.57,
+        0.0
+      ],
+      "file": "x+019_y+000.json",
+      "sha256": "a3a5115f73a774402acc52afe54ad73557ee63e23e5f9d243c89db56b146b259",
+      "checks": {
+        "position_error_m": 0.00044638288725690786,
+        "orientation_error_deg": 29.49999938191751,
+        "velocity_limit_ratio": 0.14255011937889533,
+        "acceleration_limit_ratio": 0.7704190250110977,
+        "min_measured_surface_margin_m": 0.08597822858344792
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.57,
+        0.03
+      ],
+      "file": "x+019_y+001.json",
+      "sha256": "098c1cef55e57315aa771a734dcc67d1de9d547479ef7d9fae26bf7cbb9ad540",
+      "checks": {
+        "position_error_m": 0.0007221665611124934,
+        "orientation_error_deg": 29.499999399552323,
+        "velocity_limit_ratio": 0.1588009488833812,
+        "acceleration_limit_ratio": 0.8405826521169159,
+        "min_measured_surface_margin_m": 0.08623553945123885
+      },
+      "events": {
+        "approach_complete_s": 1.5,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    },
+    {
+      "xy_m": [
+        0.57,
+        0.06
+      ],
+      "file": "x+019_y+002.json",
+      "sha256": "87127ee11699b71c14cb46843236313ac8b585a720af476340e5840f75e911f2",
+      "checks": {
+        "position_error_m": 0.0004440447695564393,
+        "orientation_error_deg": 29.499999644970746,
+        "velocity_limit_ratio": 0.13692777754296023,
+        "acceleration_limit_ratio": 0.6337162247151245,
+        "min_measured_surface_margin_m": 0.0864911794231629
+      },
+      "events": {
+        "approach_complete_s": 1.8,
+        "close_start_s": 2.5,
+        "contact_s": 3.0,
+        "close_complete_s": 3.0,
+        "lift_start_s": 3.0,
+        "lift_complete_s": 4.5,
+        "stopped_s": 5.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# One complete stored approach/parallel-close/lift/brake, from audited ready.
+string request_id
+string target_id
+string scene_version
+---
+bool success
+string reason
+string request_id
+string target_id
+string cell_id
+string grasp_mode
+bool path_completed
+bool physical_grasp_verified
+builtin_interfaces/Time acquired_at
+builtin_interfaces/Time contact_at
+geometry_msgs/PoseStamped contact_grasp
+geometry_msgs/PoseStamped stopped_grasp
+bool surface_height_valid
+float64 pre_grasp_surface_z
+---
+string state
+bool committed
+string target_id
+string cell_id
+float64 elapsed_s
